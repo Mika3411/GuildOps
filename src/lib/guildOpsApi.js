@@ -28,6 +28,15 @@ export const guildOpsEndpoints = {
     list: "/guilds",
     detail: (guildId) => `/guilds/${encodeURIComponent(guildId)}`,
     members: (guildId) => `/guilds/${encodeURIComponent(guildId)}/members`,
+    memberBan: (guildId, memberId) =>
+      `/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(memberId)}/ban`,
+    memberBlocks: (guildId) => `/guilds/${encodeURIComponent(guildId)}/member-blocks`,
+    memberBlock: (guildId, blockId) =>
+      `/guilds/${encodeURIComponent(guildId)}/member-blocks/${encodeURIComponent(blockId)}`,
+    rotateInviteLink: (guildId) => `/guilds/${encodeURIComponent(guildId)}/invite-link/rotate`,
+    membershipRequests: (guildId) => `/guilds/${encodeURIComponent(guildId)}/membership-requests`,
+    membershipRequest: (guildId, requestId) =>
+      `/guilds/${encodeURIComponent(guildId)}/membership-requests/${encodeURIComponent(requestId)}`,
     mergeRequests: (guildId) => `/guilds/${encodeURIComponent(guildId)}/merge-requests`,
     mergeRequest: (guildId, mergeRequestId) =>
       `/guilds/${encodeURIComponent(guildId)}/merge-requests/${encodeURIComponent(mergeRequestId)}`,
@@ -42,6 +51,7 @@ export const guildOpsEndpoints = {
     directory: "/directory/guilds",
     show: (slug) => `/public/guilds/${encodeURIComponent(slug)}`,
     join: (slug) => `/public/guilds/${encodeURIComponent(slug)}/join`,
+    membershipRequests: (slug) => `/public/guilds/${encodeURIComponent(slug)}/membership-requests`,
     bank: (slug) => `/public/guilds/${encodeURIComponent(slug)}/bank`,
     publish: (guildId) => `/guilds/${encodeURIComponent(guildId)}/site/publish`,
   },
@@ -194,6 +204,30 @@ export const guildOpsApi = {
   addGuildMember(guildId, body) {
     return apiRequest(guildOpsEndpoints.guilds.members(guildId), { body });
   },
+  banGuildMember(guildId, memberId, body = {}) {
+    return apiRequest(guildOpsEndpoints.guilds.memberBan(guildId, memberId), { body, method: "POST" });
+  },
+  listMemberBlocks(guildId, { signal } = {}) {
+    return apiRequest(guildOpsEndpoints.guilds.memberBlocks(guildId), { signal });
+  },
+  blockGuildMember(guildId, body) {
+    return apiRequest(guildOpsEndpoints.guilds.memberBlocks(guildId), { body, method: "POST" });
+  },
+  unblockGuildMember(guildId, blockId, body = {}) {
+    return apiRequest(guildOpsEndpoints.guilds.memberBlock(guildId, blockId), { body, method: "DELETE" });
+  },
+  rotateGuildInviteLink(guildId) {
+    return apiRequest(guildOpsEndpoints.guilds.rotateInviteLink(guildId), { method: "POST" });
+  },
+  listMembershipRequests(guildId, { signal } = {}) {
+    return apiRequest(guildOpsEndpoints.guilds.membershipRequests(guildId), { signal });
+  },
+  decideMembershipRequest(guildId, requestId, decision) {
+    return apiRequest(guildOpsEndpoints.guilds.membershipRequest(guildId, requestId), {
+      body: { decision },
+      method: "PATCH",
+    });
+  },
   listMergeRequests(guildId, { signal } = {}) {
     return apiRequest(guildOpsEndpoints.guilds.mergeRequests(guildId), { signal });
   },
@@ -220,6 +254,9 @@ export const guildOpsApi = {
   },
   joinPublicGuild(slug, body) {
     return apiRequest(guildOpsEndpoints.publicSite.join(slug), { body, method: "POST" });
+  },
+  createMembershipRequest(slug, body) {
+    return apiRequest(guildOpsEndpoints.publicSite.membershipRequests(slug), { body, method: "POST" });
   },
   listPublicGuildDirectory(query, { signal } = {}) {
     return apiRequest(guildOpsEndpoints.publicSite.directory, { query, signal });

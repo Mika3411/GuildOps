@@ -1,8 +1,9 @@
-import { defaultSiteSections } from "../config/moduleRegistry.js";
+import { defaultSiteSections, getDefaultEnabledModuleIds, getGuildOpsModule } from "../config/moduleRegistry.js";
 import { normalizeRealmCodeForGame } from "../config/guildOpsConfig.js";
 
 export const DEFAULT_SECTIONS = defaultSiteSections;
 export const INVITE_ROUTE_PREFIX = "/join";
+export const ACTIVE_INVITE_QUERY = "invite";
 
 export const THEME_OPTIONS = [
   {
@@ -173,10 +174,33 @@ const DEFAULT_OBJECTIVE_TAG = "Operations";
 const LEGACY_RECRUITMENT_OBJECTIVE = "Recruter des joueurs actifs et coordonner les wars sans chaos.";
 const OPERATIONAL_SECTION_KEYS = Object.freeze(["wars", "bank", "diplomacy", "forum"]);
 
+function normalizeEnabledModules(value) {
+  const defaults = getDefaultEnabledModuleIds();
+  const moduleIds = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[\s,|]+/)
+      : [];
+  const next = new Set(defaults);
+
+  moduleIds.forEach((moduleId) => {
+    if (getGuildOpsModule(moduleId)) {
+      next.add(moduleId);
+    }
+  });
+
+  return [...next];
+}
+
 export function createGuildSiteDraft(guild = {}, rawSite = {}) {
   const site = unwrapSite(rawSite);
   const guildName = stringValue(site.guildName || site.guild_name || site.name || site.title || guild.name, "Aegis Nord");
   const slug = slugify(site.publicSlug || site.public_slug || site.slug || guildName);
+  const inviteToken =
+    normalizeInviteToken(site.inviteToken || site.invite_token || site.pages?.inviteToken || site.pagesJson?.inviteToken || site.pages_json?.inviteToken) ||
+    getMemberInviteToken(site.memberInviteUrl || site.member_invite_url || site.pages?.memberInviteUrl || site.pagesJson?.memberInviteUrl || site.pages_json?.memberInviteUrl) ||
+    createMemberInviteToken();
+  const memberInviteUrl = buildMemberInvitePath(slug, inviteToken);
   const game = stringValue(site.game || guild.game || guild.primaryGame || guild.primary_game, "Whiteout Survival");
   const realm = normalizeRealmCodeForGame(
     site.realm || site.server || guild.realm || guild.server || guild.serverCode || guild.server_code,
@@ -200,7 +224,9 @@ export function createGuildSiteDraft(guild = {}, rawSite = {}) {
     ),
     objective,
     objectiveTag: normalizeObjectiveTag(site.objectiveTag || site.objective_tag || site.playStyle || site.play_style),
-    memberInviteUrl: normalizeMemberInviteUrl(site.memberInviteUrl || site.member_invite_url) || buildMemberInvitePath(slug),
+    inviteToken,
+    inviteRotatedAt: site.inviteRotatedAt || site.invite_rotated_at || site.pages?.inviteRotatedAt || site.pagesJson?.inviteRotatedAt || site.pages_json?.inviteRotatedAt || null,
+    memberInviteUrl,
     theme: getThemeOption(site.theme?.theme || site.theme || site.themeJson?.theme || site.theme_json?.theme).id,
     design: getDesignOption(
       site.design ||
@@ -236,6 +262,7 @@ export function createGuildSiteDraft(guild = {}, rawSite = {}) {
     publicForum: normalizePublicForumSnapshot(
       site.publicForum || site.public_forum || site.forumPublic || site.forum_public,
     ),
+    enabledModules: normalizeEnabledModules(site.enabledModules || site.enabled_modules || site.modules || site.modulesJson || site.modules_json),
     slug,
     published: Boolean(site.published || site.status === "published"),
     status: site.status || (site.published ? "published" : "draft"),
@@ -249,7 +276,8 @@ export function buildGuildSitePayload(draft, guild = {}) {
   const title = normalized.guildName.trim() || "Guilde sans nom";
   const slug = slugify(title);
   const seoDescription = [normalized.tagline, normalized.objective].filter(Boolean).join(" ");
-  const memberInviteUrl = buildMemberInvitePath(slug);
+  const inviteToken = normalizeInviteToken(normalized.inviteToken) || createMemberInviteToken();
+  const memberInviteUrl = buildMemberInvitePath(slug, inviteToken);
 
   return {
     guildId: normalized.guildId,
@@ -265,6 +293,10 @@ export function buildGuildSitePayload(draft, guild = {}) {
     objective: normalized.objective.trim(),
     heroText: normalized.objective.trim(),
     hero_text: normalized.objective.trim(),
+    inviteToken,
+    invite_token: inviteToken,
+    inviteRotatedAt: normalized.inviteRotatedAt,
+    invite_rotated_at: normalized.inviteRotatedAt,
     memberInviteUrl,
     member_invite_url: memberInviteUrl,
     theme: normalized.theme,
@@ -281,6 +313,8 @@ export function buildGuildSitePayload(draft, guild = {}) {
     public_diplomacy: normalized.publicDiplomacy,
     publicForum: normalized.publicForum,
     public_forum: normalized.publicForum,
+    enabledModules: normalized.enabledModules,
+    enabled_modules: normalized.enabledModules,
     status: "published",
     published: true,
     publishedAt: now,
@@ -302,6 +336,8 @@ export function buildGuildSitePayload(draft, guild = {}) {
     pagesJson: {
       tagline: normalized.tagline.trim(),
       objective: normalized.objective.trim(),
+      inviteToken,
+      inviteRotatedAt: normalized.inviteRotatedAt,
       memberInviteUrl,
       member_invite_url: memberInviteUrl,
       design: normalized.design,
@@ -310,6 +346,8 @@ export function buildGuildSitePayload(draft, guild = {}) {
     pages_json: {
       tagline: normalized.tagline.trim(),
       objective: normalized.objective.trim(),
+      inviteToken,
+      inviteRotatedAt: normalized.inviteRotatedAt,
       memberInviteUrl,
       member_invite_url: memberInviteUrl,
       design: normalized.design,
@@ -358,10 +396,13 @@ export function normalizePublishedSite(site) {
     publicSlug,
     title: raw.title || draft.guildName,
     heroImage: normalizeHeroImage(raw.heroImage || raw.hero_image || draft.heroImage),
-    memberInviteUrl: buildMemberInvitePath(publicSlug),
+    inviteToken: draft.inviteToken,
+    inviteRotatedAt: draft.inviteRotatedAt,
+    memberInviteUrl: buildMemberInvitePath(publicSlug, draft.inviteToken),
     members: Array.isArray(raw.members) ? raw.members : [],
     publicDiplomacy: normalizePublicDiplomacySnapshot(raw.publicDiplomacy || raw.public_diplomacy || draft.publicDiplomacy),
     publicForum: normalizePublicForumSnapshot(raw.publicForum || raw.public_forum || draft.publicForum),
+    enabledModules: normalizeEnabledModules(raw.enabledModules || raw.enabled_modules || draft.enabledModules),
     status: raw.status || "published",
     published: raw.published ?? true,
     publishedAt: raw.publishedAt || raw.published_at || draft.publishedAt || new Date().toISOString(),
@@ -466,8 +507,32 @@ export function resolveGuildId(guild = {}) {
   return stringValue(guild.id || guild.slug || `${guild.name || "aegis-nord"}-${guild.realm || "s1287"}`, "aegis-nord-s1287");
 }
 
-export function buildMemberInvitePath(slug) {
+export function buildMemberInvitePath(slug, token = createMemberInviteToken()) {
+  return `${INVITE_ROUTE_PREFIX}/${slugify(slug)}?${ACTIVE_INVITE_QUERY}=${encodeURIComponent(normalizeInviteToken(token) || createMemberInviteToken())}`;
+}
+
+export function buildMemberRequestPath(slug) {
   return `${INVITE_ROUTE_PREFIX}/${slugify(slug)}`;
+}
+
+export function createMemberInviteToken() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 14)}`;
+}
+
+export function getMemberInviteToken(value) {
+  const raw = stringValue(value, "");
+  if (!raw) return "";
+
+  try {
+    const url = new URL(raw, "https://guildops.local");
+    return normalizeInviteToken(url.searchParams.get(ACTIVE_INVITE_QUERY));
+  } catch {
+    return "";
+  }
 }
 
 function normalizeColors(value) {
@@ -515,6 +580,11 @@ function normalizeMemberInviteUrl(value) {
   } catch {
     return raw.slice(0, 240);
   }
+}
+
+function normalizeInviteToken(value) {
+  const token = stringValue(value, "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96);
+  return token && token !== "active" ? token : "";
 }
 
 function normalizePublicEventsSnapshot(value = {}) {

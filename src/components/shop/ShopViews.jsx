@@ -1,4 +1,5 @@
 import React, {
+  useEffect,
   useMemo,
   useState
 } from "react";
@@ -10,6 +11,7 @@ import {
   FileArchive,
   Image as ImageIcon,
   Map,
+  Maximize2,
   Package,
   Palette,
   ShoppingBag,
@@ -17,12 +19,17 @@ import {
   Sparkles,
   Swords,
   Terminal,
-  Unlock
+  Unlock,
+  X
 } from "lucide-react";
 import {
   PanelHeader
 } from "../shared/Shared.jsx";
 import {
+  GuildSitePreview
+} from "../command/CommandViews.jsx";
+import {
+  createGuildSiteDraft,
   getPremiumDesignOptions
 } from "../../lib/guildSiteStore.js";
 
@@ -100,9 +107,9 @@ const SHOP_PRODUCTS = Object.freeze([
 ]);
 
 const SHOP_ORDERS = Object.freeze([
-  { id: "cmd-1042", buyer: "NorthForge", product: "Emojis Officiers", amount: 9, status: "Livré" },
-  { id: "cmd-1041", buyer: "RavenHold", product: "Template War Room", amount: 29, status: "Livré" },
-  { id: "cmd-1040", buyer: "Snow Pact", product: "Pack images Camp Nord", amount: 19, status: "En cours" },
+  { id: "cmd-1042", guildName: "NorthForge", product: "Emojis Officiers", amount: 9, status: "Livré" },
+  { id: "cmd-1041", guildName: "RavenHold", product: "Template War Room", amount: 29, status: "Livré" },
+  { id: "cmd-1040", guildName: "Snow Pact", product: "Pack images Camp Nord", amount: 19, status: "En cours" },
 ]);
 
 const PRODUCT_ICONS = Object.freeze({
@@ -117,6 +124,129 @@ const TEMPLATE_ICONS = Object.freeze({
   "alliance-atlas": Map,
   "forge-terminal": Terminal,
   "citadel-luxe": Castle,
+});
+
+const SHOP_TEMPLATE_PREVIEWS = Object.freeze({
+  "raid-board": {
+    guildName: "Aegis Nord",
+    game: "Whiteout Survival",
+    realm: "S1287",
+    tagline: "Rallyes, timers et consignes au même endroit.",
+    objective: "Calendrier war, appels d'action visibles et modules en timeline pour coordonner les départs.",
+    objectiveTag: "Operations",
+    theme: "war-room",
+    design: "raid-board",
+    colors: "rose",
+    typography: "orbitron",
+  },
+  "alliance-atlas": {
+    guildName: "Atlas Pact",
+    game: "Whiteout Survival",
+    realm: "K321",
+    tagline: "Carte diplomatique, alliés et zones sensibles.",
+    objective: "Montrer les NAP, les contacts royaume et les priorites diplomatiques sans brouiller la lecture.",
+    objectiveTag: "Diplomatie",
+    theme: "royal-banner",
+    design: "alliance-atlas",
+    colors: "slate",
+    typography: "inter",
+  },
+  "forge-terminal": {
+    guildName: "Forge R5",
+    game: "Whiteout Survival",
+    realm: "S940",
+    tagline: "Banque, logs et demandes en mode command center.",
+    objective: "Centraliser ressources, ordres rapides et suivi des contributions pour les officiers.",
+    objectiveTag: "Operations",
+    theme: "camp-nord",
+    design: "forge-terminal",
+    colors: "lime",
+    typography: "orbitron",
+  },
+  "citadel-luxe": {
+    guildName: "Citadel Crown",
+    game: "Whiteout Survival",
+    realm: "K88",
+    tagline: "Vitrine premium pour guilde sélective.",
+    objective: "Inspirer confiance avant recrutement avec une page sombre, lisible et prestige.",
+    objectiveTag: "Competitif",
+    theme: "royal-banner",
+    design: "citadel-luxe",
+    colors: "rose",
+    typography: "inter",
+  },
+});
+
+const SHOP_PREVIEW_SECTIONS = Object.freeze({
+  roster: true,
+  wars: true,
+  bank: true,
+  diplomacy: true,
+  forum: true,
+  publicChat: false,
+});
+
+const SHOP_PREVIEW_EVENTS = Object.freeze({
+  nextEvent: {
+    id: "shop-preview-war",
+    title: "Rally Forteresse",
+    eventType: "war",
+    time: "20:00 UTC",
+    realm: "S1287",
+    status: "live",
+  },
+  events: [
+    {
+      id: "shop-preview-bear",
+      title: "Bear Hunt",
+      eventType: "event",
+      time: "21:30 UTC",
+      realm: "S1287",
+      status: "planned",
+    },
+    {
+      id: "shop-preview-svs",
+      title: "Prep SvS",
+      eventType: "war",
+      time: "Demain",
+      realm: "S1287",
+      status: "planned",
+    },
+  ],
+  weeklyObjectives: {
+    total: 4,
+    done: 2,
+    completionRate: 0.5,
+    objectives: [
+      { id: "shop-preview-objective-1", title: "R4 assignes", status: "done" },
+      { id: "shop-preview-objective-2", title: "Timers annonces", status: "done" },
+      { id: "shop-preview-objective-3", title: "Rally leads", status: "in_progress" },
+    ],
+  },
+});
+
+const SHOP_ASSET_PREVIEWS = Object.freeze({
+  "nord-image-pack": {
+    kind: "images",
+    title: "Camp Nord",
+    subtitle: "Hero, bannières, annonces",
+    tiles: ["Hero givré", "War banner", "Recrutement", "Fond forum"],
+    rows: ["24 PNG haute résolution", "Formats site et Discord", "Variantes sombres incluses"],
+  },
+  "emoji-officers": {
+    kind: "emojis",
+    title: "Emojis Officiers",
+    subtitle: "Rôles, alertes, ressources",
+    tiles: ["R5", "R4", "WAR", "NAP", "RSS", "OK"],
+    rows: ["36 PNG prêts Discord", "Badges commandement", "Réactions diplomatie et banque"],
+  },
+  "launch-bundle": {
+    kind: "bundle",
+    title: "Bundle lancement",
+    subtitle: "Template + images + emojis",
+    tiles: ["Site", "Hero", "Icons", "Emoji"],
+    rows: ["1 template premium", "24 images de guilde", "36 emojis officiers"],
+  },
 });
 
 function formatPrice(value) {
@@ -137,6 +267,7 @@ function getTemplateIcon(product) {
 
 export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purchasedDesignIds = [] }) {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [expandedPreviewProductId, setExpandedPreviewProductId] = useState("");
   const [selectedProductId, setSelectedProductId] = useState(SHOP_PRODUCTS[0].id);
   const purchasedDesignSet = useMemo(() => new Set(purchasedDesignIds), [purchasedDesignIds.join("|")]);
   const filteredProducts = useMemo(
@@ -148,9 +279,13 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
   );
   const selectedProduct = SHOP_PRODUCTS.find((product) => product.id === selectedProductId) || SHOP_PRODUCTS[0];
   const activeCount = SHOP_PRODUCTS.filter((product) => product.status === "Actif").length;
+  const expandedPreviewProduct = SHOP_PRODUCTS.find((product) => product.id === expandedPreviewProductId) || null;
   const minimumPrice = Math.min(...SHOP_PRODUCTS.map((product) => product.price));
   const selectedTemplatePurchased = selectedProduct.designId ? purchasedDesignSet.has(selectedProduct.designId) : false;
   const selectedProductIcon = selectedProduct.designId ? getTemplateIcon(selectedProduct) : getProductIcon(selectedProduct.type);
+  const expandedPreviewIcon = expandedPreviewProduct?.designId
+    ? getTemplateIcon(expandedPreviewProduct)
+    : getProductIcon(expandedPreviewProduct?.type);
 
   function handlePrimaryAction() {
     if (!selectedProduct.designId) return;
@@ -164,14 +299,15 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
   }
 
   return (
+    <>
     <div className="page-grid shop-page">
       <section className="panel wide-panel shop-hero-panel">
         <PanelHeader icon={ShoppingBag} title="Boutique" meta={`${activeCount}/${SHOP_PRODUCTS.length} offres disponibles`} />
         <div className="shop-hero-grid">
           <div className="shop-hero-copy">
             <span>Templates premium, images, emojis</span>
-            <h1>Vends des looks qui donnent envie de rejoindre la guilde.</h1>
-            <p>Les templates achetés se déverrouillent dans le builder et deviennent disponibles dans les propositions de design.</p>
+            <h1>Donne à ta guilde un look qui donne envie de la rejoindre.</h1>
+            <p>Tes templates, images et emojis se déverrouillent dans le builder et restent disponibles dans tes propositions de design.</p>
             <div className="shop-actions">
               <button className="primary-action" type="button" onClick={() => setActiveCategory("template")}>
                 <ShoppingBag size={17} />
@@ -186,17 +322,17 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
           <div className="shop-payment-state">
             <CreditCard size={22} />
             <span>
-              Achat test
-              <strong>{purchasedDesignIds.length} template{purchasedDesignIds.length > 1 ? "s" : ""} déverrouillé{purchasedDesignIds.length > 1 ? "s" : ""}</strong>
+              Déverrouillage builder
+              <strong>{purchasedDesignIds.length} template{purchasedDesignIds.length > 1 ? "s" : ""} disponible{purchasedDesignIds.length > 1 ? "s" : ""}</strong>
             </span>
-            <small>Le bouton d'achat simule la commande et ajoute le template au builder pour tester le flux.</small>
+            <small>Choisis un template premium, déverrouille-le, puis applique-le directement dans ton builder.</small>
           </div>
         </div>
       </section>
 
       <section className="panel shop-products-panel">
         <PanelHeader icon={Package} title="Catalogue" meta={`${filteredProducts.length} offres`} />
-        <div className="shop-metrics" aria-label="Statistiques boutique">
+        <div className="shop-metrics" aria-label="Repères catalogue">
           <ShopMetric label="Offres prêtes" value={String(activeCount)} />
           <ShopMetric label="Prix dès" value={formatPrice(minimumPrice)} />
           <ShopMetric label="Fichiers inclus" value={String(SHOP_PRODUCTS.reduce((total, product) => total + product.files, 0))} />
@@ -237,16 +373,13 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
           <span className="shop-product-icon">
             {React.createElement(selectedProductIcon, { size: 24 })}
           </span>
-          <strong>{selectedProduct.name}</strong>
-          <small>{selectedProduct.description}</small>
-          {selectedProduct.designTone ? (
-            <span className="shop-template-preview" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-              <i />
-            </span>
-          ) : null}
+          <strong className="shop-selected-title">{selectedProduct.name}</strong>
+          <small className="shop-selected-description">{selectedProduct.description}</small>
+          <ShopOfferPreview
+            icon={selectedProductIcon}
+            onExpand={() => setExpandedPreviewProductId(selectedProduct.id)}
+            product={selectedProduct}
+          />
         </div>
         <dl className="shop-product-details">
           <div>
@@ -276,7 +409,7 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
           {selectedProduct.designId ? (
             <button className="primary-action" type="button" onClick={handlePrimaryAction}>
               {selectedTemplatePurchased ? <Unlock size={17} /> : <ShoppingBag size={17} />}
-              {selectedTemplatePurchased ? "Utiliser dans le builder" : "Acheter ce template"}
+              {selectedTemplatePurchased ? "Utiliser dans le builder" : "Déverrouiller ce template"}
             </button>
           ) : (
             <button className="primary-action" type="button">
@@ -291,12 +424,12 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
       </section>
 
       <section className="panel shop-orders-panel">
-        <PanelHeader icon={CreditCard} title="Guildes équipées" meta="Derniers achats" />
+        <PanelHeader icon={CreditCard} title="Déjà adopté" meta="Exemples récents" />
         <div className="shop-order-list">
           {SHOP_ORDERS.map((order) => (
             <article key={order.id}>
               <span>
-                <strong>{order.buyer}</strong>
+                <strong>{order.guildName}</strong>
                 <small>{order.product}</small>
               </span>
               <em>{formatPrice(order.amount)}</em>
@@ -306,6 +439,14 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
         </div>
       </section>
     </div>
+    {expandedPreviewProduct ? (
+      <ShopPreviewModal
+        icon={expandedPreviewIcon}
+        onClose={() => setExpandedPreviewProductId("")}
+        product={expandedPreviewProduct}
+      />
+    ) : null}
+    </>
   );
 }
 
@@ -337,13 +478,137 @@ function ShopProductCard({ isSelected, onSelect, product, purchased = false }) {
       </span>
       <span className="shop-product-price">
         <strong>{formatPrice(product.price)}</strong>
-        <small>{product.sales} guildes</small>
+        <small>Utilisé par {product.sales} guildes</small>
       </span>
       <em>
         {purchased ? <CheckCircle2 size={13} /> : null}
-        {purchased ? "Acheté" : product.status}
+        {purchased ? "Déverrouillé" : product.status}
       </em>
     </button>
+  );
+}
+
+function ShopOfferPreview({ expanded = false, icon, onExpand, product }) {
+  if (product.designId) {
+    return <ShopTemplatePreview expanded={expanded} onExpand={onExpand} product={product} />;
+  }
+
+  return <ShopAssetPreview expanded={expanded} icon={icon} onExpand={onExpand} product={product} />;
+}
+
+function ShopTemplatePreview({ expanded = false, onExpand, product }) {
+  const previewDraft = useMemo(() => {
+    const preview = SHOP_TEMPLATE_PREVIEWS[product.designId] || SHOP_TEMPLATE_PREVIEWS["raid-board"];
+
+    return createGuildSiteDraft(
+      {},
+      {
+        ...preview,
+        sections: SHOP_PREVIEW_SECTIONS,
+        publicEvents: SHOP_PREVIEW_EVENTS,
+        slug: `${preview.guildName}-${preview.realm}`,
+      },
+    );
+  }, [product.designId]);
+
+  return (
+    <div
+      aria-label={`Aperçu réel du ${product.name}`}
+      className={`shop-offer-preview shop-template-window ${expanded ? "is-expanded" : ""} ${onExpand ? "is-clickable" : ""}`.trim()}
+    >
+      <div aria-hidden="true" className="shop-template-scaler" inert={true}>
+        <GuildSitePreview members={[]} siteDraft={previewDraft} />
+      </div>
+      {onExpand ? <ShopPreviewOpenButton product={product} onExpand={onExpand} /> : null}
+    </div>
+  );
+}
+
+function ShopAssetPreview({ expanded = false, icon, onExpand, product }) {
+  const ProductIcon = icon || getProductIcon(product.type);
+  const preview = SHOP_ASSET_PREVIEWS[product.id] || SHOP_ASSET_PREVIEWS["launch-bundle"];
+
+  return (
+    <div
+      className={`shop-offer-preview shop-asset-preview preview-${preview.kind} ${expanded ? "is-expanded" : ""} ${onExpand ? "is-clickable" : ""}`.trim()}
+      aria-label={`Aperçu de ${product.name}`}
+    >
+      <header>
+        <span>
+          <ProductIcon size={18} />
+        </span>
+        <strong>{preview.title}</strong>
+        <small>{preview.subtitle}</small>
+      </header>
+      <div className="shop-asset-grid" aria-hidden="true">
+        {preview.tiles.map((tile) => (
+          <span key={tile}>{tile}</span>
+        ))}
+      </div>
+      <ul>
+        {preview.rows.map((row) => (
+          <li key={row}>{row}</li>
+        ))}
+      </ul>
+      {onExpand ? <ShopPreviewOpenButton product={product} onExpand={onExpand} /> : null}
+    </div>
+  );
+}
+
+function ShopPreviewOpenButton({ onExpand, product }) {
+  return (
+    <button
+      aria-label={`Agrandir l'aperçu de ${product.name}`}
+      className="shop-preview-open-button"
+      onClick={onExpand}
+      title="Agrandir l'aperçu"
+      type="button"
+    >
+      <span aria-hidden="true" className="shop-preview-zoom-hint">
+        <Maximize2 size={15} />
+      </span>
+    </button>
+  );
+}
+
+function ShopPreviewModal({ icon, onClose, product }) {
+  const ProductIcon = icon || getProductIcon(product.type);
+
+  useEffect(() => {
+    function closeOnEscape(event) {
+      if (event.key === "Escape") onClose?.();
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div className="shop-preview-modal-backdrop" onMouseDown={onClose} role="presentation">
+      <section
+        aria-label={`Aperçu agrandi de ${product.name}`}
+        aria-modal="true"
+        className={`shop-preview-modal accent-${product.accent} tone-${product.designTone || "asset"}`}
+        onMouseDown={(event) => event.stopPropagation()}
+        role="dialog"
+      >
+        <header className="shop-preview-modal-header">
+          <span className="shop-product-icon">
+            <ProductIcon size={22} />
+          </span>
+          <span>
+            <strong>{product.name}</strong>
+            <small>{product.description}</small>
+          </span>
+          <button aria-label="Fermer l'aperçu" className="shop-preview-modal-close" onClick={onClose} type="button">
+            <X size={18} />
+          </button>
+        </header>
+        <div className="shop-preview-modal-body">
+          <ShopOfferPreview expanded icon={ProductIcon} product={product} />
+        </div>
+      </section>
+    </div>
   );
 }
 

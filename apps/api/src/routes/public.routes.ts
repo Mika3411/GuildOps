@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
-import { database, query, withClient } from "../db/pool.js";
+import { database, query, withClient, type Queryable } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
-import { ForbiddenError, NotFoundError } from "../http/errors.js";
+import { ConflictError, ForbiddenError, NotFoundError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
 import { getAuth, requireAuth } from "../security/auth.js";
 import { slugSchema, slugify } from "./helpers.js";
@@ -20,7 +20,16 @@ const directoryQuerySchema = z.object({
 
 const joinPublicGuildBodySchema = z
   .object({
-    nickname: z.string().trim().min(1).max(80).optional()
+    nickname: z.string().trim().min(1).max(80).optional(),
+    inviteToken: z.string().trim().min(8).max(96).optional(),
+    invite_token: z.string().trim().min(8).max(96).optional()
+  })
+  .strict();
+
+const createMembershipRequestBodySchema = z
+  .object({
+    nickname: z.string().trim().min(1).max(80).optional(),
+    message: z.string().trim().max(500).optional()
   })
   .strict();
 
@@ -158,6 +167,7 @@ type PublicJoinGuildRow = {
   name: string;
   tag: string | null;
   slug: string;
+  invite_token?: string | null;
 };
 
 type PublicJoinMemberRow = {
@@ -166,6 +176,19 @@ type PublicJoinMemberRow = {
   nickname: string;
   status: string;
   joined_at: string | null;
+};
+
+type PublicMembershipRequestRow = {
+  id: string;
+  guild_id: string;
+  user_id: string;
+  nickname: string;
+  message: string;
+  source: string;
+  status: string;
+  requested_at: string;
+  decided_at: string | null;
+  decided_by: string | null;
 };
 
 type PublicBankRow = {
@@ -486,16 +509,17 @@ publicRouter.get(
 );
 
 publicRouter.post(
-  "/public/guilds/:slug/join",
+  "/public/guilds/:slug/membership-requests",
   requireAuth,
-  validate({ params: z.object({ slug: slugSchema }), body: joinPublicGuildBodySchema }),
+  validate({ params: z.object({ slug: slugSchema }), body: createMembershipRequestBodySchema }),
   asyncHandler(async (req, res) => {
     const auth = getAuth(res);
     const { slug } = req.params as { slug: string };
-    const body = req.body as z.infer<typeof joinPublicGuildBodySchema>;
+    const body = req.body as z.infer<typeof createMembershipRequestBodySchema>;
     const nickname = body.nickname || auth.user.displayName;
+    const message = body.message || "Demande envoyée depuis le site public, sans lien d'invitation actif.";
 
-    const joined = await withClient(async (client) => {
+    const requested = await withClient(async (client) => {
       await client.query("BEGIN");
 
       try {
@@ -519,8 +543,121 @@ publicRouter.post(
         const guild = guildResult.rows[0];
 
         if (!guild) {
+          throw new NotFoundError("Guild site not found");
+        }
+
+        await assertPublicJoinNotBlocked(client, guild.id, auth.user.id, nickname);
+
+        const existingMemberResult = await client.query<{ status: string }>(
+          `
+            SELECT status
+            FROM guild_members
+            WHERE guild_id = $1
+              AND user_id = $2
+            LIMIT 1
+          `,
+          [guild.id, auth.user.id]
+        );
+        const existingStatus = existingMemberResult.rows[0]?.status;
+
+        if (existingStatus === "banned") {
+          throw new ForbiddenError("Vous ne pouvez pas demander l'accès à cette guilde.");
+        }
+
+        if (existingStatus === "active") {
+          throw new ConflictError("Vous êtes déjà membre de cette guilde.");
+        }
+
+        const requestResult = await client.query<PublicMembershipRequestRow>(
+          `
+            INSERT INTO membership_requests (guild_id, user_id, nickname, message, source, status, requested_at)
+            VALUES ($1, $2, $3, $4, 'public', 'pending', now())
+            ON CONFLICT (guild_id, user_id) WHERE status = 'pending'
+            DO UPDATE SET
+              nickname = EXCLUDED.nickname,
+              message = EXCLUDED.message,
+              requested_at = now(),
+              updated_at = now()
+            RETURNING
+              id::text,
+              guild_id::text,
+              user_id::text,
+              nickname,
+              message,
+              source,
+              status,
+              requested_at::text,
+              decided_at::text,
+              decided_by::text
+          `,
+          [guild.id, auth.user.id, nickname, message]
+        );
+        const request = requestResult.rows[0];
+
+        if (!request) {
+          throw new NotFoundError("Membership request could not be created");
+        }
+
+        await client.query("COMMIT");
+        return { guild, request };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+
+    res.status(201).json({
+      status: "pending",
+      guild: requested.guild,
+      request: toPublicMembershipRequestResource(requested.request)
+    });
+  })
+);
+
+publicRouter.post(
+  "/public/guilds/:slug/join",
+  requireAuth,
+  validate({ params: z.object({ slug: slugSchema }), body: joinPublicGuildBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { slug } = req.params as { slug: string };
+    const body = req.body as z.infer<typeof joinPublicGuildBodySchema>;
+    const nickname = body.nickname || auth.user.displayName;
+    const inviteToken = normalizeInviteToken(body.inviteToken || body.invite_token);
+
+    const joined = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        const guildResult = await client.query<PublicJoinGuildRow>(
+          `
+            SELECT
+              g.id::text,
+              g.organization_id::text,
+              g.name,
+              g.tag,
+              COALESCE(gs.public_slug::text, g.slug::text) AS slug,
+              gs.invite_token
+            FROM guilds g
+            JOIN guild_sites gs ON gs.guild_id = g.id
+            WHERE (g.slug = $1 OR gs.public_slug = $1)
+              AND g.deleted_at IS NULL
+              AND gs.status = 'published'
+            LIMIT 1
+          `,
+          [slug]
+        );
+        const guild = guildResult.rows[0];
+
+        if (!guild) {
           throw new NotFoundError("Guild invite not found");
         }
+
+        if (!inviteToken || inviteToken !== guild.invite_token) {
+          throw new ForbiddenError("Ce lien d'invitation n'est plus actif.");
+        }
+
+        await assertPublicJoinNotBlocked(client, guild.id, auth.user.id, nickname);
 
         const existingMemberResult = await client.query<{ status: string }>(
           `
@@ -639,6 +776,22 @@ export function toPublicGuildSiteResource(row: PublicGuildSiteRow) {
     status: asString(row.status) || (row.published ? "published" : "draft"),
     published: Boolean(row.published || row.status === "published"),
     publishedAt: row.publishedAt || row.published_at || null
+  };
+}
+
+export function toPublicMembershipRequestResource(row: PublicMembershipRequestRow) {
+  return {
+    id: row.id,
+    guildId: row.guild_id,
+    guildSlug: "",
+    userId: row.user_id,
+    nickname: row.nickname,
+    message: row.message,
+    source: row.source,
+    status: row.status,
+    requestedAt: row.requested_at,
+    decidedAt: row.decided_at,
+    decidedBy: row.decided_by
   };
 }
 
@@ -1183,12 +1336,49 @@ function getPublicEventStatus(startsAt: string, endsAt: string | null) {
   return "ended";
 }
 
+async function assertPublicJoinNotBlocked(
+  db: Queryable,
+  guildId: string,
+  userId: string,
+  nickname: string
+): Promise<void> {
+  const normalizedNickname = normalizeBlockKey(nickname);
+  const result = await db.query<{ id: string; nickname: string }>(
+    `
+      SELECT id::text, nickname
+      FROM guild_member_blocks
+      WHERE guild_id = $1
+        AND lifted_at IS NULL
+        AND (
+          user_id = $2
+          OR normalized_nickname = $3::citext
+        )
+      LIMIT 1
+    `,
+    [guildId, userId, normalizedNickname]
+  );
+  const block = result.rows[0];
+
+  if (block) {
+    throw new ForbiddenError("Vous ne pouvez pas rejoindre cette guilde.");
+  }
+}
+
+function normalizeBlockKey(value: string): string {
+  return asString(value).replace(/\s+/g, " ").slice(0, 80).toLowerCase();
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
 }
 
 function asString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeInviteToken(value: unknown): string {
+  const token = asString(value).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96);
+  return token === "active" ? "" : token;
 }
 
 function asIsoString(value: unknown): string | null {

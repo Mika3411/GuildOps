@@ -1,5 +1,6 @@
 export const RBAC_PERMISSIONS = Object.freeze([
   "manage_site",
+  "approve_members",
   "manage_events",
   "send_sos",
   "manage_diplomacy",
@@ -21,7 +22,7 @@ export const RBAC_ROLE_DEFINITIONS = Object.freeze({
     code: "officier",
     label: "Officier",
     color: "blue",
-    permissions: ["manage_events", "send_sos", "moderate_forum", "manage_members"],
+    permissions: ["approve_members", "manage_events", "send_sos", "moderate_forum", "manage_members"],
   },
   diplomate: {
     code: "diplomate",
@@ -55,6 +56,7 @@ const ROLE_ALIASES = Object.freeze({
 
 const PERMISSION_LABELS = Object.freeze({
   manage_site: "Site",
+  approve_members: "Adhésions",
   manage_events: "Events",
   send_sos: "SOS",
   manage_diplomacy: "Diplomatie",

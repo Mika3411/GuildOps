@@ -393,8 +393,9 @@ export const initialSosAlerts = [
     targetY: 620,
     type: "Rallye",
     attackType: "Rallye",
-    details: "Rallye en cours sur notre Forteresse ! Besoin de renforts immediats.",
-    message: "Rallye en cours sur notre Forteresse ! Besoin de renforts immediats.",
+    callKind: "defense",
+    details: "Rallye en cours sur notre Forteresse ! Besoin de renforts immédiats.",
+    message: "Rallye en cours sur notre Forteresse ! Besoin de renforts immédiats.",
     by: "FrostWarden",
     createdByName: "FrostWarden",
     status: "active",
@@ -419,7 +420,8 @@ export const initialSosForm = {
   x: "560",
   y: "620",
   type: "Rallye",
-  details: "Rallye en cours sur notre Forteresse ! Besoin de renforts immediats.",
+  callKind: "defense",
+  details: "",
 };
 
 export const authUser = {

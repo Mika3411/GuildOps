@@ -42,6 +42,7 @@
 
 .status-chip.closed,
 .status-chip.refused,
+.status-chip.banned,
 .status-chip.cancelled {
   border-color: rgba(255, 92, 122, 0.32);
   color: var(--red);
@@ -52,6 +53,289 @@
   border-color: rgba(245, 182, 56, 0.34);
   color: var(--amber);
   background: rgba(245, 182, 56, 0.08);
+}
+
+.membership-requests-page {
+  align-content: start;
+}
+
+.membership-requests-panel {
+  overflow: hidden;
+}
+
+.membership-request-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border-bottom: 1px solid rgba(132, 157, 168, 0.13);
+}
+
+.membership-request-summary article {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid rgba(132, 157, 168, 0.16);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.membership-request-summary span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.membership-request-summary strong {
+  color: var(--text);
+  font-size: 1.35rem;
+}
+
+.membership-request-intro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  margin: 12px;
+  padding: 14px;
+  border: 1px solid rgba(245, 182, 56, 0.24);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(245, 182, 56, 0.12), rgba(84, 223, 204, 0.05));
+  color: var(--amber);
+}
+
+.membership-request-intro strong,
+.membership-request-intro small {
+  display: block;
+}
+
+.membership-request-intro strong {
+  color: var(--text);
+}
+
+.membership-request-intro small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.membership-moderation-error {
+  margin: 0 12px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 92, 122, 0.28);
+  border-radius: var(--radius);
+  background: rgba(255, 92, 122, 0.08);
+  color: var(--red);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.membership-invite-tools {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.7fr) minmax(240px, 1fr) auto auto;
+  gap: 10px;
+  align-items: center;
+  margin: 0 12px 12px;
+  padding: 12px;
+  border: 1px solid rgba(84, 223, 204, 0.2);
+  border-radius: var(--radius);
+  background: rgba(7, 16, 21, 0.7);
+}
+
+.membership-invite-tools strong,
+.membership-invite-tools small {
+  display: block;
+}
+
+.membership-invite-tools small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.membership-invite-tools input {
+  width: 100%;
+  min-width: 0;
+  min-height: 36px;
+  border: 1px solid rgba(132, 157, 168, 0.2);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--text);
+}
+
+.membership-invite-tools button {
+  min-height: 36px;
+  padding: 0 10px;
+  border-color: rgba(84, 223, 204, 0.3);
+  background: rgba(84, 223, 204, 0.08);
+  color: var(--teal);
+  font-size: 0.74rem;
+}
+
+.membership-invite-tools button:last-child {
+  border-color: rgba(245, 182, 56, 0.34);
+  background: rgba(245, 182, 56, 0.08);
+  color: var(--amber);
+}
+
+.membership-request-list {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.membership-request-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(132, 157, 168, 0.16);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.membership-request-card.is-pending {
+  border-color: rgba(245, 182, 56, 0.24);
+}
+
+.membership-request-card.is-approved {
+  border-color: rgba(108, 225, 132, 0.22);
+}
+
+.membership-request-card.is-refused {
+  border-color: rgba(255, 92, 122, 0.2);
+}
+
+.membership-request-card header,
+.membership-request-card footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.membership-request-card header strong,
+.membership-request-card header small {
+  display: block;
+}
+
+.membership-request-card header small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.membership-request-avatar {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(84, 223, 204, 0.32);
+  border-radius: 7px;
+  background: rgba(84, 223, 204, 0.1);
+  color: var(--teal);
+  font-weight: 950;
+}
+
+.membership-request-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.membership-request-card footer {
+  grid-template-columns: repeat(2, max-content) minmax(0, 1fr);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.membership-request-card footer span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.membership-request-actions {
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+}
+
+.membership-request-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-color: rgba(108, 225, 132, 0.3);
+  background: rgba(108, 225, 132, 0.08);
+  color: var(--green);
+  font-size: 0.74rem;
+}
+
+.membership-request-actions button + button {
+  border-color: rgba(255, 92, 122, 0.3);
+  background: rgba(255, 92, 122, 0.08);
+  color: var(--red);
+}
+
+.member-block-panel {
+  align-self: start;
+  overflow: hidden;
+}
+
+.member-block-list {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.member-block-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(255, 92, 122, 0.18);
+  border-radius: var(--radius);
+  background: rgba(255, 92, 122, 0.045);
+}
+
+.member-block-card header,
+.member-block-card footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.member-block-card header strong,
+.member-block-card header small {
+  display: block;
+}
+
+.member-block-card header small,
+.member-block-card footer small {
+  color: var(--muted);
+}
+
+.member-block-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.member-block-card footer {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.member-block-card button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-color: rgba(84, 223, 204, 0.3);
+  background: rgba(84, 223, 204, 0.08);
+  color: var(--teal);
+  font-size: 0.74rem;
+  font-weight: 900;
 }
 
 .empty-state {

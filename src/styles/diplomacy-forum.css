@@ -416,13 +416,27 @@
 }
 
 .member-role-row {
-  grid-template-columns: auto minmax(0, 1fr) minmax(150px, 0.6fr) minmax(180px, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) minmax(150px, 0.55fr) minmax(170px, 0.8fr) auto;
 }
 
 .member-role-row select,
-.member-role-row input {
+.member-role-row input,
+.member-ban-action {
   min-height: 36px;
   padding: 0 10px;
+}
+
+.member-role-actions {
+  justify-self: end;
+  display: flex;
+}
+
+.member-ban-action {
+  border-color: rgba(255, 92, 122, 0.32);
+  background: rgba(255, 92, 122, 0.08);
+  color: var(--red);
+  font-size: 0.74rem;
+  font-weight: 900;
 }
 
 .settings-row {

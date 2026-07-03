@@ -366,6 +366,18 @@
   color: var(--green);
 }
 
+.status-pill.pending {
+  border-color: rgba(245, 182, 56, 0.36);
+  background: rgba(245, 182, 56, 0.1);
+  color: var(--amber);
+}
+
+.status-pill.expired {
+  border-color: rgba(255, 92, 122, 0.34);
+  background: rgba(255, 92, 122, 0.08);
+  color: var(--red);
+}
+
 .guild-create-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

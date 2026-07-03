@@ -62,6 +62,8 @@
 .public-hero button,
 .forum-row button,
 .settings-row button,
+.member-ban-action,
+.member-block-card button,
 .command-input button,
 .permissions-matrix button {
   min-height: 38px;

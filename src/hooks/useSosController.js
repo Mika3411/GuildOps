@@ -14,6 +14,7 @@ import {
   isUuid,
   mergeSosAcknowledgement,
   normalizeSosAlert,
+  normalizeSosCallKind,
   parseCoordinate,
   parseRealtimeEvent,
   upsertSosAlert
@@ -95,17 +96,26 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
   async function sendSos() {
     if (!moduleEnabled) return;
     if (!can(currentUser, "send_sos")) return;
-    if (!String(sosForm.target || "").trim() || !String(sosForm.details || "").trim()) return;
+
+    const attackType = String(sosForm.type || "Rallye").trim() || "Rallye";
+    const callKind = normalizeSosCallKind(sosForm.callKind);
+    const targetLabel = String(sosForm.target || "Cible non precisee").trim();
+    const fallbackMessage =
+      callKind === "attack"
+        ? `${attackType} lancé sur ${targetLabel}. Rejoignez l'attaque maintenant.`
+        : `${attackType} en cours sur ${targetLabel}. Besoin de renforts immédiats.`;
+    const message = String(sosForm.details || "").trim() || fallbackMessage;
 
     const guildId = getApiGuildId(selectedGuild);
     const draftAlert = normalizeSosAlert({
       id: `local-sos-${Date.now()}`,
-      targetLabel: String(sosForm.target || "").trim(),
+      targetLabel,
       targetX: parseCoordinate(sosForm.x),
       targetY: parseCoordinate(sosForm.y),
-      attackType: sosForm.type,
-      message: String(sosForm.details || "").trim(),
-      details: String(sosForm.details || "").trim(),
+      attackType,
+      callKind,
+      message,
+      details: message,
       createdByName: currentUser.displayName,
       by: currentUser.displayName,
       status: "active",
@@ -119,11 +129,12 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
 
     try {
       const payload = await guildOpsApi.createAttackAlert(guildId, {
-        targetLabel: String(sosForm.target || "").trim(),
+        targetLabel,
         targetX: parseCoordinate(sosForm.x),
         targetY: parseCoordinate(sosForm.y),
-        attackType: sosForm.type,
-        message: String(sosForm.details || "").trim(),
+        attackType,
+        callKind,
+        message,
         severity: "critical",
       });
       const savedAlert = normalizeSosAlert(payload?.alert);

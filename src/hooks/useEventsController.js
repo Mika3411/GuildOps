@@ -125,6 +125,35 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
     void updateMemberStatus(currentMemberId, "allianceWar", status);
   }
 
+  function addLocalMember(member) {
+    const memberName = member?.name || member?.nickname;
+    if (!memberName) return null;
+
+    const normalizedMember = {
+      id: member.id || `member-${Date.now()}`,
+      name: memberName,
+      role: member.role || "Membre",
+      power: member.power || "Nouveau",
+      status: member.status || "active",
+      allianceWar: member.allianceWar || "Non repondu",
+      fortress: member.fortress || "Non repondu",
+      heroStage: member.heroStage || "Non repondu",
+      bearHunt: member.bearHunt || "Non repondu",
+    };
+
+    setMembers((current) =>
+      current.some((currentMember) => currentMember.id === normalizedMember.id || currentMember.name === normalizedMember.name)
+        ? current
+        : [...current, normalizedMember],
+    );
+
+    return normalizedMember;
+  }
+
+  function banLocalMember(memberId) {
+    setMembers((current) => current.filter((member) => member.id !== memberId));
+  }
+
   async function createEvent(draft) {
     if (!moduleEnabled) return null;
     if (!can(currentUser, "manage_events")) return null;
@@ -171,6 +200,8 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
 
   return {
     activeEvents,
+    addLocalMember,
+    banLocalMember,
     checkIn,
     checkinError,
     createEvent,

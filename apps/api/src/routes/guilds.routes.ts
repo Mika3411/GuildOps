@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { Router } from "express";
 import { z } from "zod";
 import { database, query, withClient, type Queryable } from "../db/pool.js";
@@ -33,6 +34,21 @@ const guildIdParamsSchema = z.object({
   guildId: uuidSchema
 });
 
+const memberIdParamsSchema = z.object({
+  guildId: uuidSchema,
+  memberId: uuidSchema
+});
+
+const memberBlockIdParamsSchema = z.object({
+  guildId: uuidSchema,
+  blockId: uuidSchema
+});
+
+const membershipRequestParamsSchema = z.object({
+  guildId: uuidSchema,
+  requestId: uuidSchema
+});
+
 const createGuildMemberBodySchema = z
   .object({
     userId: uuidSchema.optional(),
@@ -42,6 +58,34 @@ const createGuildMemberBodySchema = z
     roleCodes: z.array(z.string().trim().min(1).max(48).transform((value) => value.toLowerCase())).max(12).optional()
   })
   .strict();
+
+const decideMembershipRequestBodySchema = z
+  .object({
+    decision: z.enum(["approved", "refused", "approve", "refuse"])
+  })
+  .strict();
+
+const banGuildMemberBodySchema = z
+  .object({
+    reason: z.string().trim().max(500).optional(),
+    block: z.boolean().default(true)
+  })
+  .strict();
+
+const blockGuildMemberBodySchema = z
+  .object({
+    userId: uuidSchema.optional(),
+    nickname: z.string().trim().min(1).max(80),
+    reason: z.string().trim().max(500).optional()
+  })
+  .strict();
+
+const unblockGuildMemberBodySchema = z
+  .object({
+    reason: z.string().trim().max(500).optional()
+  })
+  .strict()
+  .default({});
 
 const publishGuildSiteBodySchema = z
   .object({
@@ -56,6 +100,10 @@ const publishGuildSiteBodySchema = z
     objective: z.string().trim().max(500).optional(),
     heroText: z.string().trim().max(500).optional(),
     hero_text: z.string().trim().max(500).optional(),
+    inviteToken: z.string().trim().min(8).max(96).optional(),
+    invite_token: z.string().trim().min(8).max(96).optional(),
+    inviteRotatedAt: z.string().trim().optional(),
+    invite_rotated_at: z.string().trim().optional(),
     theme: z.string().trim().min(1).max(80).optional(),
     colors: z.record(z.string(), z.unknown()).optional(),
     colors_json: z.record(z.string(), z.unknown()).optional(),
@@ -337,6 +385,10 @@ guildsRouter.post(
     const memberInviteUrl =
       stringBodyValue((body as Record<string, unknown>).memberInviteUrl) ||
       stringBodyValue((body as Record<string, unknown>).member_invite_url);
+    const inviteToken =
+      normalizeInviteToken(body.inviteToken || body.invite_token) ||
+      extractInviteToken(memberInviteUrl) ||
+      createInviteToken();
     let pagesJson = body.pagesJson || body.pages_json || {
       tagline: body.tagline || "",
       objective: body.objective || heroText,
@@ -347,7 +399,9 @@ guildsRouter.post(
       pagesJson = {
         ...pageRecord,
         memberInviteUrl,
-        member_invite_url: memberInviteUrl
+        member_invite_url: memberInviteUrl,
+        inviteToken,
+        inviteRotatedAt: body.inviteRotatedAt || body.invite_rotated_at || new Date().toISOString()
       };
     }
     const seoJson = body.seoJson || body.seo_json || {
@@ -376,6 +430,9 @@ guildsRouter.post(
           typography_json,
           sections_json,
           hero_text,
+          invite_token,
+          invite_rotated_at,
+          invite_rotated_by,
           theme_json,
           pages_json,
           seo_json,
@@ -384,9 +441,10 @@ guildsRouter.post(
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9,
-          $10::jsonb, $11::jsonb, $12::jsonb, $13, $14::jsonb, $15::jsonb, $16::jsonb,
-          $17,
-          CASE WHEN $17 = 'published' THEN now() ELSE NULL END
+          $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, now(), $15,
+          $16::jsonb, $17::jsonb, $18::jsonb,
+          $19,
+          CASE WHEN $19 = 'published' THEN now() ELSE NULL END
         )
         ON CONFLICT (guild_id)
         DO UPDATE SET
@@ -402,6 +460,9 @@ guildsRouter.post(
           typography_json = EXCLUDED.typography_json,
           sections_json = EXCLUDED.sections_json,
           hero_text = EXCLUDED.hero_text,
+          invite_token = COALESCE(NULLIF(guild_sites.invite_token, ''), EXCLUDED.invite_token),
+          invite_rotated_at = COALESCE(guild_sites.invite_rotated_at, EXCLUDED.invite_rotated_at),
+          invite_rotated_by = COALESCE(guild_sites.invite_rotated_by, EXCLUDED.invite_rotated_by),
           theme_json = EXCLUDED.theme_json,
           pages_json = EXCLUDED.pages_json,
           seo_json = EXCLUDED.seo_json,
@@ -423,6 +484,10 @@ guildsRouter.post(
           typography_json AS typography,
           sections_json AS sections,
           hero_text AS "heroText",
+          invite_token AS "inviteToken",
+          invite_rotated_at AS "inviteRotatedAt",
+          CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "memberInviteUrl",
+          CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "member_invite_url",
           theme_json AS "themeJson",
           pages_json AS "pagesJson",
           seo_json AS "seoJson",
@@ -444,6 +509,8 @@ guildsRouter.post(
         JSON.stringify(typography),
         JSON.stringify(sections),
         heroText,
+        inviteToken,
+        auth.user.id,
         JSON.stringify(themeJson),
         JSON.stringify(pagesJson),
         JSON.stringify(seoJson),
@@ -452,6 +519,52 @@ guildsRouter.post(
     );
 
     res.json({ site: result.rows[0] });
+  })
+);
+
+guildsRouter.post(
+  "/guilds/:guildId/invite-link/rotate",
+  requireAuth,
+  validate({ params: guildIdParamsSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildIdParamsSchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageInviteLink(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const inviteToken = createInviteToken();
+    const result = await query<{
+      guildId: string;
+      publicSlug: string;
+      inviteToken: string;
+      inviteRotatedAt: string;
+      memberInviteUrl: string;
+      member_invite_url: string;
+    }>(
+      `
+        UPDATE guild_sites
+        SET invite_token = $2,
+            invite_rotated_at = now(),
+            invite_rotated_by = $3,
+            updated_at = now()
+        WHERE guild_id = $1
+        RETURNING
+          guild_id::text AS "guildId",
+          public_slug::text AS "publicSlug",
+          invite_token AS "inviteToken",
+          invite_rotated_at::text AS "inviteRotatedAt",
+          CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "memberInviteUrl",
+          CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "member_invite_url"
+      `,
+      [guildId, inviteToken, auth.user.id]
+    );
+    const invite = result.rows[0];
+
+    if (!invite) {
+      throw new NotFoundError("Publish the guild site before rotating its invite link");
+    }
+
+    res.json(invite);
   })
 );
 
@@ -499,6 +612,50 @@ guildsRouter.get(
   })
 );
 
+guildsRouter.get(
+  "/guilds/:guildId/member-blocks",
+  requireAuth,
+  validate({ params: guildIdParamsSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildIdParamsSchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageGuildMembers(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const result = await query<MemberBlockRow>(
+      `
+        SELECT
+          block.id::text,
+          block.guild_id::text,
+          block.user_id::text,
+          block.nickname,
+          block.normalized_nickname::text,
+          block.reason,
+          block.blocked_by::text,
+          blocker.display_name AS blocked_by_name,
+          block.blocked_at::text,
+          block.expires_at::text,
+          block.lifted_at::text,
+          block.lifted_by::text,
+          lifter.display_name AS lifted_by_name,
+          block.lift_reason,
+          block.created_at::text,
+          block.updated_at::text
+        FROM guild_member_blocks block
+        LEFT JOIN users blocker ON blocker.id = block.blocked_by
+        LEFT JOIN users lifter ON lifter.id = block.lifted_by
+        WHERE block.guild_id = $1
+        ORDER BY
+          CASE WHEN block.lifted_at IS NULL THEN 0 ELSE 1 END,
+          block.blocked_at DESC
+      `,
+      [guildId]
+    );
+
+    res.json({ blocks: result.rows.map(mapMemberBlock) });
+  })
+);
+
 guildsRouter.post(
   "/guilds/:guildId/members",
   requireAuth,
@@ -533,6 +690,8 @@ guildsRouter.post(
           );
           userId = userResult.rows[0]?.id ?? null;
         }
+
+        await assertGuildJoinNotBlocked(client, guildId, userId, body.nickname);
 
         if (body.userId) {
           const userResult = await client.query<{ id: string }>(
@@ -648,6 +807,451 @@ guildsRouter.post(
   })
 );
 
+guildsRouter.post(
+  "/guilds/:guildId/members/:memberId/ban",
+  requireAuth,
+  validate({ params: memberIdParamsSchema, body: banGuildMemberBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId, memberId } = req.params as unknown as z.infer<typeof memberIdParamsSchema>;
+    const body = req.body as z.infer<typeof banGuildMemberBodySchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageGuildMembers(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const result = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        const memberResult = await client.query<GuildMemberRow>(
+          `
+            SELECT
+              gm.id::text,
+              gm.user_id::text,
+              gm.nickname,
+              gm.external_game_id,
+              gm.power_score::text,
+              gm.language,
+              gm.timezone,
+              gm.status,
+              gm.joined_at::text,
+              gm.created_at::text,
+              gm.updated_at::text,
+              u.email::text,
+              u.display_name,
+              ARRAY[]::text[] AS role_codes
+            FROM guild_members gm
+            LEFT JOIN users u ON u.id = gm.user_id
+            WHERE gm.guild_id = $1
+              AND gm.id = $2
+            FOR UPDATE OF gm
+          `,
+          [guildId, memberId]
+        );
+        const targetMember = memberResult.rows[0];
+
+        if (!targetMember) {
+          throw new NotFoundError("Guild member not found");
+        }
+
+        if (targetMember.user_id === auth.user.id) {
+          throw new ForbiddenError("Cannot ban yourself");
+        }
+
+        await client.query("DELETE FROM guild_member_roles WHERE guild_member_id = $1", [memberId]);
+
+        await client.query(
+          `
+            UPDATE guild_members
+            SET status = 'banned',
+                updated_at = now()
+            WHERE guild_id = $1
+              AND id = $2
+          `,
+          [guildId, memberId]
+        );
+
+        let block: ReturnType<typeof mapMemberBlock> | null = null;
+
+        if (body.block !== false) {
+          const blockRow = await upsertActiveMemberBlock(client, {
+            actorUserId: auth.user.id,
+            guildId,
+            nickname: targetMember.nickname,
+            reason: body.reason || "Membre banni et bloque par moderation.",
+            userId: targetMember.user_id
+          });
+          block = mapMemberBlock(blockRow);
+        }
+
+        await refusePendingMembershipRequests(client, {
+          actorUserId: auth.user.id,
+          guildId,
+          nickname: targetMember.nickname,
+          userId: targetMember.user_id
+        });
+
+        const member = await getGuildMember(memberId, client);
+
+        await client.query("COMMIT");
+        return { block, member };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+
+    res.json(result);
+  })
+);
+
+guildsRouter.post(
+  "/guilds/:guildId/member-blocks",
+  requireAuth,
+  validate({ params: guildIdParamsSchema, body: blockGuildMemberBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildIdParamsSchema>;
+    const body = req.body as z.infer<typeof blockGuildMemberBodySchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageGuildMembers(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const blocked = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        if (body.userId === auth.user.id) {
+          throw new ForbiddenError("Cannot block yourself");
+        }
+
+        const blockRow = await upsertActiveMemberBlock(client, {
+          actorUserId: auth.user.id,
+          guildId,
+          nickname: body.nickname,
+          reason: body.reason || "Joueur bloque par moderation.",
+          userId: body.userId ?? null
+        });
+
+        await client.query(
+          `
+            DELETE FROM guild_member_roles
+            WHERE guild_member_id IN (
+              SELECT id
+              FROM guild_members
+              WHERE guild_id = $1
+                AND (
+                  ($2::uuid IS NOT NULL AND user_id = $2)
+                  OR lower(nickname) = lower($3)
+                )
+            )
+          `,
+          [guildId, body.userId ?? null, normalizeBlockNickname(body.nickname)]
+        );
+
+        await client.query(
+          `
+            UPDATE guild_members
+            SET status = 'banned',
+                updated_at = now()
+            WHERE guild_id = $1
+              AND (
+                ($2::uuid IS NOT NULL AND user_id = $2)
+                OR lower(nickname) = lower($3)
+              )
+          `,
+          [guildId, body.userId ?? null, normalizeBlockNickname(body.nickname)]
+        );
+
+        await refusePendingMembershipRequests(client, {
+          actorUserId: auth.user.id,
+          guildId,
+          nickname: body.nickname,
+          userId: body.userId ?? null
+        });
+
+        await client.query("COMMIT");
+        return mapMemberBlock(blockRow);
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+
+    res.status(201).json({ block: blocked });
+  })
+);
+
+guildsRouter.delete(
+  "/guilds/:guildId/member-blocks/:blockId",
+  requireAuth,
+  validate({ params: memberBlockIdParamsSchema, body: unblockGuildMemberBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId, blockId } = req.params as unknown as z.infer<typeof memberBlockIdParamsSchema>;
+    const body = req.body as z.infer<typeof unblockGuildMemberBodySchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageGuildMembers(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const result = await query<MemberBlockRow>(
+      `
+        UPDATE guild_member_blocks block
+        SET lifted_at = COALESCE(block.lifted_at, now()),
+            lifted_by = COALESCE(block.lifted_by, $3),
+            lift_reason = COALESCE(NULLIF($4, ''), block.lift_reason),
+            updated_at = now()
+        WHERE block.guild_id = $1
+          AND block.id = $2
+        RETURNING
+          block.id::text,
+          block.guild_id::text,
+          block.user_id::text,
+          block.nickname,
+          block.normalized_nickname::text,
+          block.reason,
+          block.blocked_by::text,
+          (SELECT display_name FROM users WHERE id = block.blocked_by) AS blocked_by_name,
+          block.blocked_at::text,
+          block.expires_at::text,
+          block.lifted_at::text,
+          block.lifted_by::text,
+          $5::text AS lifted_by_name,
+          block.lift_reason,
+          block.created_at::text,
+          block.updated_at::text
+      `,
+      [guildId, blockId, auth.user.id, body.reason || "", auth.user.displayName]
+    );
+    const block = result.rows[0];
+
+    if (!block) {
+      throw new NotFoundError("Member block not found");
+    }
+
+    res.json({ block: mapMemberBlock(block) });
+  })
+);
+
+guildsRouter.get(
+  "/guilds/:guildId/membership-requests",
+  requireAuth,
+  validate({ params: guildIdParamsSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildIdParamsSchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanApproveMembershipRequests(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const result = await query<MembershipRequestRow>(
+      `
+        SELECT
+          mr.id::text,
+          mr.guild_id::text,
+          g.name AS guild_name,
+          COALESCE(gs.public_slug::text, g.slug::text) AS guild_slug,
+          ga.name AS game,
+          s.code AS realm,
+          mr.user_id::text,
+          u.email::text,
+          u.display_name,
+          mr.nickname,
+          mr.message,
+          mr.source,
+          mr.status,
+          mr.requested_at::text,
+          mr.decided_at::text,
+          mr.decided_by::text,
+          decider.display_name AS decided_by_name
+        FROM membership_requests mr
+        JOIN guilds g ON g.id = mr.guild_id
+        JOIN games ga ON ga.id = g.game_id
+        LEFT JOIN servers s ON s.id = g.server_id
+        LEFT JOIN guild_sites gs ON gs.guild_id = g.id
+        JOIN users u ON u.id = mr.user_id
+        LEFT JOIN users decider ON decider.id = mr.decided_by
+        WHERE mr.guild_id = $1
+        ORDER BY
+          CASE mr.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
+          mr.requested_at DESC
+      `,
+      [guildId]
+    );
+
+    res.json({ requests: result.rows.map(mapMembershipRequest) });
+  })
+);
+
+guildsRouter.patch(
+  "/guilds/:guildId/membership-requests/:requestId",
+  requireAuth,
+  validate({ params: membershipRequestParamsSchema, body: decideMembershipRequestBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId, requestId } = req.params as unknown as z.infer<typeof membershipRequestParamsSchema>;
+    const body = req.body as z.infer<typeof decideMembershipRequestBodySchema>;
+    const decision = body.decision === "approve" ? "approved" : body.decision === "refuse" ? "refused" : body.decision;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanApproveMembershipRequests(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const decided = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        const requestResult = await client.query<MembershipRequestRow>(
+          `
+            SELECT
+              mr.id::text,
+              mr.guild_id::text,
+              g.organization_id::text,
+              g.name AS guild_name,
+              COALESCE(gs.public_slug::text, g.slug::text) AS guild_slug,
+              ga.name AS game,
+              s.code AS realm,
+              mr.user_id::text,
+              u.email::text,
+              u.display_name,
+              mr.nickname,
+              mr.message,
+              mr.source,
+              mr.status,
+              mr.requested_at::text,
+              mr.decided_at::text,
+              mr.decided_by::text,
+              decider.display_name AS decided_by_name
+            FROM membership_requests mr
+            JOIN guilds g ON g.id = mr.guild_id
+            JOIN games ga ON ga.id = g.game_id
+            LEFT JOIN servers s ON s.id = g.server_id
+            LEFT JOIN guild_sites gs ON gs.guild_id = g.id
+            JOIN users u ON u.id = mr.user_id
+            LEFT JOIN users decider ON decider.id = mr.decided_by
+            WHERE mr.guild_id = $1
+              AND mr.id = $2
+            FOR UPDATE OF mr
+          `,
+          [guildId, requestId]
+        );
+        const pendingRequest = requestResult.rows[0];
+
+        if (!pendingRequest) {
+          throw new NotFoundError("Membership request not found");
+        }
+
+        if (pendingRequest.status !== "pending") {
+          throw new BadRequestError("Membership request has already been decided");
+        }
+
+        let member: Awaited<ReturnType<typeof getGuildMember>> | null = null;
+
+        if (decision === "approved") {
+          await assertGuildJoinNotBlocked(client, guildId, pendingRequest.user_id, pendingRequest.nickname);
+
+          await client.query(
+            `
+              INSERT INTO organization_members (organization_id, user_id, organization_role)
+              VALUES ($1, $2, 'member')
+              ON CONFLICT (organization_id, user_id) DO NOTHING
+            `,
+            [pendingRequest.organization_id, pendingRequest.user_id]
+          );
+
+          const memberResult = await client.query<{ id: string }>(
+            `
+              INSERT INTO guild_members (guild_id, user_id, invited_by, nickname, status, joined_at)
+              VALUES ($1, $2, $3, $4, 'active', now())
+              ON CONFLICT (guild_id, user_id)
+              DO UPDATE SET
+                nickname = EXCLUDED.nickname,
+                invited_by = COALESCE(guild_members.invited_by, EXCLUDED.invited_by),
+                status = 'active',
+                joined_at = COALESCE(guild_members.joined_at, now()),
+                updated_at = now()
+              RETURNING id::text
+            `,
+            [guildId, pendingRequest.user_id, auth.user.id, pendingRequest.nickname]
+          );
+          const memberId = memberResult.rows[0]?.id;
+
+          if (!memberId) {
+            throw new BadRequestError("Guild member could not be activated");
+          }
+
+          await client.query(
+            `
+              INSERT INTO guild_member_roles (guild_member_id, role_id, assigned_by)
+              SELECT $1, roles.id, $2
+              FROM roles
+              WHERE roles.guild_id = $3
+                AND roles.code::text = 'membre'
+              ON CONFLICT DO NOTHING
+            `,
+            [memberId, auth.user.id, guildId]
+          );
+
+          member = await getGuildMember(memberId, client);
+        }
+
+        const updatedRequestResult = await client.query<MembershipRequestRow>(
+          `
+            UPDATE membership_requests
+            SET status = $3,
+                decided_at = now(),
+                decided_by = $4,
+                updated_at = now()
+            WHERE guild_id = $1
+              AND id = $2
+            RETURNING
+              id::text,
+              guild_id::text,
+              $5::text AS guild_name,
+              $6::text AS guild_slug,
+              $7::text AS game,
+              $8::text AS realm,
+              user_id::text,
+              $9::text AS email,
+              $10::text AS display_name,
+              nickname,
+              message,
+              source,
+              status,
+              requested_at::text,
+              decided_at::text,
+              decided_by::text,
+              $11::text AS decided_by_name
+          `,
+          [
+            guildId,
+            requestId,
+            decision,
+            auth.user.id,
+            pendingRequest.guild_name,
+            pendingRequest.guild_slug,
+            pendingRequest.game,
+            pendingRequest.realm,
+            pendingRequest.email,
+            pendingRequest.display_name,
+            auth.user.displayName
+          ]
+        );
+        const updatedRequest = updatedRequestResult.rows[0];
+
+        if (!updatedRequest) {
+          throw new NotFoundError("Membership request not found");
+        }
+
+        await client.query("COMMIT");
+        return { member, request: updatedRequest };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+
+    res.json({
+      request: mapMembershipRequest(decided.request),
+      member: decided.member
+    });
+  })
+);
+
 type GuildMemberRow = {
   id: string;
   user_id: string | null;
@@ -665,6 +1269,46 @@ type GuildMemberRow = {
   role_codes: string[] | null;
 };
 
+type MembershipRequestRow = {
+  id: string;
+  guild_id: string;
+  organization_id?: string;
+  guild_name: string;
+  guild_slug: string;
+  game: string;
+  realm: string | null;
+  user_id: string;
+  email: string | null;
+  display_name: string | null;
+  nickname: string;
+  message: string;
+  source: string;
+  status: string;
+  requested_at: string;
+  decided_at: string | null;
+  decided_by: string | null;
+  decided_by_name: string | null;
+};
+
+type MemberBlockRow = {
+  id: string;
+  guild_id: string;
+  user_id: string | null;
+  nickname: string;
+  normalized_nickname: string;
+  reason: string;
+  blocked_by: string | null;
+  blocked_by_name: string | null;
+  blocked_at: string;
+  expires_at: string | null;
+  lifted_at: string | null;
+  lifted_by: string | null;
+  lifted_by_name: string | null;
+  lift_reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type GuildRoleRow = {
   id: string;
   code: string;
@@ -676,7 +1320,88 @@ type RoleManagementAccess = {
   maxRoleRank: number | null;
 };
 
+export async function canManageGuildMembers(
+  guildId: string,
+  userId: string,
+  organizationRole: string,
+  globalRole: string
+): Promise<boolean> {
+  if (globalRole === "admin" || ["owner", "admin"].includes(organizationRole)) {
+    return true;
+  }
+
+  const result = await query<{ allowed: boolean }>(
+    `
+      SELECT true AS allowed
+      FROM guild_members gm
+      JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
+      JOIN role_permissions rp ON rp.role_id = gmr.role_id
+      JOIN permissions p ON p.id = rp.permission_id
+      WHERE gm.guild_id = $1
+        AND gm.user_id = $2
+        AND gm.status = 'active'
+        AND p.key IN ('manage_members', 'admin_all')
+      LIMIT 1
+    `,
+    [guildId, userId]
+  );
+
+  return Boolean(result.rows[0]?.allowed);
+}
+
 async function assertCanManageGuildMembers(
+  guildId: string,
+  userId: string,
+  organizationRole: string,
+  globalRole: string
+): Promise<void> {
+  if (!(await canManageGuildMembers(guildId, userId, organizationRole, globalRole))) {
+    throw new ForbiddenError("Permission manage_members is required");
+  }
+}
+
+export async function canApproveMembershipRequests(
+  db: Queryable,
+  guildId: string,
+  userId: string,
+  organizationRole: string,
+  globalRole: string
+): Promise<boolean> {
+  if (globalRole === "admin" || ["owner", "admin"].includes(organizationRole)) {
+    return true;
+  }
+
+  const result = await db.query<{ allowed: boolean }>(
+    `
+      SELECT true AS allowed
+      FROM guild_members gm
+      JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
+      JOIN role_permissions rp ON rp.role_id = gmr.role_id
+      JOIN permissions p ON p.id = rp.permission_id
+      WHERE gm.guild_id = $1
+        AND gm.user_id = $2
+        AND gm.status = 'active'
+        AND p.key IN ('approve_members', 'manage_members', 'admin_all')
+      LIMIT 1
+    `,
+    [guildId, userId]
+  );
+
+  return Boolean(result.rows[0]?.allowed);
+}
+
+async function assertCanApproveMembershipRequests(
+  guildId: string,
+  userId: string,
+  organizationRole: string,
+  globalRole: string
+): Promise<void> {
+  if (!(await canApproveMembershipRequests(database, guildId, userId, organizationRole, globalRole))) {
+    throw new ForbiddenError("Permission approve_members is required");
+  }
+}
+
+async function assertCanManageInviteLink(
   guildId: string,
   userId: string,
   organizationRole: string,
@@ -696,14 +1421,14 @@ async function assertCanManageGuildMembers(
       WHERE gm.guild_id = $1
         AND gm.user_id = $2
         AND gm.status = 'active'
-        AND p.key IN ('manage_members', 'admin_all')
+        AND p.key IN ('approve_members', 'manage_members', 'manage_site', 'admin_all')
       LIMIT 1
     `,
     [guildId, userId]
   );
 
   if (!result.rows[0]?.allowed) {
-    throw new ForbiddenError("Permission manage_members is required");
+    throw new ForbiddenError("Permission approve_members or manage_site is required");
   }
 }
 
@@ -834,8 +1559,8 @@ async function assertCanManageSite(
   }
 }
 
-async function getGuildMember(memberId: string) {
-  const result = await query<GuildMemberRow>(
+async function getGuildMember(memberId: string, db: Queryable = database) {
+  const result = await db.query<GuildMemberRow>(
     `
       SELECT
         gm.id::text,
@@ -890,6 +1615,261 @@ function mapGuildMember(row: GuildMemberRow) {
     updatedAt: row.updated_at,
     roleCodes: row.role_codes ?? []
   };
+}
+
+function mapMembershipRequest(row: MembershipRequestRow) {
+  return {
+    id: row.id,
+    guildId: row.guild_id,
+    guildName: row.guild_name,
+    guildSlug: row.guild_slug,
+    game: row.game,
+    realm: row.realm,
+    userId: row.user_id,
+    email: row.email,
+    displayName: row.display_name,
+    nickname: row.nickname,
+    message: row.message,
+    source: row.source,
+    status: row.status,
+    requestedAt: row.requested_at,
+    decidedAt: row.decided_at,
+    decidedBy: row.decided_by_name || row.decided_by || ""
+  };
+}
+
+function mapMemberBlock(row: MemberBlockRow) {
+  return {
+    id: row.id,
+    guildId: row.guild_id,
+    userId: row.user_id,
+    nickname: row.nickname,
+    normalizedNickname: row.normalized_nickname,
+    reason: row.reason,
+    blockedBy: row.blocked_by,
+    blockedByName: row.blocked_by_name,
+    blockedAt: row.blocked_at,
+    expiresAt: row.expires_at,
+    liftedAt: row.lifted_at,
+    liftedBy: row.lifted_by,
+    liftedByName: row.lifted_by_name,
+    liftReason: row.lift_reason,
+    active: !row.lifted_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function normalizeBlockNickname(value: string): string {
+  return stringBodyValue(value).replace(/\s+/g, " ").slice(0, 80);
+}
+
+function normalizeBlockKey(value: string): string {
+  return normalizeBlockNickname(value).toLowerCase();
+}
+
+async function findActiveMemberBlock(
+  db: Queryable,
+  guildId: string,
+  userId: string | null,
+  nickname: string
+): Promise<MemberBlockRow | null> {
+  const normalizedNickname = normalizeBlockKey(nickname);
+
+  if (!userId && !normalizedNickname) {
+    return null;
+  }
+
+  const result = await db.query<MemberBlockRow>(
+    `
+      SELECT
+        block.id::text,
+        block.guild_id::text,
+        block.user_id::text,
+        block.nickname,
+        block.normalized_nickname::text,
+        block.reason,
+        block.blocked_by::text,
+        blocker.display_name AS blocked_by_name,
+        block.blocked_at::text,
+        block.expires_at::text,
+        block.lifted_at::text,
+        block.lifted_by::text,
+        lifter.display_name AS lifted_by_name,
+        block.lift_reason,
+        block.created_at::text,
+        block.updated_at::text
+      FROM guild_member_blocks block
+      LEFT JOIN users blocker ON blocker.id = block.blocked_by
+      LEFT JOIN users lifter ON lifter.id = block.lifted_by
+      WHERE block.guild_id = $1
+        AND block.lifted_at IS NULL
+        AND (
+          ($2::uuid IS NOT NULL AND block.user_id = $2)
+          OR block.normalized_nickname = $3::citext
+        )
+      ORDER BY block.blocked_at DESC
+      LIMIT 1
+    `,
+    [guildId, userId, normalizedNickname]
+  );
+
+  return result.rows[0] ?? null;
+}
+
+async function assertGuildJoinNotBlocked(
+  db: Queryable,
+  guildId: string,
+  userId: string | null,
+  nickname: string
+): Promise<void> {
+  const block = await findActiveMemberBlock(db, guildId, userId, nickname);
+
+  if (block) {
+    throw new ForbiddenError("Ce joueur est bloque pour cette guilde.", {
+      blockId: block.id,
+      nickname: block.nickname
+    });
+  }
+}
+
+async function upsertActiveMemberBlock(
+  db: Queryable,
+  options: {
+    actorUserId: string;
+    guildId: string;
+    nickname: string;
+    reason: string;
+    userId: string | null;
+  }
+): Promise<MemberBlockRow> {
+  const nickname = normalizeBlockNickname(options.nickname);
+  const normalizedNickname = normalizeBlockKey(nickname);
+
+  if (!nickname || !normalizedNickname) {
+    throw new BadRequestError("Nickname is required to block a member");
+  }
+
+  const existingBlock = await findActiveMemberBlock(db, options.guildId, options.userId, nickname);
+
+  const result = existingBlock
+    ? await db.query<MemberBlockRow>(
+        `
+          UPDATE guild_member_blocks block
+          SET user_id = COALESCE(block.user_id, $3),
+              nickname = $4,
+              normalized_nickname = $5,
+              reason = COALESCE(NULLIF($6, ''), block.reason),
+              blocked_by = COALESCE(block.blocked_by, $7),
+              updated_at = now()
+          WHERE block.guild_id = $1
+            AND block.id = $2
+          RETURNING
+            block.id::text,
+            block.guild_id::text,
+            block.user_id::text,
+            block.nickname,
+            block.normalized_nickname::text,
+            block.reason,
+            block.blocked_by::text,
+            (SELECT display_name FROM users WHERE id = block.blocked_by) AS blocked_by_name,
+            block.blocked_at::text,
+            block.expires_at::text,
+            block.lifted_at::text,
+            block.lifted_by::text,
+            (SELECT display_name FROM users WHERE id = block.lifted_by) AS lifted_by_name,
+            block.lift_reason,
+            block.created_at::text,
+            block.updated_at::text
+        `,
+        [options.guildId, existingBlock.id, options.userId, nickname, normalizedNickname, options.reason, options.actorUserId]
+      )
+    : await db.query<MemberBlockRow>(
+        `
+          INSERT INTO guild_member_blocks (
+            guild_id,
+            user_id,
+            nickname,
+            normalized_nickname,
+            reason,
+            blocked_by,
+            blocked_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, now())
+          RETURNING
+            id::text,
+            guild_id::text,
+            user_id::text,
+            nickname,
+            normalized_nickname::text,
+            reason,
+            blocked_by::text,
+            (SELECT display_name FROM users WHERE id = blocked_by) AS blocked_by_name,
+            blocked_at::text,
+            expires_at::text,
+            lifted_at::text,
+            lifted_by::text,
+            (SELECT display_name FROM users WHERE id = lifted_by) AS lifted_by_name,
+            lift_reason,
+            created_at::text,
+            updated_at::text
+        `,
+        [options.guildId, options.userId, nickname, normalizedNickname, options.reason, options.actorUserId]
+      );
+  const block = result.rows[0];
+
+  if (!block) {
+    throw new BadRequestError("Member block could not be created");
+  }
+
+  return block;
+}
+
+async function refusePendingMembershipRequests(
+  db: Queryable,
+  options: {
+    actorUserId: string;
+    guildId: string;
+    nickname: string;
+    userId: string | null;
+  }
+): Promise<void> {
+  await db.query(
+    `
+      UPDATE membership_requests
+      SET status = 'refused',
+          decided_at = now(),
+          decided_by = $4,
+          updated_at = now()
+      WHERE guild_id = $1
+        AND status = 'pending'
+        AND (
+          ($2::uuid IS NOT NULL AND user_id = $2)
+          OR lower(nickname) = lower($3)
+        )
+    `,
+    [options.guildId, options.userId, normalizeBlockNickname(options.nickname), options.actorUserId]
+  );
+}
+
+function createInviteToken(): string {
+  return randomBytes(18).toString("base64url");
+}
+
+function normalizeInviteToken(value: unknown): string {
+  return stringBodyValue(value).replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 96);
+}
+
+function extractInviteToken(value: string): string {
+  if (!value) return "";
+
+  try {
+    const url = new URL(value, "https://guildops.local");
+    const token = normalizeInviteToken(url.searchParams.get("invite"));
+    return token === "active" ? "" : token;
+  } catch {
+    return "";
+  }
 }
 
 function stringBodyValue(value: unknown): string {

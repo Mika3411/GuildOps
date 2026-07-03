@@ -147,6 +147,9 @@ CREATE TABLE guild_sites (
   typography_json jsonb NOT NULL DEFAULT '{}',
   sections_json jsonb NOT NULL DEFAULT '{}',
   hero_text text,
+  invite_token text NOT NULL DEFAULT encode(gen_random_bytes(18), 'hex'),
+  invite_rotated_at timestamptz NOT NULL DEFAULT now(),
+  invite_rotated_by uuid REFERENCES users(id) ON DELETE SET NULL,
   theme_json jsonb NOT NULL DEFAULT '{}',
   pages_json jsonb NOT NULL DEFAULT '{}',
   seo_json jsonb NOT NULL DEFAULT '{}',
@@ -162,6 +165,7 @@ CREATE TABLE guild_modules (
   module_key text NOT NULL
     CHECK (module_key IN (
       'site',
+      'membership_requests',
       'wars_events',
       'sos_attack',
       'bank',
@@ -229,6 +233,41 @@ CREATE TABLE guild_members (
   UNIQUE (guild_id, nickname)
 );
 
+CREATE TABLE membership_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id uuid NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  nickname text NOT NULL,
+  message text NOT NULL DEFAULT '',
+  source text NOT NULL DEFAULT 'public'
+    CHECK (source IN ('public', 'manual')),
+  status text NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'refused', 'cancelled')),
+  requested_at timestamptz NOT NULL DEFAULT now(),
+  decided_at timestamptz,
+  decided_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE guild_member_blocks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id uuid NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES users(id) ON DELETE CASCADE,
+  nickname text NOT NULL,
+  normalized_nickname citext NOT NULL,
+  reason text NOT NULL DEFAULT '',
+  blocked_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  blocked_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz,
+  lifted_at timestamptz,
+  lifted_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  lift_reason text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CHECK (user_id IS NOT NULL OR length(trim(normalized_nickname::text)) > 0)
+);
+
 CREATE TABLE guild_member_roles (
   guild_member_id uuid NOT NULL REFERENCES guild_members(id) ON DELETE CASCADE,
   role_id uuid NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
@@ -240,6 +279,7 @@ CREATE TABLE guild_member_roles (
 INSERT INTO permissions (key, module, description)
 VALUES
   ('manage_site', 'site', 'Manage the public guild site and publishing settings.'),
+  ('approve_members', 'members', 'Approve or refuse pending guild membership requests.'),
   ('manage_events', 'events', 'Manage events, attendance, assignments, and war objectives.'),
   ('send_sos', 'alerts', 'Send SOS attack alerts to guild members.'),
   ('manage_diplomacy', 'diplomacy', 'Manage allies, enemies, NAP agreements, and coordinates.'),
@@ -269,11 +309,12 @@ BEGIN
     SELECT *
     FROM (VALUES
       ('membre', 'Membre', 10, ARRAY['send_sos']),
-      ('officier', 'Officier', 40, ARRAY['manage_events', 'send_sos', 'moderate_forum', 'manage_members']),
+      ('officier', 'Officier', 40, ARRAY['approve_members', 'manage_events', 'send_sos', 'moderate_forum', 'manage_members']),
       ('diplomate', 'Diplomate', 30, ARRAY['send_sos', 'manage_diplomacy']),
       ('banquier', 'Banquier', 30, ARRAY['send_sos', 'manage_bank']),
       ('admin', 'Admin', 100, ARRAY[
         'manage_site',
+        'approve_members',
         'manage_events',
         'send_sos',
         'manage_diplomacy',
@@ -712,10 +753,32 @@ WHERE revoked_at IS NULL;
 CREATE INDEX idx_organizations_owner ON organizations(owner_user_id);
 CREATE INDEX idx_guilds_org ON guilds(organization_id);
 CREATE INDEX idx_guilds_game_server ON guilds(game_id, server_id);
+CREATE UNIQUE INDEX idx_guild_sites_invite_token ON guild_sites(invite_token);
+CREATE INDEX idx_guild_sites_published_invite
+ON guild_sites(public_slug, invite_token)
+WHERE status = 'published';
 CREATE INDEX idx_guild_modules_active ON guild_modules(guild_id, module_key)
 WHERE status = 'enabled';
 CREATE INDEX idx_guild_members_guild ON guild_members(guild_id);
 CREATE INDEX idx_guild_members_user ON guild_members(user_id);
+CREATE INDEX idx_membership_requests_guild_status
+ON membership_requests(guild_id, status, requested_at DESC);
+CREATE INDEX idx_membership_requests_pending
+ON membership_requests(guild_id, requested_at DESC)
+WHERE status = 'pending';
+CREATE UNIQUE INDEX idx_membership_requests_pending_user
+ON membership_requests(guild_id, user_id)
+WHERE status = 'pending';
+CREATE INDEX idx_guild_member_blocks_guild_active
+ON guild_member_blocks(guild_id, blocked_at DESC)
+WHERE lifted_at IS NULL;
+CREATE UNIQUE INDEX idx_guild_member_blocks_active_user
+ON guild_member_blocks(guild_id, user_id)
+WHERE user_id IS NOT NULL
+  AND lifted_at IS NULL;
+CREATE UNIQUE INDEX idx_guild_member_blocks_active_nickname
+ON guild_member_blocks(guild_id, normalized_nickname)
+WHERE lifted_at IS NULL;
 CREATE INDEX idx_roles_guild ON roles(guild_id);
 CREATE UNIQUE INDEX idx_roles_org_global_code_unique
 ON roles(organization_id, code)
@@ -816,6 +879,14 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER guild_members_set_updated_at
 BEFORE UPDATE ON guild_members
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER membership_requests_set_updated_at
+BEFORE UPDATE ON membership_requests
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER guild_member_blocks_set_updated_at
+BEFORE UPDATE ON guild_member_blocks
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER events_set_updated_at

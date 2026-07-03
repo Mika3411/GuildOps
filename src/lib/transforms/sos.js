@@ -1,5 +1,9 @@
 export function normalizeSosAlert(alert = {}) {
   const attackType = alert.attackType || alert.type || "Rallye";
+  const metadata = alert.metadata && typeof alert.metadata === "object" ? alert.metadata : {};
+  const callKind = normalizeSosCallKind(
+    alert.callKind || alert.call_kind || alert.alertKind || alert.alert_kind || alert.kind || alert.mode || metadata.callKind || metadata.call_kind,
+  );
   const targetLabel = alert.targetLabel || alert.target || (alert.title || "").replace(`${attackType}:`, "").trim() || "Cible inconnue";
   const acknowledgements = Array.isArray(alert.acknowledgements)
     ? alert.acknowledgements.map(normalizeSosAcknowledgement).filter(Boolean)
@@ -15,6 +19,8 @@ export function normalizeSosAlert(alert = {}) {
     targetY: alert.targetY ?? alert.target_y ?? null,
     type: attackType,
     attackType,
+    callKind,
+    callLabel: getSosCallLabel(callKind),
     details: alert.details || alert.message || "",
     message: alert.message || alert.details || "",
     by: alert.by || alert.createdByName || "Membre",
@@ -25,6 +31,22 @@ export function normalizeSosAlert(alert = {}) {
     acknowledgementSummary: normalizeSosSummary(alert.acknowledgementSummary || buildSosSummary(acknowledgements)),
     myAcknowledgement,
   };
+}
+
+export function normalizeSosCallKind(value) {
+  const normalized = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+
+  if (["attack", "attaque", "offense", "offensive", "push"].includes(normalized)) return "attack";
+  return "defense";
+}
+
+export function getSosCallLabel(callKind) {
+  return normalizeSosCallKind(callKind) === "attack" ? "Attaque" : "Défense";
 }
 
 export function upsertSosAlert(alerts = [], alert) {

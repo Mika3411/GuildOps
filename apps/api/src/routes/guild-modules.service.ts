@@ -2,6 +2,7 @@ import type { Queryable } from "../db/pool.js";
 
 export const GUILD_MODULE_KEYS = [
   "site",
+  "membership_requests",
   "wars_events",
   "sos_attack",
   "bank",
@@ -12,7 +13,7 @@ export const GUILD_MODULE_KEYS = [
   "multi_guilds"
 ] as const;
 
-export const DEFAULT_VISIBLE_GUILD_MODULE_KEYS = ["site", "multi_guilds"] as const;
+export const DEFAULT_VISIBLE_GUILD_MODULE_KEYS = ["site", "membership_requests", "multi_guilds"] as const;
 export const GUILD_MODULE_STATUSES = ["enabled", "disabled"] as const;
 
 export type GuildModuleKey = (typeof GUILD_MODULE_KEYS)[number];

@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Swords,
   UserCog,
+  UserCheck,
   UserRound,
 } from "lucide-react";
 
@@ -57,7 +58,7 @@ export const guildOpsModules = Object.freeze([
     navLabel: "Boutique",
     mobileLabel: "Boutique",
     description: "Templates, packs d'images, emojis et produits digitaux.",
-    benefit: "Acheter des ressources prêtes pour améliorer le site, les annonces et le Discord de la guilde.",
+    benefit: "Déverrouiller des ressources prêtes pour améliorer le site, les annonces et le Discord de la guilde.",
     route: "/app/shop",
     view: "shop",
     permissionKeys: ["manage_site"],
@@ -67,12 +68,27 @@ export const guildOpsModules = Object.freeze([
     icon: ShoppingBag,
   },
   {
+    id: "membership_requests",
+    label: "Adhésions",
+    navLabel: "Adhésions",
+    mobileLabel: "Accès",
+    description: "Demandes d'accès arrivées hors lien d'invitation.",
+    benefit: "Valider les nouveaux joueurs avant de les activer comme membres de la guilde.",
+    route: "/app/adhesions",
+    view: "membershipRequests",
+    permissionKeys: ["approve_members"],
+    defaultEnabled: true,
+    complexity: MODULE_COMPLEXITY.core,
+    dependencies: ["site"],
+    icon: UserCheck,
+  },
+  {
     id: "member_space",
     label: "Espace membre",
     navLabel: "Espace membre",
     mobileLabel: "Compte",
     description: "Compte, informations personnelles et suivi des commandes.",
-    benefit: "Donner à chaque membre un accès clair à son profil, ses achats et sa sécurité.",
+    benefit: "Donner à chaque membre un accès clair à son profil, ses ressources et sa sécurité.",
     route: "/app/member",
     view: "member",
     permissionKeys: [],
@@ -239,6 +255,7 @@ export const guildOpsModuleById = Object.freeze(
 
 export const administrationModuleIds = Object.freeze([
   "site",
+  "membership_requests",
   "wars_events",
   "bank",
   "diplomacy",
@@ -249,7 +266,7 @@ export const defaultEnabledModuleIds = Object.freeze(
   guildOpsModules.filter((module) => module.defaultEnabled).map((module) => module.id),
 );
 
-const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "administration"]);
+const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "membership_requests", "administration"]);
 
 export function getDefaultEnabledModuleIds() {
   return [...defaultEnabledModuleIds];

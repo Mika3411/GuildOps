@@ -12,6 +12,7 @@ import { uuidSchema } from "./helpers.js";
 export const alertsRouter = Router();
 
 type AlertAcknowledgementResponse = "seen" | "joining" | "cannot_join" | "resolved";
+type AlertCallKind = "defense" | "attack";
 
 type AlertResource = {
   id: string;
@@ -26,6 +27,7 @@ type AlertResource = {
   targetX: number | null;
   targetY: number | null;
   attackType: string;
+  callKind: AlertCallKind;
   details: string;
   metadata: Record<string, unknown>;
   status: string;
@@ -81,6 +83,10 @@ const createAttackAlertBodySchema = z
     targetX: z.coerce.number().int().optional(),
     targetY: z.coerce.number().int().optional(),
     attackType: z.string().trim().min(2).max(80),
+    callKind: z
+      .enum(["defense", "attack", "attaque"])
+      .transform((value) => (value === "attaque" ? "attack" : value))
+      .default("defense"),
     message: z.string().trim().min(3).max(2000),
     severity: z.enum(["low", "medium", "high", "critical"]).default("high"),
     expiresAt: z.string().refine((value) => !Number.isNaN(Date.parse(value)), "Use an ISO-8601 datetime").optional()
@@ -190,6 +196,7 @@ alertsRouter.post(
             body.targetY ?? null,
             {
               attackType: body.attackType,
+              callKind: body.callKind,
               details: body.message,
               reminder: {
                 createdFor: "render-worker",
@@ -360,6 +367,7 @@ function attackAlertSelectSql(): string {
       a.target_x AS "targetX",
       a.target_y AS "targetY",
       COALESCE(a.metadata ->> 'attackType', a.title) AS "attackType",
+      COALESCE(a.metadata ->> 'callKind', 'defense') AS "callKind",
       COALESCE(a.metadata ->> 'details', a.message) AS details,
       a.metadata,
       a.status,

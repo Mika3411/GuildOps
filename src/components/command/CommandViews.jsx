@@ -21,9 +21,11 @@ import {
   Lock,
   MessageSquare,
   Palette,
+  RefreshCw,
   Send,
   Shield,
   ShieldAlert,
+  SlidersHorizontal,
   Swords,
   Trash2,
   Trophy,
@@ -43,6 +45,12 @@ import {
   getPublicChatRateLimitDetails
 } from "../../lib/publicChatGuards.js";
 import {
+  getMemberRelay,
+  getMemberRelayPath,
+  loadMemberRelayDispatches,
+  saveMemberRelayDispatch
+} from "../../lib/memberRelay.js";
+import {
   can,
   getGuardProps,
   getRoleLabel,
@@ -50,6 +58,7 @@ import {
 } from "../../lib/rbac.js";
 import {
   buildMemberInvitePath,
+  buildMemberRequestPath,
   createGuildSiteDraft,
   getAvailableDesignOptions,
   getColorOption,
@@ -81,6 +90,7 @@ import {
   formatEventWhen,
   formatRelativeEventTime,
   normalizeSosAlert,
+  normalizeSosCallKind,
   getSosAckLabel,
   parseRealtimeEvent,
   formatSosTime
@@ -107,7 +117,7 @@ const SITE_BUILDER_HELP = Object.freeze({
   realm: "Serveur, royaume ou monde de la guilde.",
   tagline: "Phrase courte sous le nom de guilde, lisible des l'arrivee.",
   objective: "Message principal de la page de guilde : coordination, wars, consignes ou organisation.",
-  memberInviteUrl: "Lien GuildSpace genere automatiquement pour rejoindre la guilde comme membre.",
+  memberInviteUrl: "Lien GuildOps genere automatiquement pour rejoindre la guilde comme membre.",
   objectiveTags: "Badges rapides qui resument le style de guilde.",
   style: "Regle l'apparence de la page de guilde.",
   design: "Change la structure UI sans modifier les fonctions ni le contenu.",
@@ -143,6 +153,38 @@ const PUBLIC_MEMBER_STATUS_LABELS = Object.freeze({
   online: "En ligne",
   offline: "Hors ligne",
 });
+
+const SOS_CALL_OPTIONS = Object.freeze([
+  {
+    id: "defense",
+    label: "Défense",
+    actionLabel: "Envoyer appel défense",
+    readyLabel: "Défense prête",
+    title: "Appel défense",
+    icon: ShieldAlert,
+  },
+  {
+    id: "attack",
+    label: "Attaque",
+    actionLabel: "Envoyer appel attaque",
+    readyLabel: "Attaque prête",
+    title: "Appel attaque",
+    icon: Swords,
+  },
+]);
+
+function getSosCallConfig(value) {
+  const callKind = normalizeSosCallKind(value);
+  return SOS_CALL_OPTIONS.find((option) => option.id === callKind) || SOS_CALL_OPTIONS[0];
+}
+
+function getSosFallbackMessage(callKind, attackType, targetLabel) {
+  if (normalizeSosCallKind(callKind) === "attack") {
+    return `${attackType} lancé sur ${targetLabel}. Rejoignez l'attaque maintenant.`;
+  }
+
+  return `${attackType} en cours sur ${targetLabel}. Besoin de renforts immédiats.`;
+}
 
 const HIDDEN_PUBLIC_MEMBER_STATUSES = new Set(["banned", "left"]);
 
@@ -225,6 +267,12 @@ function getMemberInviteHref(slugOrPath) {
   const value = String(slugOrPath || "").trim();
   if (!value) return "";
   return value.startsWith("/join/") ? value : buildMemberInvitePath(value);
+}
+
+function getMemberRequestHref(slugOrPath) {
+  const value = String(slugOrPath || "").trim();
+  if (!value) return "";
+  return value.startsWith("/join/") ? value.split("?")[0] : buildMemberRequestPath(value);
 }
 
 function getAbsoluteMemberInviteUrl(slugOrPath) {
@@ -637,6 +685,9 @@ function getUniqueSorted(values = []) {
 }
 
 export function PublicGuildRoute({
+  acknowledgeSos,
+  currentUser,
+  enabledModuleIds,
   fallbackSite,
   members = [],
   onBackToBuilder,
@@ -644,7 +695,13 @@ export function PublicGuildRoute({
   publicDiplomacy,
   publicForum,
   routeSegment = "",
+  sendSos,
+  setSosForm,
   slug,
+  sosAlerts,
+  sosError,
+  sosForm,
+  sosRealtimeStatus,
 }) {
   const fallbackSiteSlug = slugify(fallbackSite?.slug || fallbackSite?.publicSlug || fallbackSite?.guildName || "");
   const fallbackMembers = !isApiConfigured() && fallbackSiteSlug === slug ? members : [];
@@ -728,27 +785,45 @@ export function PublicGuildRoute({
 
   return (
     <PublicGuildSite
+      acknowledgeSos={acknowledgeSos}
+      currentUser={currentUser}
+      enabledModuleIds={enabledModuleIds}
       fallbackMembers={fallbackMembers}
       fallbackPublicDiplomacy={fallbackPublicDiplomacy}
       fallbackPublicForum={fallbackPublicForum}
       onNavigatePublicRoute={onNavigatePublicRoute}
       onBackToBuilder={onBackToBuilder}
       routeSegment={routeSegment}
+      sendSos={sendSos}
+      setSosForm={setSosForm}
       site={state.site}
       slug={slug}
+      sosAlerts={sosAlerts}
+      sosError={sosError}
+      sosForm={sosForm}
+      sosRealtimeStatus={sosRealtimeStatus}
     />
   );
 }
 
 export function PublicGuildSite({
+  acknowledgeSos,
+  currentUser,
+  enabledModuleIds = [],
   fallbackMembers = [],
   fallbackPublicDiplomacy,
   fallbackPublicForum,
   onBackToBuilder,
   onNavigatePublicRoute,
   routeSegment = "",
+  sendSos,
+  setSosForm,
   site,
   slug,
+  sosAlerts = [],
+  sosError = "",
+  sosForm = {},
+  sosRealtimeStatus = "Mode aperçu",
 }) {
   const siteDraft = createGuildSiteDraft({}, site);
   const color = getColorOption(siteDraft.colors);
@@ -758,13 +833,17 @@ export function PublicGuildSite({
   const visibleSections = getVisibleSiteSections(siteDraft.sections);
   const visibleContentSections = visibleSections.filter((section) => section.key !== "publicChat");
   const publicSlug = slugify(slug || siteDraft.slug || siteDraft.guildName);
+  const publicEnabledModuleIds = [...new Set([...(enabledModuleIds || []), ...(siteDraft.enabledModules || [])])];
+  const showPublicSosPanel = isGuildOpsModuleEnabled("sos_attack", publicEnabledModuleIds);
+  const sosPath = getPublicSiteRoutePath(publicSlug, "sos");
+  const isSosRoute = routeSegment === "sos";
   const isMemberSpaceRoute = routeSegment === PUBLIC_MEMBER_SPACE_ROUTE;
-  const activeSection = isMemberSpaceRoute ? null : getPublicSiteSectionFromRoute(routeSegment, visibleSections);
+  const activeSection = isMemberSpaceRoute || isSosRoute ? null : getPublicSiteSectionFromRoute(routeSegment, visibleSections);
   const homePath = getPublicSiteRoutePath(publicSlug);
   const galleryPath = "/guildes";
   const chatPath = getPublicSiteRoutePath(publicSlug, "publicChat");
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
-  const memberInviteUrl = getMemberInviteHref(publicSlug);
+  const memberRequestUrl = getMemberRequestHref(publicSlug);
   const rawPublicMembers = Array.isArray(site?.members) && site.members.length ? site.members : fallbackMembers;
   const publicMembers = useMemo(() => normalizePublicTeamMembers(rawPublicMembers), [rawPublicMembers]);
   const publicDiplomacy = site?.publicDiplomacy || site?.public_diplomacy || fallbackPublicDiplomacy;
@@ -782,7 +861,7 @@ export function PublicGuildSite({
   }, [publicSlug, routeSegment]);
 
   return (
-    <main className={`public-site-shell theme-${theme.overlay} design-${design.tone}`} style={pageStyle}>
+    <main className={`public-site-shell theme-${theme.overlay} design-${design.tone} ${routeSegment ? "is-route" : "is-home"}`} style={pageStyle}>
       <header className="public-site-nav">
         <div className="preview-logo">{siteDraft.guildName.slice(0, 1).toUpperCase() || "G"}</div>
         <strong>
@@ -820,6 +899,16 @@ export function PublicGuildSite({
           })}
         </nav>
         <div className="public-site-actions">
+          {showPublicSosPanel ? (
+            <a
+              className="public-site-sos-action"
+              href={sosPath}
+              onClick={(event) => navigatePublicSite(event, sosPath, onNavigatePublicRoute)}
+            >
+              <AlertTriangle size={16} aria-hidden="true" />
+              SOS
+            </a>
+          ) : null}
           <a
             className="public-site-gallery-action"
             href={galleryPath}
@@ -830,8 +919,8 @@ export function PublicGuildSite({
           </a>
           <a
             className="public-site-invite-action"
-            href={memberInviteUrl}
-            onClick={(event) => navigatePublicSite(event, memberInviteUrl, onNavigatePublicRoute)}
+            href={memberRequestUrl}
+            onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}
           >
             Devenir membre
           </a>
@@ -842,10 +931,19 @@ export function PublicGuildSite({
       </header>
       {!routeSegment ? (
         <PublicSiteHome
+          acknowledgeSos={acknowledgeSos}
+          currentUser={currentUser}
           members={publicMembers}
           onNavigatePublicRoute={onNavigatePublicRoute}
           publicSlug={publicSlug}
+          sendSos={sendSos}
+          setSosForm={setSosForm}
+          showPublicSosPanel={showPublicSosPanel}
           siteDraft={siteDraft}
+          sosAlerts={sosAlerts}
+          sosError={sosError}
+          sosForm={sosForm}
+          sosRealtimeStatus={sosRealtimeStatus}
           theme={theme}
           visibleSections={visibleContentSections}
         />
@@ -855,6 +953,20 @@ export function PublicGuildSite({
           onNavigatePublicRoute={onNavigatePublicRoute}
           publicSlug={publicSlug}
           siteDraft={siteDraft}
+        />
+      ) : isSosRoute && showPublicSosPanel ? (
+        <PublicSosModule
+          acknowledgeSos={acknowledgeSos}
+          currentUser={currentUser}
+          homePath={homePath}
+          onNavigatePublicRoute={onNavigatePublicRoute}
+          sendSos={sendSos}
+          setSosForm={setSosForm}
+          showBackLink
+          sosAlerts={sosAlerts}
+          sosError={sosError}
+          sosForm={sosForm}
+          sosRealtimeStatus={sosRealtimeStatus}
         />
       ) : activeSection ? (
         <PublicSiteModuleRoute
@@ -874,10 +986,26 @@ export function PublicGuildSite({
   );
 }
 
-function PublicSiteHome({ members = [], onNavigatePublicRoute, publicSlug, siteDraft, theme, visibleSections }) {
+function PublicSiteHome({
+  acknowledgeSos,
+  currentUser,
+  members = [],
+  onNavigatePublicRoute,
+  publicSlug,
+  sendSos,
+  setSosForm,
+  showPublicSosPanel = false,
+  siteDraft,
+  sosAlerts = [],
+  sosError = "",
+  sosForm = {},
+  sosRealtimeStatus = "Mode aperçu",
+  theme,
+  visibleSections
+}) {
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
   const teamPath = getPublicSiteRoutePath(publicSlug, "roster");
-  const memberInviteUrl = getMemberInviteHref(publicSlug);
+  const memberRequestUrl = getMemberRequestHref(publicSlug);
   const publicWarSummary = getPublicWarsData(siteDraft);
   const TeamIcon = getSiteSectionIcon("roster");
 
@@ -893,7 +1021,7 @@ function PublicSiteHome({ members = [], onNavigatePublicRoute, publicSlug, siteD
             {siteDraft.game} · {siteDraft.realm} · {siteDraft.objectiveTag}
           </em>
           <div className="preview-actions">
-            <a href={memberInviteUrl} onClick={(event) => navigatePublicSite(event, memberInviteUrl, onNavigatePublicRoute)}>
+            <a href={memberRequestUrl} onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}>
               Devenir membre
               <UserPlus size={17} />
             </a>
@@ -912,6 +1040,18 @@ function PublicSiteHome({ members = [], onNavigatePublicRoute, publicSlug, siteD
           </div>
         </div>
       </section>
+      {showPublicSosPanel ? (
+        <PublicSosModule
+          acknowledgeSos={acknowledgeSos}
+          currentUser={currentUser}
+          sendSos={sendSos}
+          setSosForm={setSosForm}
+          sosAlerts={sosAlerts}
+          sosError={sosError}
+          sosForm={sosForm}
+          sosRealtimeStatus={sosRealtimeStatus}
+        />
+      ) : null}
       <section className="preview-content-grid public-content-grid">
         {visibleSections.map((section) => (
           <PreviewSectionCard
@@ -927,6 +1067,42 @@ function PublicSiteHome({ members = [], onNavigatePublicRoute, publicSlug, siteD
         ))}
       </section>
     </>
+  );
+}
+
+function PublicSosModule({
+  acknowledgeSos,
+  currentUser,
+  homePath = "",
+  onNavigatePublicRoute,
+  sendSos,
+  setSosForm,
+  showBackLink = false,
+  sosAlerts = [],
+  sosError = "",
+  sosForm = {},
+  sosRealtimeStatus = "Mode aperçu",
+}) {
+  return (
+    <section className={`public-sos-page ${showBackLink ? "is-route" : "is-home"}`} id="public-sos" tabIndex={-1}>
+      {showBackLink ? (
+        <div className="public-sos-toolbar">
+          <a href={homePath} onClick={(event) => navigatePublicSite(event, homePath, onNavigatePublicRoute)}>
+            Retour accueil
+          </a>
+        </div>
+      ) : null}
+      <SosPanel
+        acknowledgeSos={acknowledgeSos}
+        currentUser={currentUser}
+        sosAlerts={sosAlerts}
+        sosError={sosError}
+        sosForm={sosForm}
+        sosRealtimeStatus={sosRealtimeStatus}
+        setSosForm={setSosForm}
+        sendSos={sendSos}
+      />
+    </section>
   );
 }
 
@@ -1174,25 +1350,79 @@ function PublicChatModule({ homePath, onNavigatePublicRoute, siteDraft }) {
 }
 
 function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePublicRoute, siteDraft }) {
+  const publicSlug = slugify(siteDraft.slug || siteDraft.publicSlug || siteDraft.guildName);
+  const [memberQuery, setMemberQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const [memberMessage, setMemberMessage] = useState("");
+  const [dispatches, setDispatches] = useState(() => loadMemberRelayDispatches(publicSlug));
   const roleOptions = useMemo(() => getUniqueSorted(members.map((member) => member.roleLabel)), [members]);
   const statusOptions = useMemo(() => getUniqueSorted(members.map((member) => member.statusLabel)), [members]);
+  const normalizedMemberQuery = memberQuery.trim().toLowerCase();
   const filteredMembers = useMemo(
     () =>
       members.filter(
-        (member) =>
-          (roleFilter === "all" || member.roleLabel === roleFilter) &&
-          (statusFilter === "all" || member.statusLabel === statusFilter),
+        (member) => {
+          const searchable = [member.name, member.roleLabel, member.statusLabel, member.language].filter(Boolean).join(" ").toLowerCase();
+
+          return (
+            (roleFilter === "all" || member.roleLabel === roleFilter) &&
+            (statusFilter === "all" || member.statusLabel === statusFilter) &&
+            (!normalizedMemberQuery || searchable.includes(normalizedMemberQuery))
+          );
+        },
       ),
-    [members, roleFilter, statusFilter],
+    [members, normalizedMemberQuery, roleFilter, statusFilter],
+  );
+  const selectedMember = useMemo(
+    () => filteredMembers.find((member) => member.id === selectedMemberId) || filteredMembers[0] || null,
+    [filteredMembers, selectedMemberId],
   );
   const hasMembers = members.length > 0;
-  const hasFilters = hasMembers && (roleOptions.length > 1 || statusOptions.length > 1);
+  const hasFilters = hasMembers && (members.length > 1 || roleOptions.length > 1 || statusOptions.length > 1);
+  const latestDispatch = selectedMember ? dispatches.find((dispatch) => dispatch.memberId === selectedMember.id) : null;
+
+  useEffect(() => {
+    setDispatches(loadMemberRelayDispatches(publicSlug));
+  }, [publicSlug]);
+
+  useEffect(() => {
+    if (normalizedMemberQuery && filteredMembers.length === 1 && selectedMemberId !== filteredMembers[0].id) {
+      setSelectedMemberId(filteredMembers[0].id);
+    }
+  }, [filteredMembers, normalizedMemberQuery, selectedMemberId]);
 
   function resetFilters() {
+    setMemberQuery("");
     setRoleFilter("all");
     setStatusFilter("all");
+  }
+
+  function selectMember(memberId) {
+    setSelectedMemberId(memberId);
+  }
+
+  function sendMemberDispatch(kind) {
+    if (!selectedMember) return;
+
+    const message = memberMessage.trim() || (kind === "alert" ? `Alerte tactique pour ${selectedMember.name}.` : `Message direct pour ${selectedMember.name}.`);
+    const relay = getMemberRelay(selectedMember, publicSlug);
+    const relayMember = { ...selectedMember, relayId: relay.relayId };
+    const dispatch = saveMemberRelayDispatch(publicSlug, {
+      kind,
+      memberId: selectedMember.id,
+      memberName: selectedMember.name,
+      memberRole: selectedMember.roleLabel,
+      relayId: relay.relayId,
+      relayPath: getMemberRelayPath(publicSlug, relayMember),
+      message,
+      status: "sent",
+    });
+
+    setSelectedMemberId(selectedMember.id);
+    setMemberMessage("");
+    setDispatches((current) => [dispatch, ...current.filter((item) => item.id !== dispatch.id)].slice(0, 30));
   }
 
   return (
@@ -1229,6 +1459,15 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
 
       {hasFilters ? (
         <div className="public-team-filters" aria-label="Filtres equipe">
+          <label className="public-member-search">
+            <span>Rechercher</span>
+            <input
+              type="search"
+              value={memberQuery}
+              onChange={(event) => setMemberQuery(event.target.value)}
+              placeholder="Pseudo, role, statut..."
+            />
+          </label>
           {roleOptions.length > 1 ? (
             <label>
               <span>Role</span>
@@ -1258,11 +1497,48 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
         </div>
       ) : null}
 
+      {hasMembers && selectedMember ? (
+        <section className="public-member-dispatch" aria-label="Contact membre">
+          <header>
+            <span className="theme-kicker">Contact direct</span>
+            <strong>{selectedMember.name}</strong>
+            <small>{[selectedMember.roleLabel, selectedMember.statusLabel].filter(Boolean).join(" · ")}</small>
+          </header>
+          <textarea
+            aria-label={`Message pour ${selectedMember.name}`}
+            value={memberMessage}
+            onChange={(event) => setMemberMessage(event.target.value)}
+            placeholder="Message rapide..."
+          />
+          <div className="public-member-dispatch-actions">
+            <button type="button" className="is-message" onClick={() => sendMemberDispatch("message")}>
+              <Send size={16} />
+              Message
+            </button>
+            <button type="button" className="is-alert" onClick={() => sendMemberDispatch("alert")}>
+              <AlertTriangle size={16} />
+              Alerte
+            </button>
+          </div>
+          {latestDispatch ? (
+            <p className={`public-member-dispatch-status is-${latestDispatch.kind}`}>
+              {latestDispatch.kind === "alert" ? "Alerte" : "Message"} · {latestDispatch.memberName} · {formatSosTime(latestDispatch.createdAt)}
+            </p>
+          ) : null}
+        </section>
+      ) : null}
+
       {hasMembers ? (
         filteredMembers.length ? (
           <div className="public-team-grid">
             {filteredMembers.map((member) => (
-              <article className="public-member-card" key={member.id}>
+              <button
+                className={`public-member-card public-member-contact-card${selectedMember?.id === member.id ? " is-selected" : ""}`}
+                key={member.id}
+                type="button"
+                onClick={() => selectMember(member.id)}
+                aria-pressed={selectedMember?.id === member.id}
+              >
                 <Avatar name={member.name} />
                 <span>
                   <strong>{member.name}</strong>
@@ -1288,7 +1564,7 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
                     </div>
                   ) : null}
                 </dl>
-              </article>
+              </button>
             ))}
           </div>
         ) : (
@@ -1816,10 +2092,9 @@ export function CommandCenter(props) {
   const enabledModuleIds = props.enabledModuleIds;
   const [linkCopied, setLinkCopied] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const showOperationsDock = ["wars_events", "sos_attack", "bank", "diplomacy", "forum"].some((moduleId) =>
+  const showOperationsDock = ["wars_events", "bank", "diplomacy", "forum"].some((moduleId) =>
     isGuildOpsModuleEnabled(moduleId, enabledModuleIds),
   );
-  const showSosPanel = isGuildOpsModuleEnabled("sos_attack", enabledModuleIds);
 
   function updateSiteDraft(patch) {
     if (!can(props.currentUser, "manage_site")) return;
@@ -1852,6 +2127,8 @@ export function CommandCenter(props) {
       <BuilderConfigPanel
         currentUser={props.currentUser}
         onDraftChange={updateSiteDraft}
+        onRotateInviteLink={props.onRotateInviteLink}
+        rotatingInviteLink={props.rotatingInviteLink}
         siteDraft={siteDraft}
       />
       <section className="preview-stage">
@@ -1870,22 +2147,9 @@ export function CommandCenter(props) {
           <QuickOpsDock
             onCheckIn={props.checkIn}
             onNavigate={props.onNavigate}
-            sendSos={props.sendSos}
             currentUser={props.currentUser}
             enabledModuleIds={enabledModuleIds}
             warSummary={props.warSummary}
-          />
-        ) : null}
-        {showSosPanel ? (
-          <SosPanel
-            acknowledgeSos={props.acknowledgeSos}
-            currentUser={props.currentUser}
-            sosAlerts={props.sosAlerts}
-            sosError={props.sosError}
-            sosForm={props.sosForm}
-            sosRealtimeStatus={props.sosRealtimeStatus}
-            setSosForm={props.setSosForm}
-            sendSos={props.sendSos}
           />
         ) : null}
       </section>
@@ -1921,7 +2185,7 @@ export function SiteLaunchChecklist({
 }) {
   const profileComplete = Boolean(siteDraft.guildName?.trim() && siteDraft.game?.trim() && siteDraft.realm?.trim());
   const pagePersonalized = Boolean(siteDraft.tagline?.trim() && siteDraft.objective?.trim());
-  const inviteUrl = getAbsoluteMemberInviteUrl(siteDraft.slug || siteDraft.guildName);
+  const inviteUrl = getAbsoluteMemberInviteUrl(siteDraft.memberInviteUrl || siteDraft.slug || siteDraft.guildName);
   const steps = [
     {
       id: "profile",
@@ -2008,12 +2272,13 @@ export function SiteLaunchChecklist({
   );
 }
 
-export function BuilderConfigPanel({ currentUser, onDraftChange, siteDraft }) {
+export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteLink, rotatingInviteLink = false, siteDraft }) {
   const tags = ["Operations", "Communauté", "Compétitif", "Casual"];
   const siteGuard = getGuardProps(currentUser, "manage_site");
+  const canRotateInvite = can(currentUser, "approve_members") || can(currentUser, "manage_site");
   const realmPrefix = normalizeRealmCodeForGame("", siteDraft.game);
   const [inviteCopied, setInviteCopied] = useState(false);
-  const inviteUrl = getAbsoluteMemberInviteUrl(siteDraft.slug || siteDraft.guildName);
+  const inviteUrl = getAbsoluteMemberInviteUrl(siteDraft.memberInviteUrl || siteDraft.slug || siteDraft.guildName);
 
   async function copyInviteLink() {
     if (!inviteUrl) return;
@@ -2094,7 +2359,7 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, siteDraft }) {
         </span>
         <div className="generated-invite-row">
           <input
-            aria-label="Lien GuildSpace pour devenir membre"
+            aria-label="Lien GuildOps pour devenir membre"
             readOnly
             value={inviteUrl}
             onFocus={(event) => event.target.select()}
@@ -2102,6 +2367,20 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, siteDraft }) {
           <button type="button" onClick={copyInviteLink} aria-label="Copier le lien d'invitation">
             {inviteCopied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
             {inviteCopied ? "Copié" : "Copier"}
+          </button>
+          <button
+            type="button"
+            onClick={onRotateInviteLink}
+            disabled={!canRotateInvite || rotatingInviteLink}
+            title={
+              canRotateInvite
+                ? "Générer un nouveau lien et désactiver l'ancien"
+                : "Permission Adhésions ou Site requise"
+            }
+            aria-label="Renouveler le lien d'invitation"
+          >
+            <RefreshCw size={15} aria-hidden="true" />
+            {rotatingInviteLink ? "Renouvellement..." : "Renouveler"}
           </button>
         </div>
       </div>
@@ -2130,7 +2409,7 @@ export function GuildSitePreview({ members = [], siteDraft, onNavigate, warSumma
   const design = getDesignOption(siteDraft.design);
   const typography = getTypographyOption(siteDraft.typography);
   const visibleSections = getVisibleSiteSections(siteDraft.sections);
-  const memberInviteUrl = getMemberInviteHref(siteDraft.slug || siteDraft.guildName);
+  const memberRequestUrl = getMemberRequestHref(siteDraft.slug || siteDraft.guildName);
   const WarsIcon = getSiteSectionIcon("wars");
   const previewStyle = {
     "--site-accent": color.accent,
@@ -2183,7 +2462,7 @@ export function GuildSitePreview({ members = [], siteDraft, onNavigate, warSumma
             {siteDraft.game} · {siteDraft.realm} · {siteDraft.objectiveTag}
           </em>
           <div className="preview-actions">
-            <a href={memberInviteUrl}>
+            <a href={memberRequestUrl}>
               Devenir membre
               <UserPlus size={17} />
             </a>
@@ -2360,7 +2639,7 @@ export function PreviewPopup({ members = [], onClose, onNavigate, siteDraft, war
   );
 }
 
-export function QuickOpsDock({ currentUser, enabledModuleIds, onCheckIn, onNavigate, sendSos, warSummary }) {
+export function QuickOpsDock({ enabledModuleIds, onCheckIn, onNavigate, warSummary }) {
   const weekly = warSummary?.weeklyObjectives;
   const weeklyDone = Number(weekly?.done ?? 2);
   const weeklyTotal = Math.max(Number(weekly?.total ?? 3), 1);
@@ -2374,10 +2653,6 @@ export function QuickOpsDock({ currentUser, enabledModuleIds, onCheckIn, onNavig
       title: `${module?.label || "Module"} non active pour cette guilde.`,
     };
   };
-  const sosGuardProps = isGuildOpsModuleEnabled("sos_attack", enabledModuleIds)
-    ? getGuardProps(currentUser, "send_sos")
-    : disabledModuleProps("sos_attack");
-
   return (
     <section className="quick-ops-dock">
       <strong>Accès rapides</strong>
@@ -2391,10 +2666,6 @@ export function QuickOpsDock({ currentUser, enabledModuleIds, onCheckIn, onNavig
       >
         <Check size={20} />
         Check-in
-      </button>
-      <button className="sos-quick" type="button" onClick={sendSos} {...sosGuardProps}>
-        <AlertTriangle size={20} />
-        SOS
       </button>
       <button type="button" onClick={() => onNavigate?.("bank")} {...disabledModuleProps("bank")}>
         <Banknote size={20} />
@@ -2587,107 +2858,165 @@ export function SosPanel({
   setSosForm,
   sendSos,
 }) {
+  const sosFieldsId = useId();
+  const [showSosFields, setShowSosFields] = useState(false);
   const sosGuard = getGuardProps(currentUser, "send_sos");
   const normalizedAlerts = sosAlerts.map(normalizeSosAlert);
   const activeAlerts = normalizedAlerts.filter((alert) => alert.status === "active").slice(0, 3);
   const latestAlert = activeAlerts[0] || normalizedAlerts[0];
+  const callKind = normalizeSosCallKind(sosForm.callKind);
+  const callConfig = getSosCallConfig(callKind);
+  const CallIcon = callConfig.icon;
+  const attackType = String(sosForm.type || "Rallye").trim() || "Rallye";
+  const targetLabel = String(sosForm.target || "Cible non precisee").trim();
+  const coordinateLabel = [sosForm.x ? `X ${sosForm.x}` : "", sosForm.y ? `Y ${sosForm.y}` : ""].filter(Boolean).join(" · ");
+  const detailsPreview = String(sosForm.details || "").trim() || getSosFallbackMessage(callKind, attackType, targetLabel);
+  const updateCallKind = (nextCallKind) => {
+    setSosForm((current) => ({ ...current, callKind: nextCallKind }));
+  };
 
   return (
-    <section className="panel alert-panel">
-      <PanelHeader icon={AlertTriangle} title="Alerte SOS attaque" meta={`${activeAlerts.length} actif · ${sosRealtimeStatus}`} />
-      <label className="form-row">
-        <span>Cible attaquee</span>
-        <input
-          value={sosForm.target || ""}
-          onChange={(event) => setSosForm((current) => ({ ...current, target: event.target.value }))}
-          {...sosGuard}
-        />
-      </label>
-      <div className="coordinate-grid">
+    <section className={`panel alert-panel sos-call-${callKind}`}>
+      <PanelHeader icon={CallIcon} title={callConfig.title} meta={`${activeAlerts.length} actif · ${sosRealtimeStatus}`} />
+      <div className="sos-call-toggle" role="group" aria-label="Type d'appel">
+        {SOS_CALL_OPTIONS.map((option) => {
+          const OptionIcon = option.icon;
+          return (
+            <button
+              className={`sos-call-button is-${option.id}${option.id === callKind ? " is-active" : ""}`}
+              key={option.id}
+              type="button"
+              onClick={() => updateCallKind(option.id)}
+              aria-pressed={option.id === callKind}
+              {...sosGuard}
+            >
+              <OptionIcon size={16} />
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      <div className="sos-fast-card">
+        <span>{callConfig.readyLabel}</span>
+        <strong>
+          {callConfig.label} · {attackType} · {targetLabel}
+        </strong>
+        <small>{coordinateLabel || "Coordonnees non precisees"}</small>
+        <p>{detailsPreview}</p>
+      </div>
+      <div className="sos-fast-actions">
+        <button className="danger-action sos-send-now" type="button" onClick={sendSos} {...sosGuard}>
+          <CallIcon size={18} />
+          {callConfig.actionLabel}
+        </button>
+        <button
+          className="ghost-action sos-edit-toggle"
+          type="button"
+          onClick={() => setShowSosFields((current) => !current)}
+          aria-expanded={showSosFields}
+          aria-controls={sosFieldsId}
+        >
+          <SlidersHorizontal size={15} />
+          Modifier
+        </button>
+      </div>
+      <div className="sos-edit-panel" id={sosFieldsId} hidden={!showSosFields}>
         <label className="form-row">
-          <span>X</span>
+          <span>Cible attaquee</span>
           <input
-            inputMode="numeric"
-            value={sosForm.x || ""}
-            onChange={(event) => setSosForm((current) => ({ ...current, x: event.target.value }))}
+            value={sosForm.target || ""}
+            onChange={(event) => setSosForm((current) => ({ ...current, target: event.target.value }))}
             {...sosGuard}
           />
         </label>
+        <div className="coordinate-grid">
+          <label className="form-row">
+            <span>X</span>
+            <input
+              inputMode="numeric"
+              value={sosForm.x || ""}
+              onChange={(event) => setSosForm((current) => ({ ...current, x: event.target.value }))}
+              {...sosGuard}
+            />
+          </label>
+          <label className="form-row">
+            <span>Y</span>
+            <input
+              inputMode="numeric"
+              value={sosForm.y || ""}
+              onChange={(event) => setSosForm((current) => ({ ...current, y: event.target.value }))}
+              {...sosGuard}
+            />
+          </label>
+        </div>
         <label className="form-row">
-          <span>Y</span>
-          <input
-            inputMode="numeric"
-            value={sosForm.y || ""}
-            onChange={(event) => setSosForm((current) => ({ ...current, y: event.target.value }))}
+          <span>Signal tactique</span>
+          <select
+            value={sosForm.type || "Rallye"}
+            onChange={(event) => setSosForm((current) => ({ ...current, type: event.target.value }))}
+            {...sosGuard}
+          >
+            <option>Rallye</option>
+            <option>Ravage</option>
+            <option>Solo</option>
+            <option>Scout</option>
+          </select>
+        </label>
+        <label className="form-row">
+          <span>Details</span>
+          <textarea
+            value={sosForm.details || ""}
+            onChange={(event) => setSosForm((current) => ({ ...current, details: event.target.value }))}
             {...sosGuard}
           />
         </label>
       </div>
-      <label className="form-row">
-        <span>Type d'attaque</span>
-        <select
-          value={sosForm.type || "Rallye"}
-          onChange={(event) => setSosForm((current) => ({ ...current, type: event.target.value }))}
-          {...sosGuard}
-        >
-          <option>Rallye</option>
-          <option>Ravage</option>
-          <option>Solo</option>
-          <option>Scout</option>
-        </select>
-      </label>
-      <label className="form-row">
-        <span>Details</span>
-        <textarea
-          value={sosForm.details || ""}
-          onChange={(event) => setSosForm((current) => ({ ...current, details: event.target.value }))}
-          {...sosGuard}
-        />
-      </label>
-      <button className="danger-action" type="button" onClick={sendSos} {...sosGuard}>
-        <AlertTriangle size={16} />
-        Envoyer SOS
-      </button>
       {sosError ? <p className="sync-warning">{sosError}</p> : null}
       <div className="sos-alert-list">
         {activeAlerts.length ? (
-          activeAlerts.map((alert) => (
-            <article className="sos-alert-card" key={alert.id}>
-              <header>
-                <span>
-                  <strong>{alert.attackType}</strong>
-                  <small>{formatSosTime(alert.createdAt)} · {alert.createdByName || alert.by}</small>
-                </span>
-                <em>{alert.targetLabel}</em>
-              </header>
-              <p>
-                X:{alert.targetX ?? "?"} Y:{alert.targetY ?? "?"} · {alert.details}
-              </p>
-              <div className="sos-ack-summary" aria-label="Reponses SOS">
-                <span>Vu {alert.acknowledgementSummary.seen}</span>
-                <span>En route {alert.acknowledgementSummary.joining}</span>
-                <span>Impossible {alert.acknowledgementSummary.cannotJoin}</span>
-              </div>
-              <div className="sos-ack-actions">
-                {["seen", "joining", "cannot_join"].map((response) => (
-                  <button
-                    key={response}
-                    type="button"
-                    className={alert.myAcknowledgement?.response === response ? "is-active" : ""}
-                    onClick={() => acknowledgeSos?.(alert.id, response)}
-                    aria-pressed={alert.myAcknowledgement?.response === response}
-                  >
-                    {getSosAckLabel(response)}
-                  </button>
-                ))}
-              </div>
-            </article>
-          ))
+          activeAlerts.map((alert) => {
+            const alertCallConfig = getSosCallConfig(alert.callKind);
+            const alertCallKind = normalizeSosCallKind(alert.callKind);
+            return (
+              <article className={`sos-alert-card sos-call-${alertCallKind}`} key={alert.id}>
+                <header>
+                  <span>
+                    <strong>
+                      {alertCallConfig.label} · {alert.attackType}
+                    </strong>
+                    <small>{formatSosTime(alert.createdAt)} · {alert.createdByName || alert.by}</small>
+                  </span>
+                  <em>{alert.targetLabel}</em>
+                </header>
+                <p>
+                  X:{alert.targetX ?? "?"} Y:{alert.targetY ?? "?"} · {alert.details}
+                </p>
+                <div className="sos-ack-summary" aria-label="Reponses SOS">
+                  <span>Vu {alert.acknowledgementSummary.seen}</span>
+                  <span>En route {alert.acknowledgementSummary.joining}</span>
+                  <span>Impossible {alert.acknowledgementSummary.cannotJoin}</span>
+                </div>
+                <div className="sos-ack-actions">
+                  {["seen", "joining", "cannot_join"].map((response) => (
+                    <button
+                      key={response}
+                      type="button"
+                      className={alert.myAcknowledgement?.response === response ? "is-active" : ""}
+                      onClick={() => acknowledgeSos?.(alert.id, response)}
+                      aria-pressed={alert.myAcknowledgement?.response === response}
+                    >
+                      {getSosAckLabel(response)}
+                    </button>
+                  ))}
+                </div>
+              </article>
+            );
+          })
         ) : (
           <p className="rail-note">Aucun SOS actif pour le moment.</p>
         )}
       </div>
-      <p className="rail-note">Dernier SOS envoye par {latestAlert?.by || latestAlert?.createdByName || "personne"}</p>
+      <p className="rail-note">Dernier appel envoye par {latestAlert?.by || latestAlert?.createdByName || "personne"}</p>
     </section>
   );
 }

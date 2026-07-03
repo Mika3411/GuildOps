@@ -8,6 +8,7 @@ process.env.NODE_ENV = "test";
 process.env.SESSION_SECRET ??= "guildops-api-contracts-test-secret";
 
 const { normalizeIncomingBankStatus, normalizeStoredBankStatus } = await import("./bank.routes.js");
+const { canApproveMembershipRequests } = await import("./guilds.routes.js");
 const { canManageEvents } = await import("./events.routes.js");
 const { isGuildModuleActive, listActiveGuildModuleKeys, normalizeGuildModuleRow, seedDefaultGuildModules, withDefaultGuildModuleKeys } = await import(
   "./guild-modules.service.js"
@@ -184,6 +185,7 @@ test("guild module helpers normalize rows and read active module keys", async ()
   assert.deepEqual(queries[0]?.params, ["guild-1"]);
   assert.deepEqual(withDefaultGuildModuleKeys(["bank", "unknown", "messages"]), [
     "site",
+    "membership_requests",
     "bank",
     "messages",
     "multi_guilds"
@@ -200,7 +202,16 @@ test("guild module helpers normalize rows and read active module keys", async ()
   const seedQueries: Array<{ text: string; params?: unknown[] }> = [];
   await seedDefaultGuildModules(fakeDb([], seedQueries), "guild-1", "user-1");
   assert.match(seedQueries[0]?.text ?? "", /INSERT INTO guild_modules/);
-  assert.deepEqual(seedQueries[0]?.params, ["guild-1", "user-1", ["site", "multi_guilds"]]);
+  assert.deepEqual(seedQueries[0]?.params, ["guild-1", "user-1", ["site", "membership_requests", "multi_guilds"]]);
+});
+
+test("approve_members RBAC allows dedicated membership approvers", async () => {
+  const queries: Array<{ text: string; params?: unknown[] }> = [];
+  const db = fakeDb([{ allowed: true }], queries);
+
+  assert.equal(await canApproveMembershipRequests(db, "guild-1", "user-1", "member", "user"), true);
+  assert.match(queries[0]?.text ?? "", /approve_members/);
+  assert.deepEqual(queries[0]?.params, ["guild-1", "user-1"]);
 });
 
 test("CSRF checks exempt login/register but protect unsafe authenticated requests", () => {

@@ -5,11 +5,14 @@ import React, {
 } from "react";
 import {
   AlertTriangle,
+  Ban,
   Bell,
   CheckCircle2,
   ChevronDown,
   CircleHelp,
+  Clock3,
   Command,
+  Copy,
   Globe2,
   Lock,
   MailCheck,
@@ -20,6 +23,7 @@ import {
   Search,
   Settings,
   Shield,
+  UserCheck,
   UserPlus,
   Users,
   X,
@@ -56,6 +60,7 @@ import {
 } from "../../lib/guildOpsApi.js";
 import {
   createGuildSiteDraft,
+  getMemberInviteToken,
   loadPublishedSite,
   savePublishedSite,
   slugify
@@ -95,6 +100,7 @@ import {
 const MODULE_CATALOG_IDS = Object.freeze([
   "wars_events",
   "sos_attack",
+  "membership_requests",
   "bank",
   "diplomacy",
   "forum",
@@ -303,7 +309,17 @@ export function AuthGate({ authSession, initialMode = "login" }) {
   );
 }
 
-export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, onOpenPublicSite }) {
+export function JoinGuildRoute({
+  authSession,
+  inviteSlug,
+  inviteToken = "",
+  isInviteLink = false,
+  memberBlocks = [],
+  onJoined,
+  onOpenApp,
+  onOpenPublicSite,
+  onRequestJoin,
+}) {
   const normalizedSlug = slugify(inviteSlug || "");
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState({
@@ -379,6 +395,10 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
 
   const siteDraft = siteState.site ? createGuildSiteDraft({}, siteState.site) : null;
   const requiresAuth = authSession.isApiEnabled && !authSession.isAuthenticated;
+  const activeInviteToken = siteDraft ? siteDraft.inviteToken || getMemberInviteToken(siteDraft.memberInviteUrl) : "";
+  const inviteExpired = Boolean(isInviteLink && !authSession.isApiEnabled && siteDraft && activeInviteToken !== inviteToken);
+  const inviteStatusClass = inviteExpired ? "expired" : isInviteLink ? "live" : "pending";
+  const inviteStatusLabel = inviteExpired ? "Lien renouvelé" : isInviteLink ? "Invitation active" : "Demande à valider";
 
   function updateAuthField(key, value) {
     setAuthForm((current) => ({ ...current, [key]: value }));
@@ -459,19 +479,40 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
   async function submitJoin(event) {
     event.preventDefault();
     if (!siteDraft || !normalizedSlug) return;
+    if (inviteExpired) {
+      setError("Ce lien d'invitation a été renouvelé. Demande un nouveau lien à la guilde.");
+      return;
+    }
     if (requiresAuth) {
-      setError("Connecte-toi pour devenir membre de cette guilde.");
+      setError(isInviteLink ? "Connecte-toi pour devenir membre de cette guilde." : "Connecte-toi pour envoyer une demande d'accès.");
       return;
     }
 
     const memberName = (nickname || authSession.user?.displayName || "Membre").trim();
+    if (
+      !authSession.isApiEnabled &&
+      isLocalJoinBlocked(memberBlocks, {
+        guildSlug: normalizedSlug,
+        nickname: memberName,
+        userId: authSession.user?.id || "",
+      })
+    ) {
+      setError("Ce joueur est bloqué pour cette guilde.");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     setNotice("");
 
     try {
-      if (authSession.isApiEnabled) {
-        await guildOpsApi.joinPublicGuild(normalizedSlug, { nickname: memberName });
+      if (authSession.isApiEnabled && isInviteLink) {
+        await guildOpsApi.joinPublicGuild(normalizedSlug, { nickname: memberName, inviteToken });
+      } else if (!isInviteLink) {
+        await onRequestJoin?.(normalizedSlug, siteState.site, {
+          nickname: memberName,
+          user: authSession.user,
+        });
       } else {
         const result = saveMockGuildJoin(normalizedSlug, siteState.site, {
           nickname: memberName,
@@ -480,7 +521,9 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
         setSiteState({ error: "", site: result.site, status: "ready" });
       }
 
-      await onJoined?.();
+      if (isInviteLink) {
+        await onJoined?.();
+      }
       setJoined(true);
     } catch (joinError) {
       setError(joinError?.message || "Impossible de rejoindre cette guilde pour le moment.");
@@ -496,11 +539,11 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
           <div className="brand-mark">
             <UserPlus size={28} />
           </div>
-          <span>GuildSpace</span>
+          <span>GuildOps</span>
         </div>
         <aside className="join-guild-summary">
-          <span className="status-pill live">Invitation active</span>
-          <h1>{siteDraft?.guildName || "Invitation de guilde"}</h1>
+          <span className={`status-pill ${inviteStatusClass}`}>{inviteStatusLabel}</span>
+          <h1>{siteDraft?.guildName || (isInviteLink ? "Invitation de guilde" : "Demande d'accès")}</h1>
           <p>{siteDraft ? `${siteDraft.game} · ${siteDraft.realm}` : "Chargement de la guilde..."}</p>
           {siteDraft?.tagline ? <strong>{siteDraft.tagline}</strong> : null}
           {siteDraft?.objective ? <small>{siteDraft.objective}</small> : null}
@@ -523,15 +566,36 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
               <strong>Invitation introuvable</strong>
               <p>{siteState.error}</p>
             </div>
+          ) : inviteExpired ? (
+            <div className="join-state is-error">
+              <AlertTriangle size={28} />
+              <strong>Lien renouvelé</strong>
+              <p>Ce lien d'invitation n'est plus actif. Demande à un officier de générer un nouveau lien.</p>
+              <button className="ghost-action" type="button" onClick={() => onOpenPublicSite?.(normalizedSlug)}>
+                <Globe2 size={16} />
+                Voir le site
+              </button>
+            </div>
           ) : joined ? (
             <div className="join-state is-success">
               <CheckCircle2 size={34} />
-              <strong>Tu es membre de {siteDraft?.guildName}</strong>
-              <p>Ton espace est prêt avec cette guilde active.</p>
-              <button className="primary-action" type="button" onClick={onOpenApp}>
-                <Command size={17} />
-                Ouvrir l'espace membre
-              </button>
+              <strong>{isInviteLink ? `Tu es membre de ${siteDraft?.guildName}` : "Demande envoyée"}</strong>
+              <p>
+                {isInviteLink
+                  ? "Ton espace est prêt avec cette guilde active."
+                  : "Un membre autorisé doit accepter la demande avant activation."}
+              </p>
+              {isInviteLink ? (
+                <button className="primary-action" type="button" onClick={onOpenApp}>
+                  <Command size={17} />
+                  Ouvrir l'espace membre
+                </button>
+              ) : (
+                <button className="primary-action" type="button" onClick={() => onOpenPublicSite?.(normalizedSlug)}>
+                  <Globe2 size={17} />
+                  Retour au site
+                </button>
+              )}
             </div>
           ) : requiresAuth ? (
             <>
@@ -620,7 +684,7 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
               {error ? <p className="auth-error">{error}</p> : null}
               <button className="primary-action" type="submit" disabled={submitting}>
                 <UserPlus size={17} />
-                {submitting ? "Ajout..." : "Devenir membre"}
+                {submitting ? (isInviteLink ? "Ajout..." : "Envoi...") : isInviteLink ? "Devenir membre" : "Envoyer la demande"}
               </button>
             </form>
           )}
@@ -628,6 +692,25 @@ export function JoinGuildRoute({ authSession, inviteSlug, onJoined, onOpenApp, o
       </section>
     </main>
   );
+}
+
+function isLocalJoinBlocked(blocks = [], { guildSlug = "", nickname = "", userId = "" } = {}) {
+  const normalizedSlug = slugify(guildSlug);
+  const normalizedNickname = String(nickname || "").trim().toLowerCase();
+
+  if (!normalizedNickname && !userId) return false;
+
+  return blocks.some((block) => {
+    if (block.active === false) return false;
+    const blockGuildMatches =
+      !block.guildSlug ||
+      !normalizedSlug ||
+      block.guildSlug === normalizedSlug;
+    const userMatches = userId && block.userId === userId;
+    const nicknameMatches = String(block.nickname || "").trim().toLowerCase() === normalizedNickname;
+
+    return blockGuildMatches && (userMatches || nicknameMatches);
+  });
 }
 
 export function VerifyEmailRoute({ authSession, onBackToLogin, onVerified }) {
@@ -1131,6 +1214,8 @@ export function ViewRouter(props) {
       return <ModulesView {...props} />;
     case "administration":
       return <AdministrationView {...props} />;
+    case "membershipRequests":
+      return <MembershipRequestsView {...props} />;
     case "shop":
       return <ShopView {...props} />;
     case "member":
@@ -1392,38 +1477,285 @@ export function AdministrationView({
   );
 }
 
-export function MembersView({ currentUser, guilds: availableGuilds, members, roleEdits, selectedGuild, setRoleEdits }) {
+export function MembershipRequestsView({
+  currentUser,
+  memberModerationError = "",
+  membershipRequests = [],
+  moderatingMemberId = "",
+  onRotateInviteLink,
+  onApproveMembershipRequest,
+  onBlockMembershipRequest,
+  onRefuseMembershipRequest,
+  rotatingInviteLink = false,
+  selectedGuild,
+  siteDraft,
+}) {
+  const guildSlug = slugify(selectedGuild?.name || "");
+  const requests = membershipRequests.filter((request) => !guildSlug || request.guildSlug === guildSlug);
+  const pendingRequests = requests.filter((request) => request.status === "pending");
+  const approvedRequests = requests.filter((request) => request.status === "approved");
+  const refusedRequests = requests.filter((request) => request.status === "refused");
+  const approvalGuard = getGuardProps(currentUser, "approve_members");
+  const canApprove = can(currentUser, "approve_members");
+  const memberGuard = getGuardProps(currentUser, "manage_members");
+  const canBlock = can(currentUser, "manage_members");
+  const [inviteCopied, setInviteCopied] = useState(false);
+  const inviteUrl = siteDraft?.memberInviteUrl
+    ? new URL(siteDraft.memberInviteUrl, window.location.origin).href
+    : "";
+
+  async function copyInviteLink() {
+    if (!inviteUrl || !navigator.clipboard) return;
+
+    await navigator.clipboard.writeText(inviteUrl);
+    setInviteCopied(true);
+    window.setTimeout(() => setInviteCopied(false), 1400);
+  }
+
+  return (
+    <div className="page-grid membership-requests-page">
+      <section className="panel wide-panel membership-requests-panel">
+        <PanelHeader icon={UserCheck} title="Adhésions" meta={`${pendingRequests.length} en attente`} />
+        <div className="membership-request-summary">
+          <article>
+            <span>À valider</span>
+            <strong>{pendingRequests.length}</strong>
+          </article>
+          <article>
+            <span>Acceptées</span>
+            <strong>{approvedRequests.length}</strong>
+          </article>
+          <article>
+            <span>Refusées</span>
+            <strong>{refusedRequests.length}</strong>
+          </article>
+        </div>
+        <div className="membership-request-intro">
+          <UserCheck size={22} />
+          <span>
+            <strong>Les joueurs sans lien d'invitation ne sont pas activés automatiquement.</strong>
+            <small>Ils arrivent ici en demande, puis un rôle autorisé peut accepter ou refuser l'accès.</small>
+          </span>
+        </div>
+        {memberModerationError ? (
+          <p className="membership-moderation-error">
+            <AlertTriangle size={16} />
+            {memberModerationError}
+          </p>
+        ) : null}
+        <div className="membership-invite-tools">
+          <span>
+            <strong>Lien d'invitation actif</strong>
+            <small>Renouveler ce lien désactive immédiatement l'ancien.</small>
+          </span>
+          <input readOnly value={inviteUrl} onFocus={(event) => event.target.select()} aria-label="Lien d'invitation actif" />
+          <button type="button" onClick={copyInviteLink} disabled={!inviteUrl}>
+            {inviteCopied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+            {inviteCopied ? "Copié" : "Copier"}
+          </button>
+          <button type="button" onClick={onRotateInviteLink} disabled={!canApprove || rotatingInviteLink}>
+            <RefreshCw size={16} />
+            {rotatingInviteLink ? "Renouvellement..." : "Renouveler"}
+          </button>
+        </div>
+        <div className="membership-request-list">
+          {requests.length ? (
+            requests.map((request) => {
+              const isPending = request.status === "pending";
+              const canBlockRequest = request.status !== "approved";
+              const statusLabel = {
+                approved: "Acceptée",
+                pending: "En attente",
+                refused: "Refusée",
+              }[request.status] || request.status;
+
+              return (
+                <article className={`membership-request-card is-${request.status}`} key={request.id}>
+                  <header>
+                    <span className="membership-request-avatar">{request.nickname.slice(0, 1).toUpperCase()}</span>
+                    <span>
+                      <strong>{request.nickname}</strong>
+                      <small>{[request.guildName, request.game, request.realm].filter(Boolean).join(" · ")}</small>
+                    </span>
+                    <em className={`status-chip ${request.status}`}>{statusLabel}</em>
+                  </header>
+                  <p>{request.message}</p>
+                  <footer>
+                    <span>
+                      <Clock3 size={15} />
+                      {formatMembershipRequestDate(request.requestedAt)}
+                    </span>
+                    {request.decidedAt ? (
+                      <span>
+                        <CheckCircle2 size={15} />
+                        {statusLabel} par {request.decidedBy || "Admin"}
+                      </span>
+                    ) : null}
+                    <span className="membership-request-actions">
+                      <button
+                        type="button"
+                        onClick={() => onApproveMembershipRequest?.(request.id)}
+                        disabled={!isPending || !canApprove}
+                        title={!isPending ? "Demande déjà traitée" : approvalGuard.title}
+                      >
+                        <CheckCircle2 size={16} />
+                        Accepter
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onRefuseMembershipRequest?.(request.id)}
+                        disabled={!isPending || !canApprove}
+                        title={!isPending ? "Demande déjà traitée" : approvalGuard.title}
+                      >
+                        <X size={16} />
+                        Refuser
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onBlockMembershipRequest?.(request.id)}
+                        disabled={!canBlockRequest || !canBlock || moderatingMemberId === request.id}
+                        title={!canBlockRequest ? "Demande déjà acceptée" : memberGuard.title}
+                      >
+                        <Ban size={16} />
+                        {moderatingMemberId === request.id ? "Blocage..." : "Bloquer"}
+                      </button>
+                    </span>
+                  </footer>
+                </article>
+              );
+            })
+          ) : (
+            <p className="empty-state">Aucune demande pour cette guilde. Les demandes hors invitation apparaîtront ici.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function formatMembershipRequestDate(value) {
+  if (!value) return "Date inconnue";
+
+  try {
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
+export function MembersView({
+  currentUser,
+  guilds: availableGuilds,
+  memberBlocks = [],
+  memberModerationError = "",
+  members,
+  moderatingMemberId = "",
+  onBanGuildMember,
+  onUnblockGuildMember,
+  roleEdits,
+  selectedGuild,
+  setRoleEdits,
+}) {
   const memberGuard = getGuardProps(currentUser, "manage_members");
   const roleGuard = getGuardProps(currentUser, "manage_roles");
+  const canManageMembers = can(currentUser, "manage_members");
+  const selectedGuildSlug = slugify(selectedGuild?.name || "");
+  const selectedGuildId = selectedGuild?.id || "";
+  const activeBlocks = memberBlocks.filter(
+    (block) =>
+      block.active !== false &&
+      (!selectedGuildId || !block.guildId || block.guildId === selectedGuildId) &&
+      (!selectedGuildSlug || !block.guildSlug || block.guildSlug === selectedGuildSlug),
+  );
 
   return (
     <div className="page-grid two-columns">
       <section className="panel wide-panel">
         <PanelHeader icon={Users} title="Membres, roles et objectifs" meta={`${members.length} actifs`} />
+        {memberModerationError ? (
+          <p className="membership-moderation-error">
+            <AlertTriangle size={16} />
+            {memberModerationError}
+          </p>
+        ) : null}
         <div className="member-role-list">
-          {members.map((member) => (
-            <div className="member-role-row" key={member.id}>
-              <Avatar name={member.name} />
-              <span>
-                <strong>{member.name}</strong>
-                <small>{member.power}</small>
-              </span>
-              <select
-                value={roleEdits[member.id]}
-                onChange={(event) => {
-                  if (can(currentUser, "manage_roles")) {
-                    setRoleEdits((current) => ({ ...current, [member.id]: event.target.value }));
-                  }
-                }}
-                {...roleGuard}
-              >
-                {permissionRoles.map((role) => (
-                  <option key={role.code}>{role.role}</option>
-                ))}
-              </select>
-              <input defaultValue={member.objective || "Presence events"} {...memberGuard} />
-            </div>
-          ))}
+          {members.map((member) => {
+            const isCurrentMember = member.userId === currentUser.id || member.id === currentUser.id;
+            const isBusy = moderatingMemberId === member.id;
+
+            return (
+              <div className="member-role-row" key={member.id}>
+                <Avatar name={member.name} />
+                <span>
+                  <strong>{member.name}</strong>
+                  <small>{[member.power, member.status].filter(Boolean).join(" · ")}</small>
+                </span>
+                <select
+                  value={roleEdits[member.id]}
+                  onChange={(event) => {
+                    if (can(currentUser, "manage_roles")) {
+                      setRoleEdits((current) => ({ ...current, [member.id]: event.target.value }));
+                    }
+                  }}
+                  {...roleGuard}
+                >
+                  {permissionRoles.map((role) => (
+                    <option key={role.code}>{role.role}</option>
+                  ))}
+                </select>
+                <input defaultValue={member.objective || "Presence events"} {...memberGuard} />
+                <span className="member-role-actions">
+                  <button
+                    className="member-ban-action"
+                    type="button"
+                    onClick={() => onBanGuildMember?.(member.id)}
+                    disabled={!canManageMembers || isCurrentMember || isBusy}
+                    title={isCurrentMember ? "Impossible de te bannir toi-même" : memberGuard.title}
+                  >
+                    <Ban size={16} />
+                    {isBusy ? "Ban..." : "Bannir + bloquer"}
+                  </button>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+      <section className="panel member-block-panel">
+        <PanelHeader icon={Ban} title="Joueurs bloqués" meta={`${activeBlocks.length} actifs`} />
+        <div className="member-block-list">
+          {activeBlocks.length ? (
+            activeBlocks.map((block) => (
+              <article className="member-block-card" key={block.id}>
+                <header>
+                  <span className="membership-request-avatar">{block.nickname.slice(0, 1).toUpperCase()}</span>
+                  <span>
+                    <strong>{block.nickname}</strong>
+                    <small>{formatMembershipRequestDate(block.blockedAt)}</small>
+                  </span>
+                  <em className="status-chip banned">Bloqué</em>
+                </header>
+                <p>{block.reason}</p>
+                <footer>
+                  <small>Par {block.blockedByName || "Admin"}</small>
+                  <button
+                    type="button"
+                    onClick={() => onUnblockGuildMember?.(block.id)}
+                    disabled={!canManageMembers || moderatingMemberId === block.id}
+                    title={memberGuard.title}
+                  >
+                    <Lock size={15} />
+                    {moderatingMemberId === block.id ? "Déblocage..." : "Débloquer"}
+                  </button>
+                </footer>
+              </article>
+            ))
+          ) : (
+            <p className="empty-state">Aucun joueur bloqué pour cette guilde.</p>
+          )}
         </div>
       </section>
       <PermissionsMatrix currentUser={currentUser} />
