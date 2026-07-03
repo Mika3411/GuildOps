@@ -1,0 +1,34 @@
+{
+  "name": "guildops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "npm run test:guildops-transforms && npm run api:test && npm run worker:test",
+    "test:guildops-transforms": "node scripts/check-guildops-transforms.mjs",
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "api:dev": "npm --prefix apps/api run dev",
+    "api:build": "npm --prefix apps/api run build",
+    "api:start": "npm --prefix apps/api run start:prod",
+    "api:db:migrate": "npm --prefix apps/api run db:migrate",
+    "api:test": "npm --prefix apps/api run test",
+    "api:typecheck": "npm --prefix apps/api run typecheck",
+    "worker:dev": "npm --prefix apps/worker run worker:dev",
+    "worker:build": "npm --prefix apps/worker run build",
+    "worker:start": "npm --prefix apps/worker run worker:prod",
+    "worker:typecheck": "npm --prefix apps/worker run typecheck",
+    "worker:test": "npm --prefix apps/worker run test"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.0.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "vite": "^7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

@@ -1,0 +1,172 @@
+# Render Blueprint for GuildOps.
+# Current repo layout:
+# frontend at the repository root, API in apps/api, worker and cron jobs in apps/worker.
+
+previews:
+  generation: manual
+  expireAfterDays: 7
+
+databases:
+  - name: guildops-postgres
+    region: frankfurt
+    plan: basic-256mb
+    databaseName: guildops
+    user: guildops
+    postgresMajorVersion: "16"
+    storageAutoscalingEnabled: true
+
+services:
+  - type: web
+    name: guildops-frontend
+    runtime: static
+    region: frankfurt
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeployTrigger: checksPass
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+    envVars:
+      - key: VITE_API_URL
+        value: https://guildops-api.onrender.com
+      - key: VITE_REALTIME_MODE
+        value: sse
+
+  - type: web
+    name: guildops-api
+    runtime: node
+    region: frankfurt
+    rootDir: apps/api
+    plan: starter
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: npm run start:prod
+    healthCheckPath: /healthz
+    maxShutdownDelaySeconds: 60
+    autoDeployTrigger: checksPass
+    disk:
+      name: guildops-uploads
+      mountPath: /var/data/guildops/uploads
+      sizeGB: 10
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guildops-postgres
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PASSWORD_PEPPER
+        generateValue: true
+      - key: APP_PUBLIC_URL
+        value: https://guildops-frontend.onrender.com
+      - key: EMAIL_VERIFICATION_TTL_HOURS
+        value: "24"
+      - key: EMAIL_FROM
+        sync: false
+      - key: CORS_ORIGIN
+        value: https://guildops-frontend.onrender.com
+      - key: UPLOAD_ROOT
+        value: /var/data/guildops/uploads
+      - key: SMTP_URL
+        sync: false
+
+  - type: worker
+    name: guildops-worker
+    runtime: node
+    region: frankfurt
+    rootDir: apps/worker
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm run worker:prod
+    maxShutdownDelaySeconds: 120
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guildops-postgres
+          property: connectionString
+      - key: SOS_REMINDER_BATCH_SIZE
+        value: "25"
+      - key: SOS_REMINDER_POLL_INTERVAL_MS
+        value: "15000"
+      - key: EVENT_REMINDER_LOOKAHEAD_MINUTES
+        value: "1440"
+      - key: PRESENCE_REMINDER_LOOKAHEAD_MINUTES
+        value: "180"
+      - key: SESSION_RETENTION_DAYS
+        value: "30"
+      - key: TRANSLATION_PROVIDER
+        value: provider-api
+      - key: TRANSLATION_API_URL
+        sync: false
+      - key: TRANSLATION_API_KEY
+        sync: false
+      - key: TRANSLATION_API_TIMEOUT_MS
+        value: "15000"
+      - key: TRANSLATION_POLL_INTERVAL_MS
+        value: "3000"
+      - key: SMTP_URL
+        sync: false
+
+  - type: cron
+    name: guildops-event-reminders
+    runtime: node
+    region: frankfurt
+    rootDir: apps/worker
+    schedule: "*/5 * * * *"
+    buildCommand: npm ci && npm run build
+    startCommand: npm run cron:events
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guildops-postgres
+          property: connectionString
+      - key: EVENT_REMINDER_LOOKAHEAD_MINUTES
+        value: "1440"
+      - key: PRESENCE_REMINDER_LOOKAHEAD_MINUTES
+        value: "180"
+
+  - type: cron
+    name: guildops-diplomacy-maintenance
+    runtime: node
+    region: frankfurt
+    rootDir: apps/worker
+    schedule: "0 * * * *"
+    buildCommand: npm ci && npm run build
+    startCommand: npm run cron:diplomacy
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guildops-postgres
+          property: connectionString
+
+  - type: cron
+    name: guildops-session-cleanup
+    runtime: node
+    region: frankfurt
+    rootDir: apps/worker
+    schedule: "25 3 * * *"
+    buildCommand: npm ci && npm run build
+    startCommand: npm run cron:sessions
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: guildops-postgres
+          property: connectionString
+      - key: SESSION_RETENTION_DAYS
+        value: "30"

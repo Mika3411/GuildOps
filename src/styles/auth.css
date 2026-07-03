@@ -1,0 +1,439 @@
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(84, 223, 204, 0.12), transparent 26rem),
+    linear-gradient(180deg, rgba(3, 8, 11, 0.28), rgba(3, 8, 11, 0.88));
+}
+
+.auth-panel {
+  width: min(420px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(7, 18, 23, 0.94);
+  box-shadow: var(--shadow);
+}
+
+.auth-panel.compact {
+  place-items: center;
+  text-align: center;
+}
+
+.auth-brand {
+  padding: 0;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.auth-tabs button {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+}
+
+.auth-tabs button.is-active {
+  border-color: rgba(84, 223, 204, 0.45);
+  background: var(--teal-dim);
+  color: var(--text);
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form .form-row {
+  display: grid;
+  gap: 6px;
+  padding: 0;
+}
+
+.auth-form .form-row span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.auth-form .form-row input,
+.auth-form .form-row select,
+.auth-form .form-row textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+}
+
+.auth-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 93, 82, 0.34);
+  border-radius: 6px;
+  background: var(--red-dim);
+  color: #ffd6d2;
+  font-size: 0.9rem;
+}
+
+.auth-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid rgba(108, 225, 132, 0.34);
+  border-radius: 6px;
+  background: var(--green-dim);
+  color: #d8ffe1;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.auth-notice svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--green);
+}
+
+.auth-dev-link {
+  color: var(--teal);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.auth-dev-link:hover {
+  text-decoration: underline;
+}
+
+.auth-inline-action {
+  width: 100%;
+  justify-content: center;
+}
+
+.command-state-shell {
+  padding: 28px;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(84, 223, 204, 0.12), transparent 28rem),
+    radial-gradient(circle at 15% 86%, rgba(245, 182, 56, 0.08), transparent 22rem),
+    linear-gradient(180deg, rgba(3, 8, 11, 0.24), rgba(3, 8, 11, 0.9));
+}
+
+.command-state-card {
+  width: min(500px, 100%);
+  justify-items: center;
+  gap: 16px;
+  padding: 28px;
+  text-align: center;
+}
+
+.command-state-card h1,
+.command-state-card p {
+  margin: 0;
+}
+
+.command-state-card h1 {
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.command-state-card p {
+  max-width: 380px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.command-state-card .brand-mark.danger {
+  border-color: rgba(255, 93, 82, 0.56);
+  color: var(--red);
+  background: linear-gradient(145deg, rgba(255, 93, 82, 0.18), rgba(8, 17, 21, 0.88));
+}
+
+.state-actions {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.state-actions .primary-action,
+.state-actions .ghost-action {
+  min-width: 142px;
+}
+
+.join-shell {
+  align-items: start;
+  padding: 36px 24px;
+}
+
+.join-panel {
+  width: min(860px, 100%);
+  grid-template-columns: minmax(230px, 0.9fr) minmax(320px, 1.1fr);
+  gap: 22px;
+  align-items: start;
+  padding: 26px;
+}
+
+.join-panel .auth-brand {
+  grid-column: 1 / -1;
+}
+
+.join-guild-summary {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  padding: 18px;
+  border: 1px solid rgba(84, 223, 204, 0.2);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(84, 223, 204, 0.08), rgba(84, 223, 204, 0.02)),
+    rgba(9, 22, 28, 0.68);
+}
+
+.join-guild-summary h1,
+.join-guild-summary p,
+.join-guild-summary small {
+  margin: 0;
+}
+
+.join-guild-summary h1 {
+  overflow-wrap: anywhere;
+  font-size: 1.7rem;
+  line-height: 1.08;
+}
+
+.join-guild-summary p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.join-guild-summary strong {
+  color: #dff6ff;
+  line-height: 1.35;
+}
+
+.join-guild-summary small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.join-guild-summary .ghost-action {
+  width: fit-content;
+  margin-top: 4px;
+}
+
+.join-action-card {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.join-state {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid rgba(154, 180, 192, 0.16);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.035);
+  text-align: center;
+}
+
+.join-state svg {
+  color: var(--teal);
+}
+
+.join-state strong,
+.join-state p {
+  margin: 0;
+}
+
+.join-state p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.join-state.is-error svg {
+  color: var(--red);
+}
+
+.join-state.is-success svg {
+  color: var(--green);
+}
+
+.join-state .primary-action {
+  margin-top: 4px;
+}
+
+.join-form .primary-action {
+  width: 100%;
+  justify-content: center;
+}
+
+.guild-onboarding-shell {
+  align-items: start;
+  padding: 36px 24px;
+}
+
+.guild-onboarding-panel {
+  width: min(780px, 100%);
+  grid-template-columns: minmax(210px, 0.85fr) minmax(320px, 1.15fr);
+  gap: 22px;
+  align-items: start;
+  padding: 26px;
+}
+
+.guild-onboarding-panel .auth-brand {
+  grid-column: 1 / -1;
+}
+
+.onboarding-copy {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  min-height: 100%;
+  padding: 18px;
+  border: 1px solid rgba(84, 223, 204, 0.2);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, rgba(84, 223, 204, 0.08), rgba(84, 223, 204, 0.02)),
+    rgba(9, 22, 28, 0.68);
+}
+
+.onboarding-copy h1,
+.onboarding-copy p {
+  margin: 0;
+}
+
+.onboarding-copy h1 {
+  font-size: 1.75rem;
+  line-height: 1.08;
+}
+
+.onboarding-copy p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.onboarding-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.onboarding-steps span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(84, 223, 204, 0.28);
+  border-radius: 999px;
+  background: rgba(84, 223, 204, 0.08);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.status-pill {
+  width: fit-content;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.status-pill.live {
+  border-color: rgba(108, 225, 132, 0.36);
+  background: var(--green-dim);
+  color: var(--green);
+}
+
+.guild-create-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.guild-create-form .wide,
+.guild-create-form .checkbox-row,
+.guild-create-form .auth-error,
+.guild-create-form .primary-action {
+  grid-column: 1 / -1;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(84, 223, 204, 0.18);
+  border-radius: 7px;
+  background: rgba(84, 223, 204, 0.06);
+  color: #d7edf2;
+  line-height: 1.4;
+}
+
+.checkbox-row input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 1px 0 0;
+  accent-color: var(--teal);
+}
+
+@media (max-width: 720px) {
+  .join-shell,
+  .guild-onboarding-shell {
+    padding: 20px 14px;
+  }
+
+  .join-panel,
+  .guild-onboarding-panel {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 20px;
+  }
+
+  .join-panel .auth-brand,
+  .guild-onboarding-panel .auth-brand {
+    grid-column: auto;
+  }
+
+  .join-guild-summary .ghost-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .guild-create-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .command-state-shell {
+    padding: 18px;
+  }
+
+  .command-state-card {
+    padding: 22px;
+  }
+
+  .state-actions {
+    display: grid;
+  }
+}

@@ -1,0 +1,438 @@
+.diplomacy-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.diplomacy-card {
+  display: grid;
+  gap: 6px;
+}
+
+.diplomacy-card strong {
+  color: var(--text);
+}
+
+.diplomacy-card em {
+  color: var(--teal);
+  font-style: normal;
+}
+
+.diplomacy-card.hostile em {
+  color: var(--red);
+}
+
+.diplomacy-card.nap em {
+  color: var(--amber);
+}
+
+.diplomacy-workspace {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.85fr);
+}
+
+.diplomacy-command {
+  grid-column: 1 / -1;
+}
+
+.diplomacy-warning {
+  margin: 12px;
+}
+
+.diplomacy-ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 12px;
+}
+
+.diplomacy-entry {
+  display: grid;
+  gap: 10px;
+  min-height: 158px;
+  padding: 13px;
+  border: 1px solid rgba(154, 180, 192, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.diplomacy-entry header,
+.diplomacy-entry footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.diplomacy-entry strong,
+.diplomacy-entry small,
+.diplomacy-entry footer span {
+  display: block;
+}
+
+.diplomacy-entry small,
+.diplomacy-entry p,
+.diplomacy-entry footer {
+  color: var(--muted);
+}
+
+.diplomacy-entry p {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.diplomacy-entry footer {
+  font-size: 0.72rem;
+}
+
+.diplomacy-entry.ally {
+  border-color: rgba(108, 225, 132, 0.24);
+}
+
+.diplomacy-entry.enemy {
+  border-color: rgba(255, 93, 82, 0.3);
+}
+
+.diplomacy-entry.nap {
+  border-color: rgba(245, 182, 56, 0.28);
+}
+
+.diplomacy-badge {
+  flex: 0 0 auto;
+  min-height: 24px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 9px;
+  border: 1px solid rgba(154, 180, 192, 0.2);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.diplomacy-badge.ally,
+.diplomacy-badge.active {
+  border-color: rgba(108, 225, 132, 0.34);
+  color: var(--green);
+  background: rgba(108, 225, 132, 0.08);
+}
+
+.diplomacy-badge.enemy,
+.diplomacy-badge.expired,
+.diplomacy-badge.cancelled {
+  border-color: rgba(255, 93, 82, 0.34);
+  color: var(--red);
+  background: rgba(255, 93, 82, 0.08);
+}
+
+.diplomacy-badge.nap,
+.diplomacy-badge.draft {
+  border-color: rgba(245, 182, 56, 0.36);
+  color: var(--amber);
+  background: rgba(245, 182, 56, 0.08);
+}
+
+.diplomacy-badge.watchlist,
+.diplomacy-badge.neutral {
+  border-color: rgba(84, 223, 204, 0.28);
+  color: var(--teal);
+  background: rgba(84, 223, 204, 0.06);
+}
+
+.diplomacy-editor,
+.nap-panel,
+.diplomacy-coordinates,
+.diplomacy-audit-panel {
+  align-self: start;
+}
+
+.segmented-list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 12px 0;
+}
+
+.segmented-list button {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(154, 180, 192, 0.16);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--muted);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.segmented-list button.is-active,
+.nap-list button.is-active {
+  border-color: rgba(84, 223, 204, 0.42);
+  color: var(--teal);
+  background: rgba(84, 223, 204, 0.08);
+}
+
+.diplomacy-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 6px;
+  padding-bottom: 4px;
+}
+
+.diplomacy-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.nap-list {
+  display: grid;
+  gap: 8px;
+  padding: 12px 12px 0;
+}
+
+.nap-list button {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid rgba(154, 180, 192, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-align: left;
+}
+
+.nap-list strong,
+.nap-list small {
+  display: block;
+}
+
+.nap-list small {
+  margin-top: 3px;
+  color: var(--muted);
+}
+
+.diplomacy-coordinate-list {
+  padding-top: 8px;
+}
+
+.diplomacy-coordinate-list .coordinate-row {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(132, 157, 168, 0.13);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+
+.diplomacy-coordinate-list .coordinate-row:hover {
+  background: rgba(84, 223, 204, 0.06);
+}
+
+.audit-timeline {
+  display: grid;
+  padding: 8px 12px 12px;
+}
+
+.audit-timeline article {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 0.6fr) minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(132, 157, 168, 0.13);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.audit-timeline article:last-child {
+  border-bottom: 0;
+}
+
+.audit-timeline strong {
+  color: var(--text);
+}
+
+.coordinate-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.forum-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.forum-row.is-active,
+.forum-category-list button.is-active {
+  border-color: rgba(84, 223, 204, 0.36);
+  background: rgba(84, 223, 204, 0.08);
+}
+
+.forum-workspace {
+  align-items: start;
+}
+
+.forum-categories-panel,
+.forum-category-editor,
+.forum-permissions-panel {
+  align-self: start;
+}
+
+.forum-category-list,
+.forum-post-list,
+.forum-permission-list {
+  display: grid;
+}
+
+.forum-category-list button {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(132, 157, 168, 0.13);
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+}
+
+.forum-category-list strong,
+.forum-category-list small,
+.forum-row strong,
+.forum-row small {
+  display: block;
+}
+
+.forum-category-list strong,
+.forum-row strong {
+  color: var(--text);
+}
+
+.forum-category-list em {
+  min-width: 24px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(120, 169, 255, 0.14);
+  color: var(--blue);
+  font-style: normal;
+  font-size: 0.75rem;
+}
+
+.forum-compose,
+.forum-category-editor,
+.forum-permissions-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.forum-compose {
+  grid-template-columns: minmax(150px, 0.45fr) minmax(220px, 1fr);
+  padding: 12px;
+  border-bottom: 1px solid rgba(132, 157, 168, 0.13);
+}
+
+.forum-compose .wide,
+.forum-category-editor .wide {
+  grid-column: 1 / -1;
+}
+
+.forum-post-list {
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 12px;
+  gap: 10px;
+}
+
+.forum-post {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(132, 157, 168, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.forum-post header,
+.forum-post footer,
+.forum-thread-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.forum-post p {
+  margin: 0;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.forum-post.is-deleted p,
+.moderation-note {
+  color: var(--muted);
+}
+
+.forum-post footer {
+  justify-content: flex-start;
+}
+
+.forum-post footer button,
+.forum-thread-actions button {
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.forum-reply-input {
+  border-top: 1px solid rgba(132, 157, 168, 0.13);
+  padding-top: 12px;
+}
+
+.forum-permission-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) repeat(3, auto);
+  gap: 8px;
+  align-items: center;
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(132, 157, 168, 0.13);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.forum-permission-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.forum-warning {
+  grid-column: 1 / -1;
+}
+
+.member-role-row {
+  grid-template-columns: auto minmax(0, 1fr) minmax(150px, 0.6fr) minmax(180px, 1fr);
+}
+
+.member-role-row select,
+.member-role-row input {
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+.settings-row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.settings-row.is-active {
+  background: rgba(96, 211, 148, 0.08);
+}
+
+.settings-row.is-active svg {
+  color: var(--green);
+}

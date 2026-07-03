@@ -1,0 +1,33 @@
+{
+  "name": "@guildops/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "tsx --test src/*.test.ts",
+    "worker:prod": "node dist/worker.js",
+    "worker:dev": "tsx watch src/worker.ts",
+    "cron:events": "node dist/cron-events.js",
+    "cron:diplomacy": "node dist/cron-diplomacy.js",
+    "cron:maintenance": "node dist/cron-maintenance.js",
+    "cron:sessions": "node dist/cron-sessions.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.11.1",
+    "pg": "^8.16.3",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.3",
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
