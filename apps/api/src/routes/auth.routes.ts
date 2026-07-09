@@ -6,7 +6,7 @@ import { asyncHandler } from "../http/async-handler.js";
 import { BadRequestError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
 import {
-  assertTransactionalEmailConfigured,
+  isTransactionalEmailConfigured,
   sendEmailVerification
 } from "../notifications/email.js";
 import {
@@ -94,7 +94,6 @@ authRouter.post(
   asyncHandler(async (req, res) => {
     const body = req.body as z.infer<typeof registerBodySchema>;
     throwIfRateLimited(res, (await consumeAuthRateLimit("register", req, body.email)).hit);
-    assertTransactionalEmailConfigured();
 
     const passwordHash = await hashPassword(body.password);
     const organizationName = body.organizationName ?? `${body.displayName} GuildOps`;
@@ -159,15 +158,18 @@ authRouter.post(
       email: result.user.email,
       token: result.verificationToken.token
     });
+    const manualVerification = !isTransactionalEmailConfigured();
 
     res.status(201).json({
       status: "verification_required",
-      message: "Compte cree. Verifiez votre email pour activer la connexion.",
+      message: manualVerification
+        ? "Compte cree. SMTP n'est pas configure: utilisez le lien de validation affiche."
+        : "Compte cree. Verifiez votre email pour activer la connexion.",
       email: result.user.email,
       user: result.user,
       organization: result.organization,
       verificationExpiresAt: result.verificationToken.expiresAt.toISOString(),
-      ...(process.env.NODE_ENV === "production" ? {} : { verificationUrl })
+      ...(manualVerification || process.env.NODE_ENV !== "production" ? { verificationUrl } : {})
     });
   })
 );
@@ -204,11 +206,12 @@ authRouter.post(
         email: user.email,
         token: verificationToken.token
       });
+      const manualVerification = !isTransactionalEmailConfigured();
 
       throw new ForbiddenError("Email non verifie. Un nouveau lien de validation vient d'etre envoye.", {
         email: user.email,
         reason: "EMAIL_NOT_VERIFIED",
-        ...(process.env.NODE_ENV === "production" ? {} : { verificationUrl })
+        ...(manualVerification || process.env.NODE_ENV !== "production" ? { verificationUrl } : {})
       });
     }
 
@@ -362,10 +365,12 @@ authRouter.post(
 
     res.status(202).json({
       status: "accepted",
-      message: "Si un compte attend une validation, un nouveau lien vient d'etre envoye.",
+      message: !isTransactionalEmailConfigured()
+        ? "Si un compte attend une validation, utilisez le lien affiche."
+        : "Si un compte attend une validation, un nouveau lien vient d'etre envoye.",
       email: body.email,
       ...(verificationExpiresAt ? { verificationExpiresAt } : {}),
-      ...(process.env.NODE_ENV === "production" || !verificationUrl ? {} : { verificationUrl })
+      ...(!verificationUrl || (process.env.NODE_ENV === "production" && isTransactionalEmailConfigured()) ? {} : { verificationUrl })
     });
   })
 );

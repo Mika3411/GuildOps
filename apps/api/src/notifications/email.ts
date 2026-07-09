@@ -21,6 +21,10 @@ export function assertTransactionalEmailConfigured(): void {
   }
 }
 
+export function isTransactionalEmailConfigured(): boolean {
+  return Boolean(env.SMTP_URL);
+}
+
 export function buildEmailVerificationUrl(token: string): string {
   const url = new URL("/auth/verify-email", env.APP_PUBLIC_URL);
   url.searchParams.set("token", token);
@@ -28,8 +32,6 @@ export function buildEmailVerificationUrl(token: string): string {
 }
 
 export async function sendEmailVerification(input: VerificationEmailInput): Promise<{ verificationUrl: string }> {
-  assertTransactionalEmailConfigured();
-
   const verificationUrl = buildEmailVerificationUrl(input.token);
   const subject = "Confirmez votre email GuildOps";
   const text = [
