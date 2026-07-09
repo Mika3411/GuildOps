@@ -68,11 +68,7 @@ services:
         value: https://guildops-frontend.onrender.com
       - key: EMAIL_VERIFICATION_TTL_HOURS
         value: "24"
-      - key: EMAIL_FROM
-        sync: false
       - key: CORS_ORIGIN
         value: https://guildops-frontend.onrender.com
       - key: UPLOAD_ROOT
         value: /var/data/guildops/uploads
-      - key: SMTP_URL
-        sync: false
