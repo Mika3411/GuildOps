@@ -19,7 +19,6 @@ services:
   - type: web
     name: guildops-frontend
     runtime: static
-    region: frankfurt
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
     autoDeployTrigger: checksPass
@@ -53,7 +52,6 @@ services:
     preDeployCommand: npm run db:migrate
     startCommand: npm run start:prod
     healthCheckPath: /healthz
-    maxShutdownDelaySeconds: 60
     autoDeployTrigger: checksPass
     disk:
       name: guildops-uploads
