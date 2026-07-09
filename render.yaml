@@ -2,10 +2,6 @@
 # Current repo layout:
 # frontend at the repository root, API in apps/api, worker and cron jobs in apps/worker.
 
-previews:
-  generation: manual
-  expireAfterDays: 7
-
 databases:
   - name: guildops-postgres
     region: frankfurt
