@@ -44,7 +44,7 @@ services:
     region: frankfurt
     rootDir: apps/api
     plan: starter
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     preDeployCommand: npm run db:migrate
     startCommand: npm run start:prod
     healthCheckPath: /healthz
