@@ -5,8 +5,9 @@ import { z } from "zod";
 import { env } from "../config/env.js";
 import { database, query, type Queryable } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
-import { BadRequestError, NotFoundError, TooManyRequestsError } from "../http/errors.js";
+import { BadRequestError, ForbiddenError, NotFoundError, TooManyRequestsError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
+import { sendRegistrationInvitationEmail } from "../notifications/email.js";
 import { getAuth, requireAuth } from "../security/auth.js";
 import { formatMessageForLanguage, normalizeLanguage, type MessageRow } from "../translation/messages.js";
 import { assertGuildAccess } from "./access.js";
@@ -52,22 +53,58 @@ const publicMessageBodySchema = z
   })
   .strict();
 
+const privateImageAttachmentSchema = z
+  .object({
+    id: z.string().trim().min(1).max(120).optional(),
+    type: z.literal("image").default("image"),
+    name: z.string().trim().min(1).max(180).default("Image"),
+    mimeType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
+    size: z.coerce.number().int().min(1).max(900 * 1024),
+    originalSize: z.coerce.number().int().min(1).max(80 * 1024 * 1024).optional(),
+    compressed: z.boolean().optional(),
+    compressionLabel: z.string().trim().max(80).optional(),
+    dataUrl: z
+      .string()
+      .trim()
+      .min(1)
+      .max(1_500_000)
+      .regex(/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/, "Image data URL expected"),
+    alt: z.string().trim().max(180).optional()
+  })
+  .strict();
+
 const privateMessageBodySchema = z
   .object({
-    body: z.string().trim().min(1).max(4000),
+    body: z.string().trim().max(4000).default(""),
+    attachments: z.array(privateImageAttachmentSchema).max(1).default([]),
     conversationType: z.enum(["internal", "private"]).default("internal"),
     channel: z.string().trim().min(1).max(80).default("general"),
     recipientUserId: uuidSchema.optional(),
     sourceLanguage: z.string().trim().min(2).max(12).default("auto"),
     targetLanguage: z.string().trim().min(2).max(12).optional()
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (!value.body && value.attachments.length === 0) {
+      context.addIssue({
+        code: "custom",
+        message: "Message body or image attachment is required",
+        path: ["body"]
+      });
+    }
+  });
 
 const readConversationBodySchema = z
   .object({
     conversationType: z.enum(["internal", "private"]).default("internal"),
     channel: z.string().trim().min(1).max(80).default("general"),
     participantId: uuidSchema.optional()
+  })
+  .strict();
+
+const messageInvitationBodySchema = z
+  .object({
+    email: z.string().email().max(320).transform((value) => value.toLowerCase())
   })
   .strict();
 
@@ -103,6 +140,21 @@ type PrivateMessageRow = MessageRow & {
   sender_user_id: string | null;
   recipient_user_id: string | null;
   is_read: boolean;
+  read_by?: unknown;
+};
+
+type MessageRecipientRow = {
+  id: string;
+  display_name: string;
+  email: string;
+  nickname: string;
+  preferred_language: string;
+  role: string | null;
+  status: string | null;
+};
+
+type MessageInvitationLookupRow = MessageRecipientRow & {
+  isGuildMember: boolean;
 };
 
 type SseClient = {
@@ -265,35 +317,73 @@ messagesRouter.get(
     const { guildId } = req.params as unknown as z.infer<typeof guildParamsSchema>;
     await assertGuildAccess(database, guildId, auth.user.id);
 
-    const result = await query<{
-      id: string;
-      display_name: string;
-      nickname: string;
-      preferred_language: string;
-    }>(
+    const result = await query<MessageRecipientRow>(
       `
         SELECT
           u.id::text,
+          u.email::text,
           u.display_name,
           gm.nickname,
-          u.preferred_language
+          u.preferred_language,
+          gm.status,
+          COALESCE(
+            string_agg(DISTINCT roles.name, ', ' ORDER BY roles.name) FILTER (WHERE roles.name IS NOT NULL),
+            ''
+          ) AS role
         FROM guild_members gm
         JOIN users u ON u.id = gm.user_id
+        LEFT JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
+        LEFT JOIN roles ON roles.id = gmr.role_id
         WHERE gm.guild_id = $1
           AND gm.user_id <> $2
           AND gm.status <> 'banned'
+        GROUP BY u.id, u.email, u.display_name, gm.nickname, u.preferred_language, gm.status
         ORDER BY gm.nickname ASC, u.display_name ASC
       `,
       [guildId, auth.user.id]
     );
 
     res.json({
-      recipients: result.rows.map((recipient) => ({
-        id: recipient.id,
-        displayName: recipient.display_name,
-        nickname: recipient.nickname,
-        preferredLanguage: recipient.preferred_language
-      }))
+      recipients: result.rows.map(toMessageRecipientResource)
+    });
+  })
+);
+
+messagesRouter.post(
+  "/guilds/:guildId/message-invitations",
+  requireAuth,
+  validate({ params: guildParamsSchema, body: messageInvitationBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildParamsSchema>;
+    const body = req.body as z.infer<typeof messageInvitationBodySchema>;
+    await assertGuildAccess(database, guildId, auth.user.id);
+
+    const user = await findUserByEmail(guildId, body.email);
+
+    if (user?.status === "banned") {
+      throw new ForbiddenError("Ce compte ne peut pas etre contacte depuis cette guilde.");
+    }
+
+    if (user) {
+      res.json({
+        status: "recipient_found",
+        message: "Compte GuildOps trouve.",
+        recipient: toMessageRecipientResource(user)
+      });
+      return;
+    }
+
+    const delivery = await sendRegistrationInvitationEmail({
+      email: body.email,
+      inviterName: auth.user.displayName
+    });
+
+    res.status(202).json({
+      status: "registration_invitation_sent",
+      email: body.email,
+      message: "Aucun compte GuildOps trouve. Mail d'inscription envoye.",
+      ...(process.env.NODE_ENV === "production" ? {} : { invitationUrl: delivery.invitationUrl })
     });
   })
 );
@@ -314,7 +404,7 @@ messagesRouter.get(
     }
 
     if (queryParams.conversationType === "private") {
-      await assertUserInGuild(guildId, queryParams.participantId as string);
+      await assertMessageRecipientExists(queryParams.participantId as string);
     }
 
     const payload = await listPrivateMessages(guildId, auth.user.id, {
@@ -341,6 +431,8 @@ messagesRouter.post(
     const access = await assertGuildAccess(database, guildId, auth.user.id);
     const conversationType = body.recipientUserId ? "private" : body.conversationType;
     const channel = normalizeChannel(body.channel);
+    const attachments = normalizePrivateMessageAttachments(body.attachments);
+    const messageBody = body.body || (attachments.length ? "Image" : "");
 
     if (conversationType === "private") {
       if (!body.recipientUserId) {
@@ -351,7 +443,7 @@ messagesRouter.post(
         throw new BadRequestError("Cannot send a private message to yourself");
       }
 
-      await assertUserInGuild(guildId, body.recipientUserId);
+      await assertMessageRecipientExists(body.recipientUserId);
     }
 
     const result = await query<PrivateMessageRow>(
@@ -375,6 +467,13 @@ messagesRouter.post(
           sender_user_id::text,
           recipient_user_id::text,
           true AS is_read,
+          jsonb_build_array(
+            jsonb_build_object(
+              'id', $3::text,
+              'displayName', $8::text,
+              'readAt', now()::text
+            )
+          ) AS read_by,
           metadata
       `,
       [
@@ -382,9 +481,9 @@ messagesRouter.post(
         guildId,
         auth.user.id,
         conversationType === "private" ? body.recipientUserId : null,
-        body.body,
+        messageBody,
         normalizeLanguage(body.sourceLanguage, "auto"),
-        { kind: conversationType, channel },
+        { kind: conversationType, channel, attachments },
         auth.user.displayName
       ]
     );
@@ -643,10 +742,25 @@ async function listChannelMessages(
         pm.sender_user_id::text,
         pm.recipient_user_id::text,
         (rr.message_id IS NOT NULL OR pm.sender_user_id = $2) AS is_read,
+        COALESCE(readers.read_by, '[]'::jsonb) AS read_by,
         pm.metadata
       FROM private_messages pm
       LEFT JOIN users u ON u.id = pm.sender_user_id
       LEFT JOIN message_read_receipts rr ON rr.message_id = pm.id AND rr.user_id = $2
+      LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+          jsonb_build_object(
+            'id', reader.id::text,
+            'displayName', COALESCE(NULLIF(gm.nickname, ''), reader.display_name),
+            'readAt', mrr.read_at::text
+          )
+          ORDER BY mrr.read_at ASC
+        ) AS read_by
+        FROM message_read_receipts mrr
+        JOIN users reader ON reader.id = mrr.user_id
+        LEFT JOIN guild_members gm ON gm.guild_id = pm.guild_id AND gm.user_id = reader.id
+        WHERE mrr.message_id = pm.id
+      ) readers ON true
       WHERE pm.guild_id = $1
         AND pm.recipient_user_id IS NULL
         AND COALESCE(NULLIF(pm.metadata->>'channel', ''), 'general') = $4
@@ -680,10 +794,25 @@ async function listDirectMessages(
         pm.sender_user_id::text,
         pm.recipient_user_id::text,
         (rr.message_id IS NOT NULL OR pm.sender_user_id = $2) AS is_read,
+        COALESCE(readers.read_by, '[]'::jsonb) AS read_by,
         pm.metadata
       FROM private_messages pm
       LEFT JOIN users u ON u.id = pm.sender_user_id
       LEFT JOIN message_read_receipts rr ON rr.message_id = pm.id AND rr.user_id = $2
+      LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+          jsonb_build_object(
+            'id', reader.id::text,
+            'displayName', COALESCE(NULLIF(gm.nickname, ''), reader.display_name),
+            'readAt', mrr.read_at::text
+          )
+          ORDER BY mrr.read_at ASC
+        ) AS read_by
+        FROM message_read_receipts mrr
+        JOIN users reader ON reader.id = mrr.user_id
+        LEFT JOIN guild_members gm ON gm.guild_id = pm.guild_id AND gm.user_id = reader.id
+        WHERE mrr.message_id = pm.id
+      ) readers ON true
       WHERE pm.guild_id = $1
         AND pm.recipient_user_id IS NOT NULL
         AND (
@@ -932,9 +1061,119 @@ async function formatPrivateMessage(message: PrivateMessageRow, targetLanguage: 
     conversationType,
     isOwn: message.sender_user_id === currentUserId,
     read: Boolean(message.is_read),
+    readBy: normalizePrivateMessageReaders(message.read_by),
+    attachments: normalizePrivateMessageAttachments(message.metadata?.attachments),
     recipientUserId: message.recipient_user_id,
     senderUserId: message.sender_user_id
   };
+}
+
+function normalizePrivateMessageAttachments(attachments: unknown) {
+  if (!Array.isArray(attachments)) return [];
+
+  return attachments
+    .map((attachment, index) => {
+      if (!attachment || typeof attachment !== "object") return null;
+      const value = attachment as Record<string, unknown>;
+      const mimeType = String(value.mimeType || value.mime_type || "").trim();
+      const dataUrl = String(value.dataUrl || value.data_url || "").trim();
+      const name = String(value.name || "Image").trim();
+
+      if (!["image/png", "image/jpeg", "image/webp", "image/gif"].includes(mimeType)) return null;
+      if (!dataUrl || !/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(dataUrl)) return null;
+
+      return {
+        id: String(value.id || `image-${index}`).trim(),
+        type: "image",
+        name: name || "Image",
+        mimeType,
+        size: Number(value.size || 0),
+        dataUrl,
+        alt: String(value.alt || name || "Image envoyée").trim(),
+        compressed: Boolean(value.compressed),
+        originalSize: Number(value.originalSize || value.original_size || 0),
+        compressionLabel: String(value.compressionLabel || value.compression_label || "").trim()
+      };
+    })
+    .filter(
+      (attachment): attachment is {
+        id: string;
+        type: "image";
+        name: string;
+        mimeType: string;
+        size: number;
+        dataUrl: string;
+        alt: string;
+        compressed: boolean;
+        originalSize: number;
+        compressionLabel: string;
+      } => Boolean(attachment)
+    );
+}
+
+function normalizePrivateMessageReaders(readBy: unknown) {
+  if (!Array.isArray(readBy)) return [];
+
+  return readBy
+    .map((reader) => {
+      if (!reader || typeof reader !== "object") return null;
+      const value = reader as Record<string, unknown>;
+      const id = String(value.id || value.userId || value.user_id || "").trim();
+      const displayName = String(value.displayName || value.display_name || value.nickname || value.name || "Membre").trim();
+
+      if (!id || !displayName) return null;
+
+      return {
+        id,
+        displayName,
+        readAt: typeof value.readAt === "string" ? value.readAt : typeof value.read_at === "string" ? value.read_at : null
+      };
+    })
+    .filter((reader): reader is { id: string; displayName: string; readAt: string | null } => Boolean(reader));
+}
+
+export function toMessageRecipientResource(recipient: MessageRecipientRow) {
+  return {
+    id: recipient.id,
+    displayName: recipient.display_name,
+    email: recipient.email,
+    nickname: recipient.nickname || recipient.display_name,
+    preferredLanguage: recipient.preferred_language,
+    role: recipient.role || "",
+    status: recipient.status || ""
+  };
+}
+
+async function findUserByEmail(guildId: string, email: string): Promise<MessageInvitationLookupRow | null> {
+  const result = await query<MessageInvitationLookupRow>(
+    `
+      SELECT
+        u.id::text,
+        u.email::text,
+        u.display_name,
+        COALESCE(gm.nickname, u.display_name) AS nickname,
+        u.preferred_language,
+        gm.status,
+        (gm.id IS NOT NULL AND gm.status <> 'banned') AS "isGuildMember",
+        COALESCE(
+          string_agg(DISTINCT roles.name, ', ' ORDER BY roles.name) FILTER (WHERE roles.name IS NOT NULL),
+          ''
+        ) AS role
+      FROM users u
+      LEFT JOIN guild_members gm
+        ON gm.user_id = u.id
+       AND gm.guild_id = $2
+      LEFT JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
+      LEFT JOIN roles ON roles.id = gmr.role_id
+      WHERE u.email = $1
+        AND u.disabled_at IS NULL
+      GROUP BY u.id, u.email, u.display_name, u.preferred_language, gm.id, gm.nickname, gm.status
+      LIMIT 1
+    `,
+    [email, guildId]
+  );
+
+  return result.rows[0] ?? null;
 }
 
 export async function findPublicChatGuildBySlug(db: Queryable, slug: string): Promise<PublicChatGuild> {
@@ -970,21 +1209,20 @@ export async function findPublicChatGuildBySlug(db: Queryable, slug: string): Pr
   return { id: guild.id, default_language: guild.default_language };
 }
 
-async function assertUserInGuild(guildId: string, userId: string): Promise<void> {
+async function assertMessageRecipientExists(userId: string): Promise<void> {
   const result = await query<{ id: string }>(
     `
-      SELECT gm.id::text
-      FROM guild_members gm
-      WHERE gm.guild_id = $1
-        AND gm.user_id = $2
-        AND gm.status <> 'banned'
+      SELECT id::text
+      FROM users
+      WHERE id = $1
+        AND disabled_at IS NULL
       LIMIT 1
     `,
-    [guildId, userId]
+    [userId]
   );
 
   if (!result.rows[0]) {
-    throw new NotFoundError("Guild member not found");
+    throw new NotFoundError("Message recipient not found");
   }
 }
 

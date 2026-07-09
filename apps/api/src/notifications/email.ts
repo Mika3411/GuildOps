@@ -8,6 +8,11 @@ type VerificationEmailInput = {
   token: string;
 };
 
+type RegistrationInvitationEmailInput = {
+  email: string;
+  inviterName: string;
+};
+
 let transporter: nodemailer.Transporter | undefined;
 
 export function assertTransactionalEmailConfigured(): void {
@@ -59,6 +64,55 @@ export async function sendEmailVerification(input: VerificationEmailInput): Prom
   });
 
   return { verificationUrl };
+}
+
+export function buildRegistrationInvitationUrl(input: { email?: string }): string {
+  const url = new URL("/auth/register", env.APP_PUBLIC_URL);
+
+  if (input.email) {
+    url.searchParams.set("email", input.email);
+  }
+
+  return url.toString();
+}
+
+export async function sendRegistrationInvitationEmail(input: RegistrationInvitationEmailInput): Promise<{ invitationUrl: string }> {
+  assertTransactionalEmailConfigured();
+
+  const invitationUrl = buildRegistrationInvitationUrl({ email: input.email });
+  const subject = "Creer ton compte GuildOps";
+  const text = [
+    `Bonjour,`,
+    "",
+    `${input.inviterName} t'a envoye un lien pour creer un compte GuildOps.`,
+    "Ce compte permet ensuite d'etre retrouve dans GuildOps et de recevoir des messages.",
+    invitationUrl,
+    "",
+    "Si tu n'attendais pas cet email, tu peux l'ignorer."
+  ].join("\n");
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#102027">
+      <h1 style="font-size:20px">Creer ton compte GuildOps</h1>
+      <p>Bonjour,</p>
+      <p>${escapeHtml(input.inviterName)} t'a envoye un lien pour creer un compte GuildOps.</p>
+      <p>Ce compte permet ensuite d'etre retrouve dans GuildOps et de recevoir des messages.</p>
+      <p>
+        <a href="${escapeHtml(invitationUrl)}" style="display:inline-block;padding:10px 14px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:6px">
+          Creer mon compte
+        </a>
+      </p>
+      <p style="color:#64748b">Si tu n'attendais pas cet email, tu peux l'ignorer.</p>
+    </div>
+  `;
+
+  await sendMail({
+    html,
+    subject,
+    text,
+    to: input.email
+  });
+
+  return { invitationUrl };
 }
 
 async function sendMail(message: { html: string; subject: string; text: string; to: string }): Promise<void> {

@@ -36,7 +36,7 @@ export const getMeHandler = [
   requireAuth,
   asyncHandler(async (_req, res) => {
     const auth = getAuth(res);
-    res.json(await buildMePayload(database, auth.user.id, auth.sessionId));
+    res.json(withCsrfToken(await buildMePayload(database, auth.user.id, auth.sessionId), auth.csrfToken));
   })
 ];
 
@@ -66,7 +66,7 @@ meRouter.patch(
       await database.query(`UPDATE users SET ${updates.join(", ")} WHERE id = $1`, params);
     }
 
-    res.json(await buildMePayload(database, auth.user.id, auth.sessionId));
+    res.json(withCsrfToken(await buildMePayload(database, auth.user.id, auth.sessionId), auth.csrfToken));
   })
 );
 
@@ -121,6 +121,10 @@ meRouter.patch(
       activeGuildId: body.activeGuildId
     });
 
-    res.json(await buildMePayload(database, auth.user.id, auth.sessionId));
+    res.json(withCsrfToken(await buildMePayload(database, auth.user.id, auth.sessionId), auth.csrfToken));
   })
 );
+
+function withCsrfToken<T extends Record<string, unknown>>(payload: T, csrfToken: string | null): T & { csrfToken?: string } {
+  return csrfToken ? { ...payload, csrfToken } : payload;
+}

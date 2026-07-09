@@ -13,11 +13,18 @@ export const GUILD_MODULE_KEYS = [
   "multi_guilds"
 ] as const;
 
-export const DEFAULT_VISIBLE_GUILD_MODULE_KEYS = ["site", "membership_requests", "multi_guilds"] as const;
+export const DEFAULT_VISIBLE_GUILD_MODULE_KEYS = ["site", "membership_requests", "messages", "multi_guilds"] as const;
 export const GUILD_MODULE_STATUSES = ["enabled", "disabled"] as const;
 
 export type GuildModuleKey = (typeof GUILD_MODULE_KEYS)[number];
 export type GuildModuleStatus = (typeof GUILD_MODULE_STATUSES)[number];
+
+const GUILD_MODULE_DEPENDENCIES: Partial<Record<GuildModuleKey, readonly GuildModuleKey[]>> = {
+  membership_requests: ["site"],
+  forum: ["multi_guilds"],
+  messages: ["site"],
+  translation: ["messages"]
+};
 
 export type GuildModuleRow = {
   guild_id: string;
@@ -44,6 +51,18 @@ const GUILD_MODULE_STATUS_SET = new Set<string>(GUILD_MODULE_STATUSES);
 
 export function isGuildModuleKey(value: string): value is GuildModuleKey {
   return GUILD_MODULE_KEY_SET.has(value);
+}
+
+export function normalizeGuildModuleKeys(moduleKeys: readonly string[] = []): GuildModuleKey[] {
+  const enabledKeys = new Set<GuildModuleKey>(DEFAULT_VISIBLE_GUILD_MODULE_KEYS);
+
+  moduleKeys.forEach((moduleKey) => {
+    if (isGuildModuleKey(moduleKey)) {
+      collectGuildModuleKeys(moduleKey, enabledKeys);
+    }
+  });
+
+  return GUILD_MODULE_KEYS.filter((moduleKey) => enabledKeys.has(moduleKey));
 }
 
 export function normalizeGuildModuleRow(row: GuildModuleRow): GuildModuleResource | null {
@@ -101,15 +120,7 @@ export async function listActiveGuildModuleKeys(db: Queryable, guildId: string):
 }
 
 export function withDefaultGuildModuleKeys(moduleKeys: readonly string[] = []): GuildModuleKey[] {
-  const enabledKeys = new Set<GuildModuleKey>(DEFAULT_VISIBLE_GUILD_MODULE_KEYS);
-
-  moduleKeys.forEach((moduleKey) => {
-    if (isGuildModuleKey(moduleKey)) {
-      enabledKeys.add(moduleKey);
-    }
-  });
-
-  return GUILD_MODULE_KEYS.filter((moduleKey) => enabledKeys.has(moduleKey));
+  return normalizeGuildModuleKeys(moduleKeys);
 }
 
 export async function getActiveGuildModuleSet(db: Queryable, guildId: string): Promise<Set<GuildModuleKey>> {
@@ -152,6 +163,59 @@ export async function seedDefaultGuildModules(
   );
 }
 
+export async function syncGuildModules(
+  db: Queryable,
+  guildId: string,
+  moduleKeys: readonly string[],
+  enabledByUserId: string | null
+): Promise<GuildModuleKey[]> {
+  const enabledModuleKeys = normalizeGuildModuleKeys(moduleKeys);
+
+  await db.query(
+    `
+      INSERT INTO guild_modules (
+        guild_id,
+        module_key,
+        status,
+        config_json,
+        enabled_at,
+        disabled_at,
+        enabled_by
+      )
+      SELECT
+        $1,
+        module_key,
+        CASE WHEN module_key = ANY($3::text[]) THEN 'enabled' ELSE 'disabled' END,
+        '{}'::jsonb,
+        CASE WHEN module_key = ANY($3::text[]) THEN now() ELSE NULL END,
+        CASE WHEN module_key = ANY($3::text[]) THEN NULL ELSE now() END,
+        CASE WHEN module_key = ANY($3::text[]) THEN $2::uuid ELSE NULL END
+      FROM unnest($4::text[]) AS all_modules(module_key)
+      ON CONFLICT (guild_id, module_key) DO UPDATE
+      SET status = EXCLUDED.status,
+          enabled_at = CASE
+            WHEN EXCLUDED.status = 'enabled' AND guild_modules.status <> 'enabled' THEN now()
+            WHEN EXCLUDED.status = 'enabled' THEN COALESCE(guild_modules.enabled_at, now())
+            ELSE guild_modules.enabled_at
+          END,
+          disabled_at = CASE
+            WHEN EXCLUDED.status = 'disabled' AND guild_modules.status <> 'disabled' THEN now()
+            WHEN EXCLUDED.status = 'disabled' THEN COALESCE(guild_modules.disabled_at, now())
+            ELSE NULL
+          END,
+          enabled_by = CASE
+            WHEN EXCLUDED.status = 'enabled' AND guild_modules.status <> 'enabled' THEN EXCLUDED.enabled_by
+            WHEN EXCLUDED.status = 'enabled' THEN COALESCE(guild_modules.enabled_by, EXCLUDED.enabled_by)
+            ELSE guild_modules.enabled_by
+          END,
+          updated_at = now()
+    `,
+    [guildId, enabledByUserId, enabledModuleKeys, [...GUILD_MODULE_KEYS]]
+  );
+
+  return enabledModuleKeys;
+}
+
 export async function isGuildModuleActive(
   db: Queryable,
   guildId: string,
@@ -182,4 +246,14 @@ function normalizeGuildModuleStatus(status: string): GuildModuleStatus {
 function normalizeConfigJson(value: Record<string, unknown> | null): Record<string, unknown> {
   if (!value || Array.isArray(value) || typeof value !== "object") return {};
   return value;
+}
+
+function collectGuildModuleKeys(moduleKey: GuildModuleKey, enabledKeys: Set<GuildModuleKey>): void {
+  if (enabledKeys.has(moduleKey)) return;
+
+  for (const dependency of GUILD_MODULE_DEPENDENCIES[moduleKey] ?? []) {
+    collectGuildModuleKeys(dependency, enabledKeys);
+  }
+
+  enabledKeys.add(moduleKey);
 }

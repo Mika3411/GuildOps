@@ -3,19 +3,12 @@ import {
   useState
 } from "react";
 import {
-  coordinates,
-  diplomacyAuditLog,
-  diplomacyRows,
-  napAgreements
-} from "../data/guildOpsMockData.js";
-import {
   guildOpsApi
 } from "../lib/guildOpsApi.js";
 import {
   can
 } from "../lib/rbac.js";
 import {
-  createLocalDiplomacyAudit,
   getApiGuildId,
   normalizeDiplomacyAuditEntry,
   normalizeDiplomacyCoordinate,
@@ -23,22 +16,21 @@ import {
   normalizeNapAgreement,
   toApiDiplomacyCoordinate,
   toApiDiplomacyRelation,
-  toApiNapAgreement,
-  upsertById
+  toApiNapAgreement
 } from "../lib/guildOpsTransforms.js";
 
 export function useDiplomacyController({ apiEnabled, currentUser, selectedGuild, guildOpsData, moduleEnabled = true }) {
-  const [diplomacyRelations, setDiplomacyRelations] = useState(() => (moduleEnabled ? guildOpsData.diplomacyRows || diplomacyRows : []));
-  const [diplomacyNapAgreements, setDiplomacyNapAgreements] = useState(() => (moduleEnabled ? guildOpsData.napAgreements || napAgreements : []));
-  const [diplomacyCoordinates, setDiplomacyCoordinates] = useState(() => (moduleEnabled ? guildOpsData.coordinates || coordinates : []));
-  const [diplomacyAudit, setDiplomacyAudit] = useState(() => (moduleEnabled ? guildOpsData.diplomacyAuditLog || diplomacyAuditLog : []));
+  const [diplomacyRelations, setDiplomacyRelations] = useState(() => (moduleEnabled ? guildOpsData.diplomacyRows : []));
+  const [diplomacyNapAgreements, setDiplomacyNapAgreements] = useState(() => (moduleEnabled ? guildOpsData.napAgreements : []));
+  const [diplomacyCoordinates, setDiplomacyCoordinates] = useState(() => (moduleEnabled ? guildOpsData.coordinates : []));
+  const [diplomacyAudit, setDiplomacyAudit] = useState(() => (moduleEnabled ? guildOpsData.diplomacyAuditLog : []));
   const [diplomacyError, setDiplomacyError] = useState("");
 
   useEffect(() => {
-    setDiplomacyRelations(moduleEnabled ? guildOpsData.diplomacyRows || diplomacyRows : []);
-    setDiplomacyNapAgreements(moduleEnabled ? guildOpsData.napAgreements || napAgreements : []);
-    setDiplomacyCoordinates(moduleEnabled ? guildOpsData.coordinates || coordinates : []);
-    setDiplomacyAudit(moduleEnabled ? guildOpsData.diplomacyAuditLog || diplomacyAuditLog : []);
+    setDiplomacyRelations(moduleEnabled ? guildOpsData.diplomacyRows : []);
+    setDiplomacyNapAgreements(moduleEnabled ? guildOpsData.napAgreements : []);
+    setDiplomacyCoordinates(moduleEnabled ? guildOpsData.coordinates : []);
+    setDiplomacyAudit(moduleEnabled ? guildOpsData.diplomacyAuditLog : []);
   }, [guildOpsData, moduleEnabled]);
 
   useEffect(() => {
@@ -73,6 +65,12 @@ export function useDiplomacyController({ apiEnabled, currentUser, selectedGuild,
   async function saveDiplomacyRelation(relation) {
     if (!moduleEnabled) return;
     if (!can(currentUser, "manage_diplomacy")) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setDiplomacyError("API requise pour enregistrer une relation.");
+      return;
+    }
 
     const normalized = normalizeDiplomacyRelation({
       ...relation,
@@ -84,26 +82,24 @@ export function useDiplomacyController({ apiEnabled, currentUser, selectedGuild,
     });
 
     setDiplomacyError("");
-    setDiplomacyRelations((current) => upsertById(current, normalized));
-    setDiplomacyAudit((current) => [
-      createLocalDiplomacyAudit("diplomacy.relation.updated", "diplomacy_entries", normalized.id, normalized, currentUser),
-      ...current,
-    ]);
-
-    const guildId = getApiGuildId(selectedGuild);
-    if (!apiEnabled || !guildId) return;
 
     try {
       const payload = await guildOpsApi.saveDiplomacyRelation(guildId, toApiDiplomacyRelation(normalized));
       applyDiplomacySnapshot(payload);
     } catch (error) {
-      setDiplomacyError(error?.message || "Relation enregistree ici, mais pas encore partagee.");
+      setDiplomacyError(error?.message || "Relation non enregistrée.");
     }
   }
 
   async function saveNapAgreement(agreement) {
     if (!moduleEnabled) return;
     if (!can(currentUser, "manage_diplomacy")) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setDiplomacyError("API requise pour enregistrer un accord NAP.");
+      return;
+    }
 
     const normalized = normalizeNapAgreement({
       ...agreement,
@@ -114,26 +110,24 @@ export function useDiplomacyController({ apiEnabled, currentUser, selectedGuild,
     });
 
     setDiplomacyError("");
-    setDiplomacyNapAgreements((current) => upsertById(current, normalized));
-    setDiplomacyAudit((current) => [
-      createLocalDiplomacyAudit("diplomacy.nap.updated", "nap_agreements", normalized.id, normalized, currentUser),
-      ...current,
-    ]);
-
-    const guildId = getApiGuildId(selectedGuild);
-    if (!apiEnabled || !guildId) return;
 
     try {
       const payload = await guildOpsApi.saveNapAgreement(guildId, toApiNapAgreement(normalized));
       applyDiplomacySnapshot(payload);
     } catch (error) {
-      setDiplomacyError(error?.message || "Accord NAP enregistre ici, mais pas encore partage.");
+      setDiplomacyError(error?.message || "Accord NAP non enregistré.");
     }
   }
 
   async function saveDiplomacyCoordinate(coordinate) {
     if (!moduleEnabled) return;
     if (!can(currentUser, "manage_diplomacy")) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setDiplomacyError("API requise pour enregistrer une coordonnée.");
+      return;
+    }
 
     const normalized = normalizeDiplomacyCoordinate({
       ...coordinate,
@@ -144,20 +138,12 @@ export function useDiplomacyController({ apiEnabled, currentUser, selectedGuild,
     });
 
     setDiplomacyError("");
-    setDiplomacyCoordinates((current) => upsertById(current, normalized));
-    setDiplomacyAudit((current) => [
-      createLocalDiplomacyAudit("diplomacy.coordinate.updated", "coordinates", normalized.id, normalized, currentUser),
-      ...current,
-    ]);
-
-    const guildId = getApiGuildId(selectedGuild);
-    if (!apiEnabled || !guildId) return;
 
     try {
       const payload = await guildOpsApi.saveCoordinate(guildId, toApiDiplomacyCoordinate(normalized));
       applyDiplomacySnapshot(payload);
     } catch (error) {
-      setDiplomacyError(error?.message || "Coordonnee enregistree ici, mais pas encore partagee.");
+      setDiplomacyError(error?.message || "Coordonnée non enregistrée.");
     }
   }
 

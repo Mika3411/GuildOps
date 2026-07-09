@@ -19,6 +19,7 @@ import {
   Info,
   LayoutDashboard,
   Lock,
+  Mail,
   MessageSquare,
   Palette,
   RefreshCw,
@@ -97,18 +98,29 @@ import {
 } from "../../lib/guildOpsTransforms.js";
 import {
   BankMini,
+  BankView,
   PublicBankModule
 } from "../bank/BankViews.jsx";
 import {
   DiplomacyMini,
+  DiplomacyView,
   PublicDiplomacyModule
 } from "../diplomacy/DiplomacyViews.jsx";
+import {
+  ForumView
+} from "../forum/ForumViews.jsx";
+import {
+  MembershipRequestsView
+} from "../layout/admin/AdminViews.jsx";
 import {
   Avatar,
   PanelHeader,
   RolePill,
   TranslationPanel
 } from "../shared/Shared.jsx";
+import {
+  EventComposer
+} from "../wars/WarsViews.jsx";
 
 const SITE_BUILDER_HELP = Object.freeze({
   config: "Parametres de base du site de guilde.",
@@ -117,7 +129,7 @@ const SITE_BUILDER_HELP = Object.freeze({
   realm: "Serveur, royaume ou monde de la guilde.",
   tagline: "Phrase courte sous le nom de guilde, lisible des l'arrivee.",
   objective: "Message principal de la page de guilde : coordination, wars, consignes ou organisation.",
-  memberInviteUrl: "Lien GuildOps genere automatiquement pour rejoindre la guilde comme membre.",
+  memberInviteUrl: "Lien GuildOps genere automatiquement pour inviter un membre a s'inscrire.",
   objectiveTags: "Badges rapides qui resument le style de guilde.",
   style: "Regle l'apparence de la page de guilde.",
   design: "Change la structure UI sans modifier les fonctions ni le contenu.",
@@ -209,12 +221,32 @@ const COMMAND_ROLE_FALLBACK = Object.freeze({
 
 const SITE_SECTION_MODULE_IDS = Object.freeze({
   roster: "multi_guilds",
+  membership: "membership_requests",
   wars: "wars_events",
   bank: "bank",
   diplomacy: "diplomacy",
   forum: "forum",
   publicChat: "messages",
 });
+
+const MODULE_FORCED_SITE_SECTION_IDS = Object.freeze({
+  membership: "membership_requests",
+  wars: "wars_events",
+  bank: "bank",
+  diplomacy: "diplomacy",
+  forum: "forum",
+});
+
+function getPublicVisibleSiteSections(siteDraft = {}, enabledModuleIds = []) {
+  const enabledSet = new Set([...(enabledModuleIds || []), ...(siteDraft.enabledModules || [])]);
+  const sections = { ...(siteDraft.sections || {}) };
+
+  Object.entries(MODULE_FORCED_SITE_SECTION_IDS).forEach(([sectionKey, moduleId]) => {
+    sections[sectionKey] = isGuildOpsModuleEnabled(moduleId, enabledSet);
+  });
+
+  return getVisibleSiteSections(sections);
+}
 
 function getSiteSectionIcon(sectionKey) {
   return guildOpsModuleById[SITE_SECTION_MODULE_IDS[sectionKey]]?.icon || LayoutDashboard;
@@ -512,7 +544,8 @@ function getPublicMemberProfileInitials(name) {
 function getPublicWarsData(siteDraft = {}, fallbackSummary = {}) {
   const snapshot = siteDraft.publicEvents || {};
   const snapshotEvents = Array.isArray(snapshot.events) ? snapshot.events : [];
-  const nextEvent = fallbackSummary.nextEvent || snapshot.nextEvent || snapshotEvents[0] || null;
+  const fallbackEvents = Array.isArray(fallbackSummary.events) ? fallbackSummary.events : [];
+  const nextEvent = fallbackSummary.nextEvent || fallbackEvents[0] || snapshot.nextEvent || snapshotEvents[0] || null;
   const weeklyObjectives =
     fallbackSummary.weeklyObjectives ||
     snapshot.weeklyObjectives || {
@@ -524,7 +557,7 @@ function getPublicWarsData(siteDraft = {}, fallbackSummary = {}) {
 
   return {
     nextEvent,
-    events: dedupePublicEvents([nextEvent, ...snapshotEvents]),
+    events: dedupePublicEvents([nextEvent, ...fallbackEvents, ...snapshotEvents]),
     weeklyObjectives: {
       ...weeklyObjectives,
       objectives: Array.isArray(weeklyObjectives.objectives) ? weeklyObjectives.objectives : [],
@@ -607,6 +640,85 @@ function getPublicMemberName(member = {}) {
   return String(member.name || member.nickname || member.displayName || member.memberName || "").trim();
 }
 
+function normalizePublicIdentity(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getPublicMemberIdentityValues(member = {}) {
+  return [
+    member.id,
+    member.publicId,
+    member.userId,
+    member.user_id,
+    member.accountId,
+    member.account_id,
+    member.user?.id,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value));
+}
+
+function isActivePublicMemberStatus(value) {
+  const status = normalizePublicIdentity(value);
+  return !["banned", "blocked", "refused", "rejected", "inactive"].includes(status);
+}
+
+function isCurrentUserListedAsPublicMember(currentUser = {}, members = []) {
+  const userId = String(currentUser.id || currentUser.userId || "").trim();
+  const localUserId = userId ? `local-${userId}` : "";
+  const userEmail = normalizePublicIdentity(currentUser.email);
+  const userDisplayName = normalizePublicIdentity(currentUser.displayName || currentUser.nickname);
+
+  if (!userId && !userEmail && !userDisplayName) return false;
+
+  return members.some((member) => {
+    if (!isActivePublicMemberStatus(member.status)) return false;
+
+    const memberIds = getPublicMemberIdentityValues(member);
+    if (userId && memberIds.some((id) => id === userId || id === localUserId)) return true;
+
+    const memberEmail = normalizePublicIdentity(member.email || member.user?.email);
+    if (userEmail && memberEmail === userEmail) return true;
+
+    const memberName = normalizePublicIdentity(getPublicMemberName(member));
+    return Boolean(userDisplayName && memberName && memberName === userDisplayName);
+  });
+}
+
+function isCurrentUserInPublicGuild(currentUser = {}, guilds = [], publicSlug = "", siteDraft = {}) {
+  if (!currentUser.id && !currentUser.email && !currentUser.displayName) return false;
+
+  const normalizedPublicSlug = slugify(publicSlug || siteDraft.slug || siteDraft.publicSlug || siteDraft.guildName);
+  if (!normalizedPublicSlug) return false;
+
+  return guilds.some((guild) => {
+    const status = normalizePublicIdentity(guild.status || guild.membershipStatus);
+    if (["banned", "blocked", "refused", "rejected"].includes(status)) return false;
+
+    const guildSlugs = [
+      guild.slug,
+      guild.publicSlug,
+      guild.public_slug,
+      guild.guildSlug,
+      guild.guild_slug,
+      guild.siteSlug,
+      guild.site_slug,
+      guild.name,
+    ]
+      .filter(Boolean)
+      .map((value) => slugify(value));
+
+    return guildSlugs.includes(normalizedPublicSlug);
+  });
+}
+
+function isCurrentPublicGuildMember({ currentUser = {}, guilds = [], members = [], publicSlug = "", siteDraft = {} } = {}) {
+  return (
+    isCurrentUserListedAsPublicMember(currentUser, members) ||
+    isCurrentUserInPublicGuild(currentUser, guilds, publicSlug, siteDraft)
+  );
+}
+
 function getPublicMemberRoles(member = {}) {
   const roleValues = [
     member.role,
@@ -686,10 +798,16 @@ function getUniqueSorted(values = []) {
 
 export function PublicGuildRoute({
   acknowledgeSos,
+  createEvent,
+  creatingEvent = false,
   currentUser,
   enabledModuleIds,
+  eventCreateError = "",
+  events = [],
   fallbackSite,
+  memberGuilds = [],
   members = [],
+  moduleManagementProps = {},
   onBackToBuilder,
   onNavigatePublicRoute,
   publicDiplomacy,
@@ -702,6 +820,8 @@ export function PublicGuildRoute({
   sosError,
   sosForm,
   sosRealtimeStatus,
+  unreadMessages = 0,
+  warSummary,
 }) {
   const fallbackSiteSlug = slugify(fallbackSite?.slug || fallbackSite?.publicSlug || fallbackSite?.guildName || "");
   const fallbackMembers = !isApiConfigured() && fallbackSiteSlug === slug ? members : [];
@@ -786,11 +906,17 @@ export function PublicGuildRoute({
   return (
     <PublicGuildSite
       acknowledgeSos={acknowledgeSos}
+      createEvent={createEvent}
+      creatingEvent={creatingEvent}
       currentUser={currentUser}
       enabledModuleIds={enabledModuleIds}
+      eventCreateError={eventCreateError}
+      events={events}
       fallbackMembers={fallbackMembers}
       fallbackPublicDiplomacy={fallbackPublicDiplomacy}
       fallbackPublicForum={fallbackPublicForum}
+      memberGuilds={memberGuilds}
+      moduleManagementProps={moduleManagementProps}
       onNavigatePublicRoute={onNavigatePublicRoute}
       onBackToBuilder={onBackToBuilder}
       routeSegment={routeSegment}
@@ -802,17 +928,25 @@ export function PublicGuildRoute({
       sosError={sosError}
       sosForm={sosForm}
       sosRealtimeStatus={sosRealtimeStatus}
+      unreadMessages={unreadMessages}
+      warSummary={warSummary}
     />
   );
 }
 
 export function PublicGuildSite({
   acknowledgeSos,
+  createEvent,
+  creatingEvent = false,
   currentUser,
   enabledModuleIds = [],
+  eventCreateError = "",
+  events = [],
   fallbackMembers = [],
   fallbackPublicDiplomacy,
   fallbackPublicForum,
+  memberGuilds = [],
+  moduleManagementProps = {},
   onBackToBuilder,
   onNavigatePublicRoute,
   routeSegment = "",
@@ -823,17 +957,19 @@ export function PublicGuildSite({
   sosAlerts = [],
   sosError = "",
   sosForm = {},
-  sosRealtimeStatus = "Mode aperçu",
+  sosRealtimeStatus = "API requise",
+  unreadMessages = 0,
+  warSummary,
 }) {
   const siteDraft = createGuildSiteDraft({}, site);
   const color = getColorOption(siteDraft.colors);
   const theme = getThemeOption(siteDraft.theme);
   const design = getDesignOption(siteDraft.design);
   const typography = getTypographyOption(siteDraft.typography);
-  const visibleSections = getVisibleSiteSections(siteDraft.sections);
-  const visibleContentSections = visibleSections.filter((section) => section.key !== "publicChat");
   const publicSlug = slugify(slug || siteDraft.slug || siteDraft.guildName);
   const publicEnabledModuleIds = [...new Set([...(enabledModuleIds || []), ...(siteDraft.enabledModules || [])])];
+  const visibleSections = getPublicVisibleSiteSections(siteDraft, publicEnabledModuleIds);
+  const visibleContentSections = visibleSections.filter((section) => section.key !== "publicChat");
   const showPublicSosPanel = isGuildOpsModuleEnabled("sos_attack", publicEnabledModuleIds);
   const sosPath = getPublicSiteRoutePath(publicSlug, "sos");
   const isSosRoute = routeSegment === "sos";
@@ -843,9 +979,19 @@ export function PublicGuildSite({
   const galleryPath = "/guildes";
   const chatPath = getPublicSiteRoutePath(publicSlug, "publicChat");
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
+  const appMessagesPath = "/app/messages";
   const memberRequestUrl = getMemberRequestHref(publicSlug);
   const rawPublicMembers = Array.isArray(site?.members) && site.members.length ? site.members : fallbackMembers;
   const publicMembers = useMemo(() => normalizePublicTeamMembers(rawPublicMembers), [rawPublicMembers]);
+  const isCurrentMember = isCurrentPublicGuildMember({
+    currentUser,
+    guilds: memberGuilds,
+    members: rawPublicMembers,
+    publicSlug,
+    siteDraft,
+  });
+  const canUsePublicSos = showPublicSosPanel && isCurrentMember;
+  const unreadMessageCount = Math.max(0, Number(unreadMessages) || 0);
   const publicDiplomacy = site?.publicDiplomacy || site?.public_diplomacy || fallbackPublicDiplomacy;
   const publicForum = site?.publicForum || site?.public_forum || siteDraft.publicForum || fallbackPublicForum;
   const pageStyle = {
@@ -899,7 +1045,7 @@ export function PublicGuildSite({
           })}
         </nav>
         <div className="public-site-actions">
-          {showPublicSosPanel ? (
+          {canUsePublicSos ? (
             <a
               className="public-site-sos-action"
               href={sosPath}
@@ -907,6 +1053,18 @@ export function PublicGuildSite({
             >
               <AlertTriangle size={16} aria-hidden="true" />
               SOS
+            </a>
+          ) : null}
+          {isCurrentMember ? (
+            <a
+              aria-label={`Messagerie membre, ${unreadMessageCount} message${unreadMessageCount > 1 ? "s" : ""} non lu${unreadMessageCount > 1 ? "s" : ""}`}
+              className="public-site-message-action"
+              href={appMessagesPath}
+              onClick={(event) => navigatePublicSite(event, appMessagesPath, onNavigatePublicRoute)}
+            >
+              <Mail size={16} aria-hidden="true" />
+              <span className="public-site-message-label">Messagerie</span>
+              {unreadMessageCount ? <i>{unreadMessageCount}</i> : null}
             </a>
           ) : null}
           <a
@@ -917,13 +1075,15 @@ export function PublicGuildSite({
             <Globe2 size={16} aria-hidden="true" />
             Galerie
           </a>
-          <a
-            className="public-site-invite-action"
-            href={memberRequestUrl}
-            onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}
-          >
-            Devenir membre
-          </a>
+          {!isCurrentMember ? (
+            <a
+              className="public-site-invite-action"
+              href={memberRequestUrl}
+              onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}
+            >
+              Devenir membre
+            </a>
+          ) : null}
           <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
             Espace membre
           </a>
@@ -932,19 +1092,23 @@ export function PublicGuildSite({
       {!routeSegment ? (
         <PublicSiteHome
           acknowledgeSos={acknowledgeSos}
+          appMessagesPath={appMessagesPath}
           currentUser={currentUser}
+          isCurrentMember={isCurrentMember}
           members={publicMembers}
+          moduleManagementProps={moduleManagementProps}
           onNavigatePublicRoute={onNavigatePublicRoute}
           publicSlug={publicSlug}
           sendSos={sendSos}
           setSosForm={setSosForm}
-          showPublicSosPanel={showPublicSosPanel}
+          showPublicSosPanel={canUsePublicSos}
           siteDraft={siteDraft}
           sosAlerts={sosAlerts}
           sosError={sosError}
           sosForm={sosForm}
           sosRealtimeStatus={sosRealtimeStatus}
           theme={theme}
+          unreadMessages={unreadMessageCount}
           visibleSections={visibleContentSections}
         />
       ) : isMemberSpaceRoute ? (
@@ -954,7 +1118,7 @@ export function PublicGuildSite({
           publicSlug={publicSlug}
           siteDraft={siteDraft}
         />
-      ) : isSosRoute && showPublicSosPanel ? (
+      ) : isSosRoute && canUsePublicSos ? (
         <PublicSosModule
           acknowledgeSos={acknowledgeSos}
           currentUser={currentUser}
@@ -971,13 +1135,20 @@ export function PublicGuildSite({
       ) : activeSection ? (
         <PublicSiteModuleRoute
           activeSection={activeSection}
+          createEvent={createEvent}
+          creatingEvent={creatingEvent}
+          currentUser={currentUser}
+          eventCreateError={eventCreateError}
+          events={events}
           homePath={homePath}
+          isCurrentMember={isCurrentMember}
           members={publicMembers}
           onNavigatePublicRoute={onNavigatePublicRoute}
           publicDiplomacy={publicDiplomacy}
           publicForum={publicForum}
           publicSlug={publicSlug}
           siteDraft={siteDraft}
+          warSummary={warSummary}
         />
       ) : (
         <PublicSiteMissingModule homePath={homePath} onNavigatePublicRoute={onNavigatePublicRoute} />
@@ -988,7 +1159,9 @@ export function PublicGuildSite({
 
 function PublicSiteHome({
   acknowledgeSos,
+  appMessagesPath = "/app/messages",
   currentUser,
+  isCurrentMember = false,
   members = [],
   onNavigatePublicRoute,
   publicSlug,
@@ -999,8 +1172,9 @@ function PublicSiteHome({
   sosAlerts = [],
   sosError = "",
   sosForm = {},
-  sosRealtimeStatus = "Mode aperçu",
+  sosRealtimeStatus = "API requise",
   theme,
+  unreadMessages = 0,
   visibleSections
 }) {
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
@@ -1021,10 +1195,22 @@ function PublicSiteHome({
             {siteDraft.game} · {siteDraft.realm} · {siteDraft.objectiveTag}
           </em>
           <div className="preview-actions">
-            <a href={memberRequestUrl} onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}>
-              Devenir membre
-              <UserPlus size={17} />
-            </a>
+            {isCurrentMember ? (
+              <a
+                className="public-site-message-action public-site-hero-message-action"
+                href={appMessagesPath}
+                onClick={(event) => navigatePublicSite(event, appMessagesPath, onNavigatePublicRoute)}
+              >
+                Messagerie
+                <Mail size={17} />
+                {unreadMessages ? <i>{unreadMessages}</i> : null}
+              </a>
+            ) : (
+              <a href={memberRequestUrl} onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}>
+                Devenir membre
+                <UserPlus size={17} />
+              </a>
+            )}
             {siteDraft.sections.roster ? (
               <a href={teamPath} onClick={(event) => navigatePublicSite(event, teamPath, onNavigatePublicRoute)}>
                 Voir l'équipe
@@ -1081,7 +1267,7 @@ function PublicSosModule({
   sosAlerts = [],
   sosError = "",
   sosForm = {},
-  sosRealtimeStatus = "Mode aperçu",
+  sosRealtimeStatus = "API requise",
 }) {
   return (
     <section className={`public-sos-page ${showBackLink ? "is-route" : "is-home"}`} id="public-sos" tabIndex={-1}>
@@ -1108,13 +1294,21 @@ function PublicSosModule({
 
 function PublicSiteModuleRoute({
   activeSection,
+  createEvent,
+  creatingEvent = false,
+  currentUser,
+  eventCreateError = "",
+  events = [],
   homePath,
+  isCurrentMember = false,
   members = [],
+  moduleManagementProps = {},
   onNavigatePublicRoute,
   publicDiplomacy,
   publicForum,
   publicSlug,
   siteDraft,
+  warSummary,
 }) {
   const chatPath = getPublicSiteRoutePath(publicSlug, "publicChat");
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
@@ -1135,6 +1329,27 @@ function PublicSiteModuleRoute({
   if (activeSection.key === "wars") {
     return (
       <PublicWarsModule
+        createEvent={createEvent}
+        creatingEvent={creatingEvent}
+        currentUser={currentUser}
+        eventCreateError={eventCreateError}
+        events={events}
+        isCurrentMember={isCurrentMember}
+        onNavigatePublicRoute={onNavigatePublicRoute}
+        publicSlug={publicSlug}
+        siteDraft={siteDraft}
+        warSummary={warSummary}
+      />
+    );
+  }
+
+  if (activeSection.key === "membership") {
+    return (
+      <PublicMembershipModule
+        currentUser={currentUser}
+        homePath={homePath}
+        isCurrentMember={isCurrentMember}
+        membershipProps={moduleManagementProps.membership}
         onNavigatePublicRoute={onNavigatePublicRoute}
         publicSlug={publicSlug}
         siteDraft={siteDraft}
@@ -1144,7 +1359,10 @@ function PublicSiteModuleRoute({
 
   if (activeSection.key === "bank") {
     return (
-      <PublicBankModule
+      <PublicBankRoute
+        bankProps={moduleManagementProps.bank}
+        currentUser={currentUser}
+        isCurrentMember={isCurrentMember}
         onNavigatePublicRoute={onNavigatePublicRoute}
         publicSlug={publicSlug}
         siteDraft={siteDraft}
@@ -1154,7 +1372,10 @@ function PublicSiteModuleRoute({
 
   if (activeSection.key === "diplomacy") {
     return (
-      <PublicDiplomacyModule
+      <PublicDiplomacyRoute
+        currentUser={currentUser}
+        diplomacyProps={moduleManagementProps.diplomacy}
+        isCurrentMember={isCurrentMember}
         onNavigatePublicRoute={onNavigatePublicRoute}
         publicDiplomacy={publicDiplomacy}
         publicSlug={publicSlug}
@@ -1165,8 +1386,11 @@ function PublicSiteModuleRoute({
 
   if (activeSection.key === "forum") {
     return (
-      <PublicForumModule
+      <PublicForumRoute
+        currentUser={currentUser}
+        forumProps={moduleManagementProps.forum}
         homePath={homePath}
+        isCurrentMember={isCurrentMember}
         memberSpacePath={memberSpacePath}
         onNavigatePublicRoute={onNavigatePublicRoute}
         publicForum={publicForum}
@@ -1197,8 +1421,20 @@ function PublicSiteModuleRoute({
   );
 }
 
-function PublicWarsModule({ onNavigatePublicRoute, publicSlug, siteDraft }) {
-  const wars = getPublicWarsData(siteDraft);
+function PublicWarsModule({
+  createEvent,
+  creatingEvent = false,
+  currentUser,
+  eventCreateError = "",
+  events = [],
+  isCurrentMember = false,
+  onNavigatePublicRoute,
+  publicSlug,
+  siteDraft,
+  warSummary,
+}) {
+  const canManageEvents = isCurrentMember && can(currentUser, "manage_events");
+  const wars = getPublicWarsData(siteDraft, { ...(warSummary || {}), events });
   const nextEvent = wars.nextEvent;
   const upcomingEvents = wars.events;
   const weeklyObjectives = wars.weeklyObjectives;
@@ -1207,24 +1443,38 @@ function PublicWarsModule({ onNavigatePublicRoute, publicSlug, siteDraft }) {
   const objectiveProgress = Math.round((weeklyObjectives.completionRate || (objectiveTotal ? objectiveDone / objectiveTotal : 0)) * 100);
   const hasPublicData = Boolean(nextEvent || upcomingEvents.length || objectiveTotal);
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
+  const managerPanel = canManageEvents ? (
+    <div className="public-wars-manager">
+      <EventComposer
+        creating={creatingEvent}
+        currentUser={currentUser}
+        error={eventCreateError}
+        onCreate={createEvent}
+      />
+    </div>
+  ) : null;
 
   if (!hasPublicData) {
     return (
-      <section className="public-empty public-route-empty public-wars-empty" id={getPublicSiteSectionId("wars")} tabIndex={-1}>
-        <CalendarDays size={42} />
-        <h1>Aucun war annoncé</h1>
-        <p>Cette guilde n'a pas encore publié d'event ou d'objectif hebdo.</p>
-        {siteDraft.sections.publicChat ? (
-          <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
-            Espace membre
-          </a>
-        ) : null}
+      <section className="public-wars-page" id={getPublicSiteSectionId("wars")} tabIndex={-1}>
+        {managerPanel}
+        <article className="public-empty public-route-empty public-wars-empty">
+          <CalendarDays size={42} />
+          <h1>Aucun war annoncé</h1>
+          <p>Cette guilde n'a pas encore publié d'event ou d'objectif hebdo.</p>
+          {siteDraft.sections.publicChat ? (
+            <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
+              Espace membre
+            </a>
+          ) : null}
+        </article>
       </section>
     );
   }
 
   return (
     <section className="public-wars-page" id={getPublicSiteSectionId("wars")} tabIndex={-1}>
+      {managerPanel}
       <article className="public-wars-feature">
         <header>
           <div>
@@ -1324,6 +1574,224 @@ function PublicWarsModule({ onNavigatePublicRoute, publicSlug, siteDraft }) {
         </article>
       </div>
     </section>
+  );
+}
+
+function PublicModuleManager({ children, icon: Icon = Shield, meta, title }) {
+  return (
+    <section className="public-module-manager">
+      <header className="public-module-manager-header">
+        <span>
+          <Icon size={18} aria-hidden="true" />
+          <strong>{title}</strong>
+        </span>
+        {meta ? <em>{meta}</em> : null}
+      </header>
+      {children}
+    </section>
+  );
+}
+
+function PublicMembershipModule({
+  currentUser,
+  homePath,
+  isCurrentMember = false,
+  membershipProps = {},
+  onNavigatePublicRoute,
+  publicSlug,
+  siteDraft,
+}) {
+  const canManageMembership = isCurrentMember && can(currentUser, "approve_members");
+  const memberRequestUrl = getMemberRequestHref(publicSlug || siteDraft.slug || siteDraft.guildName);
+  const memberSpacePath = getPublicMemberSpacePath(publicSlug || siteDraft.slug || siteDraft.guildName);
+  const membershipManager = canManageMembership ? (
+    <PublicModuleManager icon={UserPlus} title="Gestion des adhésions" meta="Membres autorisés">
+      <MembershipRequestsView
+        {...membershipProps}
+        currentUser={currentUser}
+        selectedGuild={membershipProps.selectedGuild || { name: siteDraft.guildName, game: siteDraft.game, realm: siteDraft.realm }}
+        siteDraft={siteDraft}
+      />
+    </PublicModuleManager>
+  ) : null;
+
+  return (
+    <section className="public-membership-page" id={getPublicSiteSectionId("membership")} tabIndex={-1}>
+      {membershipManager}
+      <div className="public-membership-hero">
+        <span className="theme-kicker">Adhésions</span>
+        <h1>Accès membres</h1>
+        <p>
+          {siteDraft.guildName} centralise ici les demandes d'accès et les liens utiles. Les validations restent réservées
+          aux membres autorisés.
+        </p>
+        <div className="public-membership-actions">
+          <a href={homePath} onClick={(event) => navigatePublicSite(event, homePath, onNavigatePublicRoute)}>
+            Retour accueil
+          </a>
+          {isCurrentMember ? (
+            <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
+              Espace membre
+            </a>
+          ) : (
+            <a href={memberRequestUrl} onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}>
+              Devenir membre
+            </a>
+          )}
+        </div>
+      </div>
+      <div className="public-membership-result">
+        <article>
+          <UserPlus size={24} aria-hidden="true" />
+          <span>
+            <strong>{isCurrentMember ? "Accès membre actif" : "Demande d'accès"}</strong>
+            <small>
+              {isCurrentMember
+                ? "Votre espace membre reste disponible depuis ce site."
+                : "Les nouveaux joueurs passent par une demande avant activation."}
+            </small>
+          </span>
+        </article>
+        <article>
+          <Shield size={24} aria-hidden="true" />
+          <span>
+            <strong>Validation contrôlée</strong>
+            <small>Les demandes, refus et blocages ne sont visibles que par les rôles autorisés.</small>
+          </span>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+function PublicBankRoute({ bankProps = {}, currentUser, isCurrentMember = false, onNavigatePublicRoute, publicSlug, siteDraft }) {
+  const canManageBank = isCurrentMember && can(currentUser, "manage_bank");
+  const safeBankProps = {
+    addBankMovement: () => {},
+    bankCommand: "!banque",
+    bankError: "",
+    bankMovements: [],
+    bankRequests: [],
+    bankStock: [],
+    createBankRequest: () => {},
+    setBankCommand: () => {},
+    updateBankRequestStatus: () => {},
+    ...bankProps,
+    currentUser,
+  };
+
+  return (
+    <>
+      {canManageBank ? (
+        <PublicModuleManager icon={Banknote} title="Gestion banque" meta="Membres autorisés">
+          <BankView {...safeBankProps} />
+        </PublicModuleManager>
+      ) : null}
+      <PublicBankModule onNavigatePublicRoute={onNavigatePublicRoute} publicSlug={publicSlug} siteDraft={siteDraft} />
+    </>
+  );
+}
+
+function PublicDiplomacyRoute({
+  currentUser,
+  diplomacyProps = {},
+  isCurrentMember = false,
+  onNavigatePublicRoute,
+  publicDiplomacy,
+  publicSlug,
+  siteDraft,
+}) {
+  const canManageDiplomacy = isCurrentMember && can(currentUser, "manage_diplomacy");
+  const safeDiplomacyProps = {
+    diplomacyAudit: [],
+    diplomacyCoordinates: [],
+    diplomacyError: "",
+    diplomacyNapAgreements: [],
+    diplomacyRelations: [],
+    saveDiplomacyCoordinate: () => {},
+    saveDiplomacyRelation: () => {},
+    saveNapAgreement: () => {},
+    ...diplomacyProps,
+    currentUser,
+  };
+
+  return (
+    <>
+      {canManageDiplomacy ? (
+        <PublicModuleManager icon={Handshake} title="Gestion diplomatie" meta="Membres autorisés">
+          <DiplomacyView {...safeDiplomacyProps} />
+        </PublicModuleManager>
+      ) : null}
+      <PublicDiplomacyModule
+        onNavigatePublicRoute={onNavigatePublicRoute}
+        publicDiplomacy={publicDiplomacy}
+        publicSlug={publicSlug}
+        siteDraft={siteDraft}
+      />
+    </>
+  );
+}
+
+function PublicForumRoute({
+  currentUser,
+  forumProps = {},
+  homePath,
+  isCurrentMember = false,
+  memberSpacePath,
+  onNavigatePublicRoute,
+  publicForum,
+  publicSlug,
+  siteDraft,
+}) {
+  const canManageForum = isCurrentMember && (forumProps.forumCanManage || can(currentUser, "moderate_forum"));
+  const safeForumProps = {
+    activeForumCategoryId: "",
+    activeForumThread: null,
+    forumCategories: [],
+    forumCategoryDraft: { description: "", name: "", visibility: "members" },
+    forumCounters: {},
+    forumEditingPostId: "",
+    forumError: "",
+    forumLoading: false,
+    forumPostPagination: {},
+    forumPosts: [],
+    forumReplyDraft: "",
+    forumRoles: [],
+    forumThreadDraft: { body: "", categoryId: "", title: "" },
+    forumThreadPagination: {},
+    forumThreads: [],
+    onCreateForumThread: () => {},
+    onDeleteForumPost: () => {},
+    onEditForumPost: () => {},
+    onSaveForumCategory: () => {},
+    onSaveForumCategoryPermissions: () => {},
+    onSelectForumCategory: () => {},
+    onSelectForumThread: () => {},
+    onSendForumReply: () => {},
+    onUpdateForumThreadFlags: () => {},
+    setForumCategoryDraft: () => {},
+    setForumReplyDraft: () => {},
+    setForumThreadDraft: () => {},
+    ...forumProps,
+    forumCanManage: canManageForum,
+  };
+
+  return (
+    <>
+      {canManageForum ? (
+        <PublicModuleManager icon={MessageSquare} title="Gestion forum" meta="Membres autorisés">
+          <ForumView {...safeForumProps} />
+        </PublicModuleManager>
+      ) : null}
+      <PublicForumModule
+        homePath={homePath}
+        memberSpacePath={memberSpacePath}
+        onNavigatePublicRoute={onNavigatePublicRoute}
+        publicForum={publicForum}
+        publicSlug={publicSlug}
+        siteDraft={siteDraft}
+      />
+    </>
   );
 }
 
@@ -2042,7 +2510,7 @@ export function PublicSiteGuestChat({ memberProfile, siteDraft }) {
       <PanelHeader
         icon={MessageSquare}
         title="Chat invite"
-        meta={cooldownRemaining > 0 ? `Pause ${cooldownRemaining}s` : isApiConfigured() ? PUBLIC_CHAT_LIMIT_LABEL : "Mode aperçu"}
+        meta={cooldownRemaining > 0 ? `Pause ${cooldownRemaining}s` : isApiConfigured() ? PUBLIC_CHAT_LIMIT_LABEL : "API requise"}
       />
       <div className="chat-feed public-chat-feed">
         {recentMessages.length ? (
@@ -2165,6 +2633,7 @@ export function CommandCenter(props) {
           onClose={() => setPreviewOpen(false)}
           onNavigate={props.onNavigate}
           siteDraft={siteDraft}
+          unreadMessages={props.unreadMessageCount}
           warSummary={props.warSummary}
         />
       ) : null}
@@ -2403,12 +2872,13 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
   );
 }
 
-export function GuildSitePreview({ members = [], siteDraft, onNavigate, warSummary }) {
+export function GuildSitePreview({ members = [], siteDraft, onNavigate, unreadMessages = 0, warSummary }) {
   const color = getColorOption(siteDraft.colors);
   const theme = getThemeOption(siteDraft.theme);
   const design = getDesignOption(siteDraft.design);
   const typography = getTypographyOption(siteDraft.typography);
-  const visibleSections = getVisibleSiteSections(siteDraft.sections);
+  const visibleSections = getPublicVisibleSiteSections(siteDraft, siteDraft.enabledModules);
+  const hasWarsSection = visibleSections.some((section) => section.key === "wars");
   const memberRequestUrl = getMemberRequestHref(siteDraft.slug || siteDraft.guildName);
   const WarsIcon = getSiteSectionIcon("wars");
   const previewStyle = {
@@ -2443,6 +2913,11 @@ export function GuildSitePreview({ members = [], siteDraft, onNavigate, warSumma
           })}
         </nav>
         <span className="preview-header-actions">
+          <button className="preview-message-action" type="button" onClick={() => onNavigate?.("messages")}>
+            <Mail size={14} aria-hidden="true" />
+            Messagerie
+            <span>{Number(unreadMessages) || 0}</span>
+          </button>
           <span className="preview-gallery-action">
             <Globe2 size={14} aria-hidden="true" />
             Galerie
@@ -2466,7 +2941,7 @@ export function GuildSitePreview({ members = [], siteDraft, onNavigate, warSumma
               Devenir membre
               <UserPlus size={17} />
             </a>
-            {siteDraft.sections.wars ? (
+            {hasWarsSection ? (
               <button type="button" onClick={() => onNavigate?.("wars")}>
                 Voir les wars
                 <WarsIcon size={17} />
@@ -2534,6 +3009,19 @@ export function PreviewSectionCard({
           </article>
         );
       }
+    case "membership":
+      return (
+        <article {...articleProps}>
+          <header>
+            <span className="preview-section-title">
+              <SectionIcon size={20} aria-hidden="true" />
+              <strong>Adhésions</strong>
+            </span>
+            <em>Accès</em>
+          </header>
+          <p className="preview-card-text">Demande d'accès côté site, validation réservée aux membres autorisés.</p>
+        </article>
+      );
     case "bank":
       return (
         <article {...articleProps}>
@@ -2603,7 +3091,7 @@ export function PreviewSectionCard({
   }
 }
 
-export function PreviewPopup({ members = [], onClose, onNavigate, siteDraft, warSummary }) {
+export function PreviewPopup({ members = [], onClose, onNavigate, siteDraft, unreadMessages = 0, warSummary }) {
   useEffect(() => {
     function closeOnEscape(event) {
       if (event.key === "Escape") onClose?.();
@@ -2632,7 +3120,13 @@ export function PreviewPopup({ members = [], onClose, onNavigate, siteDraft, war
           </button>
         </header>
         <div className="preview-popup-body">
-          <GuildSitePreview members={members} siteDraft={siteDraft} onNavigate={onNavigate} warSummary={warSummary} />
+          <GuildSitePreview
+            members={members}
+            siteDraft={siteDraft}
+            onNavigate={onNavigate}
+            unreadMessages={unreadMessages}
+            warSummary={warSummary}
+          />
         </div>
       </section>
     </div>
@@ -2854,13 +3348,12 @@ export function SosPanel({
   sosAlerts = [],
   sosError = "",
   sosForm = {},
-  sosRealtimeStatus = "Mode aperçu",
+  sosRealtimeStatus = "API requise",
   setSosForm,
   sendSos,
 }) {
   const sosFieldsId = useId();
   const [showSosFields, setShowSosFields] = useState(false);
-  const sosGuard = getGuardProps(currentUser, "send_sos");
   const normalizedAlerts = sosAlerts.map(normalizeSosAlert);
   const activeAlerts = normalizedAlerts.filter((alert) => alert.status === "active").slice(0, 3);
   const latestAlert = activeAlerts[0] || normalizedAlerts[0];
@@ -2888,7 +3381,6 @@ export function SosPanel({
               type="button"
               onClick={() => updateCallKind(option.id)}
               aria-pressed={option.id === callKind}
-              {...sosGuard}
             >
               <OptionIcon size={16} />
               {option.label}
@@ -2905,7 +3397,7 @@ export function SosPanel({
         <p>{detailsPreview}</p>
       </div>
       <div className="sos-fast-actions">
-        <button className="danger-action sos-send-now" type="button" onClick={sendSos} {...sosGuard}>
+        <button className="danger-action sos-send-now" type="button" onClick={sendSos}>
           <CallIcon size={18} />
           {callConfig.actionLabel}
         </button>
@@ -2926,7 +3418,6 @@ export function SosPanel({
           <input
             value={sosForm.target || ""}
             onChange={(event) => setSosForm((current) => ({ ...current, target: event.target.value }))}
-            {...sosGuard}
           />
         </label>
         <div className="coordinate-grid">
@@ -2936,7 +3427,6 @@ export function SosPanel({
               inputMode="numeric"
               value={sosForm.x || ""}
               onChange={(event) => setSosForm((current) => ({ ...current, x: event.target.value }))}
-              {...sosGuard}
             />
           </label>
           <label className="form-row">
@@ -2945,7 +3435,6 @@ export function SosPanel({
               inputMode="numeric"
               value={sosForm.y || ""}
               onChange={(event) => setSosForm((current) => ({ ...current, y: event.target.value }))}
-              {...sosGuard}
             />
           </label>
         </div>
@@ -2954,7 +3443,6 @@ export function SosPanel({
           <select
             value={sosForm.type || "Rallye"}
             onChange={(event) => setSosForm((current) => ({ ...current, type: event.target.value }))}
-            {...sosGuard}
           >
             <option>Rallye</option>
             <option>Ravage</option>
@@ -2967,7 +3455,6 @@ export function SosPanel({
           <textarea
             value={sosForm.details || ""}
             onChange={(event) => setSosForm((current) => ({ ...current, details: event.target.value }))}
-            {...sosGuard}
           />
         </label>
       </div>
@@ -3030,9 +3517,13 @@ export function PermissionsMini() {
           <div key={role.role} className="permission-row">
             <RolePill role={role.role} />
             <span>
-              {role.modules.slice(0, 4).map((module) => (
-                <em key={module}>{module}</em>
-              ))}
+              {role.modules.length ? (
+                role.modules.slice(0, 4).map((module) => (
+                  <em key={module}>{module}</em>
+                ))
+              ) : (
+                <em>Accès membre</em>
+              )}
             </span>
           </div>
         ))}

@@ -2,7 +2,6 @@ export const RBAC_PERMISSIONS = Object.freeze([
   "manage_site",
   "approve_members",
   "manage_events",
-  "send_sos",
   "manage_diplomacy",
   "manage_bank",
   "moderate_forum",
@@ -15,22 +14,22 @@ export const RBAC_ROLE_DEFINITIONS = Object.freeze({
   membre: {
     code: "membre",
     label: "Membre",
-    permissions: ["send_sos"],
+    permissions: [],
   },
   officier: {
     code: "officier",
     label: "Officier",
-    permissions: ["approve_members", "manage_events", "send_sos", "moderate_forum", "manage_members"],
+    permissions: ["approve_members", "manage_events", "moderate_forum", "manage_members"],
   },
   diplomate: {
     code: "diplomate",
     label: "Diplomate",
-    permissions: ["send_sos", "manage_diplomacy"],
+    permissions: ["manage_diplomacy"],
   },
   banquier: {
     code: "banquier",
     label: "Banquier",
-    permissions: ["send_sos", "manage_bank"],
+    permissions: ["manage_bank"],
   },
   admin: {
     code: "admin",

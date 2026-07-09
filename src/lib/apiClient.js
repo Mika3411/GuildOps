@@ -1,5 +1,7 @@
 const DEFAULT_API_PREFIX = "/api/v1";
 const DEFAULT_TIMEOUT_MS = 8000;
+const CSRF_COOKIE_NAME = "guildops_csrf";
+const CSRF_STORAGE_KEY = "guildops:csrf-token";
 
 export class ApiError extends Error {
   constructor(message, { status, payload } = {}) {
@@ -38,7 +40,7 @@ export async function apiRequest(path, options = {}) {
   }
 
   try {
-    const csrfToken = readCookie("guildops_csrf");
+    const csrfToken = getCsrfToken();
     const response = await fetch(buildUrl(path, query), {
       method,
       credentials: "include",
@@ -57,12 +59,16 @@ export async function apiRequest(path, options = {}) {
 
     if (!response.ok) {
       const apiError = payload?.error || {};
+      if (response.status === 401 || isCsrfError(apiError)) {
+        clearCsrfToken();
+      }
       throw new ApiError(apiError.message || payload?.message || `API request failed with ${response.status}`, {
         status: response.status,
         payload,
       });
     }
 
+    rememberCsrfToken(payload?.csrfToken);
     return payload;
   } finally {
     window.clearTimeout(timeout);
@@ -84,6 +90,26 @@ export function buildUrl(path, query) {
   });
 
   return url.toString();
+}
+
+export function rememberCsrfToken(token) {
+  if (!token || typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage?.setItem(CSRF_STORAGE_KEY, token);
+  } catch {
+    // Session storage can be unavailable in hardened/private contexts.
+  }
+}
+
+export function clearCsrfToken() {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage?.removeItem(CSRF_STORAGE_KEY);
+  } catch {
+    // Best effort only; the server remains authoritative.
+  }
 }
 
 function normalizeApiPath(path) {
@@ -115,6 +141,26 @@ function getAuthHeaders() {
 
 function isUnsafeMethod(method) {
   return !["GET", "HEAD", "OPTIONS"].includes(String(method || "GET").toUpperCase());
+}
+
+function isCsrfError(error) {
+  const code = String(error?.code || "").toUpperCase();
+  const message = String(error?.message || "");
+  return code === "FORBIDDEN" && /csrf/i.test(message);
+}
+
+function getCsrfToken() {
+  return readStoredCsrfToken() || readCookie(CSRF_COOKIE_NAME);
+}
+
+function readStoredCsrfToken() {
+  if (typeof window === "undefined") return "";
+
+  try {
+    return window.sessionStorage?.getItem(CSRF_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
 }
 
 function readCookie(name) {

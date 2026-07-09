@@ -4,9 +4,6 @@ import {
   useState
 } from "react";
 import {
-  events as fallbackEvents
-} from "../data/guildOpsMockData.js";
-import {
   guildOpsApi
 } from "../lib/guildOpsApi.js";
 import {
@@ -39,9 +36,7 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
       ? eventsState
       : guildOpsData.events.length
         ? guildOpsData.events
-        : apiEnabled
-          ? []
-          : fallbackEvents
+        : []
     : [];
   const eventStatusMap = useMemo(() => buildEventStatusMap(activeEvents), [activeEvents]);
   const currentMemberId = useMemo(() => resolveCurrentMemberId(members, currentUser), [currentUser, members]);
@@ -89,9 +84,18 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
 
   async function updateMemberStatus(memberId, eventKey, value) {
     if (!moduleEnabled) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setCheckinError("API requise pour enregistrer un check-in.");
+      return;
+    }
+
     const isSelf = isCurrentUserMember(memberId, members, currentUser);
 
     if (!isSelf && !can(currentUser, "manage_events")) return;
+    const previousMembers = members;
+    const previousSelfStatus = selfStatus;
     if (isSelf && eventKey === "allianceWar") setSelfStatus(value);
     setCheckinError("");
 
@@ -103,10 +107,14 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
       ),
     );
 
-    const guildId = getApiGuildId(selectedGuild);
     const eventId = eventStatusMap[eventKey];
 
-    if (!apiEnabled || !guildId || !isUuid(eventId)) return;
+    if (!isUuid(eventId)) {
+      setMembers(previousMembers);
+      setSelfStatus(previousSelfStatus);
+      setCheckinError("Event API introuvable pour enregistrer le check-in.");
+      return;
+    }
 
     try {
       if (isSelf) {
@@ -117,7 +125,9 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
 
       await refreshEventSummary(guildId);
     } catch (error) {
-      setCheckinError(error?.message || "Check-in enregistre ici, mais pas encore partage.");
+      setMembers(previousMembers);
+      setSelfStatus(previousSelfStatus);
+      setCheckinError(error?.message || "Check-in non enregistré.");
     }
   }
 
@@ -157,6 +167,12 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
   async function createEvent(draft) {
     if (!moduleEnabled) return null;
     if (!can(currentUser, "manage_events")) return null;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setEventCreateError("API requise pour créer un event.");
+      return null;
+    }
 
     const startsAt = draft.startsAt ? new Date(draft.startsAt).toISOString() : new Date(Date.now() + 3600000).toISOString();
     const localEvent = normalizeEvent({
@@ -168,13 +184,6 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
 
     setEventCreateError("");
     setCreatingEvent(true);
-    setEventsState((current) => [localEvent, ...current]);
-
-    const guildId = getApiGuildId(selectedGuild);
-    if (!apiEnabled || !guildId) {
-      setCreatingEvent(false);
-      return localEvent;
-    }
 
     try {
       const payload = await guildOpsApi.createEvent(guildId, {
@@ -191,8 +200,8 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
       await refreshEventSummary(guildId);
       return savedEvent;
     } catch (error) {
-      setEventCreateError(error?.message || "Event cree ici, mais pas encore partage.");
-      return localEvent;
+      setEventCreateError(error?.message || "Event non créé.");
+      return null;
     } finally {
       setCreatingEvent(false);
     }

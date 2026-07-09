@@ -5,9 +5,6 @@ import {
   useState
 } from "react";
 import {
-  guildOpsMockData
-} from "../data/guildOpsMockData.js";
-import {
   isApiConfigured
 } from "../lib/apiClient.js";
 import {
@@ -100,10 +97,10 @@ export function createEmptyGuildOpsData() {
 export function useGuildOpsData({ enabled = true, reloadKey = 0 } = {}) {
   const apiEnabled = isApiConfigured();
   const [state, setState] = useState(() => ({
-    data: apiEnabled ? createEmptyGuildOpsData() : guildOpsMockData,
+    data: createEmptyGuildOpsData(),
     error: null,
-    source: apiEnabled ? "api" : "mock",
-    status: apiEnabled ? "idle" : "mock",
+    source: apiEnabled ? "api" : "none",
+    status: apiEnabled ? "idle" : "unconfigured",
   }));
 
   const reload = useCallback(
@@ -138,14 +135,12 @@ export function useGuildOpsData({ enabled = true, reloadKey = 0 } = {}) {
 
   useEffect(() => {
     if (!apiEnabled || !enabled) {
-      if (apiEnabled) {
-        setState({
-          data: createEmptyGuildOpsData(),
-          error: null,
-          source: "api",
-          status: "idle",
-        });
-      }
+      setState({
+        data: createEmptyGuildOpsData(),
+        error: null,
+        source: apiEnabled ? "api" : "none",
+        status: apiEnabled ? "idle" : "unconfigured",
+      });
       return undefined;
     }
 
@@ -158,7 +153,7 @@ export function useGuildOpsData({ enabled = true, reloadKey = 0 } = {}) {
   return useMemo(
     () => ({
       ...state,
-      isFallback: !apiEnabled && state.source === "mock",
+      isFallback: false,
       isLoading: apiEnabled && ["idle", "loading"].includes(state.status),
       isRefreshing: apiEnabled && state.status === "refreshing",
       reload,
@@ -169,7 +164,7 @@ export function useGuildOpsData({ enabled = true, reloadKey = 0 } = {}) {
 
 export function normalizeGuildOpsData(payload) {
   const raw = payload?.data || payload || {};
-  const base = isApiConfigured() ? createEmptyGuildOpsData() : guildOpsMockData;
+  const base = createEmptyGuildOpsData();
   const normalized = {
     ...base,
     ...raw,

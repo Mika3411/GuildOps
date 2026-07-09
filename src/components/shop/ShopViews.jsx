@@ -168,7 +168,7 @@ const SHOP_TEMPLATE_PREVIEWS = Object.freeze({
     game: "Whiteout Survival",
     realm: "K88",
     tagline: "Vitrine premium pour guilde sélective.",
-    objective: "Inspirer confiance avant recrutement avec une page sombre, lisible et prestige.",
+    objective: "Inspirer confiance avec une page sombre, lisible et prestige.",
     objectiveTag: "Competitif",
     theme: "royal-banner",
     design: "citadel-luxe",
@@ -230,7 +230,7 @@ const SHOP_ASSET_PREVIEWS = Object.freeze({
     kind: "images",
     title: "Camp Nord",
     subtitle: "Hero, bannières, annonces",
-    tiles: ["Hero givré", "War banner", "Recrutement", "Fond forum"],
+    tiles: ["Hero givré", "War banner", "Accès membres", "Fond forum"],
     rows: ["24 PNG haute résolution", "Formats site et Discord", "Variantes sombres incluses"],
   },
   "emoji-officers": {

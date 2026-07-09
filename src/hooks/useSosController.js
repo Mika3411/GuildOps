@@ -6,9 +6,6 @@ import {
   guildOpsApi
 } from "../lib/guildOpsApi.js";
 import {
-  can
-} from "../lib/rbac.js";
-import {
   getApiGuildId,
   getSosAckLabel,
   isUuid,
@@ -23,7 +20,7 @@ import {
 export function useSosController({ apiEnabled, currentUser, selectedGuild, guildOpsData, currentMemberId, moduleEnabled = true }) {
   const [sosAlerts, setSosAlerts] = useState(() => (moduleEnabled ? guildOpsData.sosAlerts : []));
   const [sosForm, setSosForm] = useState(() => guildOpsData.sosForm);
-  const [sosRealtimeStatus, setSosRealtimeStatus] = useState(apiEnabled ? "Connexion..." : "Mode aperçu");
+  const [sosRealtimeStatus, setSosRealtimeStatus] = useState(apiEnabled ? "Connexion..." : "API requise");
   const [sosError, setSosError] = useState("");
 
   useEffect(() => {
@@ -35,7 +32,7 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
     const guildId = getApiGuildId(selectedGuild);
 
     if (!moduleEnabled || !apiEnabled || !guildId) {
-      setSosRealtimeStatus(moduleEnabled ? "Mode aperçu" : "Désactivé");
+      setSosRealtimeStatus(moduleEnabled ? "API requise" : "Désactivé");
       return undefined;
     }
 
@@ -95,7 +92,6 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
 
   async function sendSos() {
     if (!moduleEnabled) return;
-    if (!can(currentUser, "send_sos")) return;
 
     const attackType = String(sosForm.type || "Rallye").trim() || "Rallye";
     const callKind = normalizeSosCallKind(sosForm.callKind);
@@ -107,25 +103,13 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
     const message = String(sosForm.details || "").trim() || fallbackMessage;
 
     const guildId = getApiGuildId(selectedGuild);
-    const draftAlert = normalizeSosAlert({
-      id: `local-sos-${Date.now()}`,
-      targetLabel,
-      targetX: parseCoordinate(sosForm.x),
-      targetY: parseCoordinate(sosForm.y),
-      attackType,
-      callKind,
-      message,
-      details: message,
-      createdByName: currentUser.displayName,
-      by: currentUser.displayName,
-      status: "active",
-      createdAt: new Date().toISOString(),
-    });
 
     setSosError("");
-    setSosAlerts((current) => upsertSosAlert(current, draftAlert));
 
-    if (!apiEnabled || !guildId) return;
+    if (!apiEnabled || !guildId) {
+      setSosError("API requise pour envoyer un SOS.");
+      return;
+    }
 
     try {
       const payload = await guildOpsApi.createAttackAlert(guildId, {
@@ -138,9 +122,11 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
         severity: "critical",
       });
       const savedAlert = normalizeSosAlert(payload?.alert);
-      setSosAlerts((current) => [savedAlert, ...current.filter((alert) => alert.id !== draftAlert.id && alert.id !== savedAlert.id)]);
+      if (savedAlert) {
+        setSosAlerts((current) => upsertSosAlert(current, savedAlert));
+      }
     } catch (error) {
-      setSosError(error?.message || "SOS cree ici, mais pas encore envoye a la guilde.");
+      setSosError(error?.message || "SOS non envoyé.");
     }
   }
 
@@ -155,6 +141,13 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
       acknowledgedAt: new Date().toISOString(),
     };
 
+    if (!apiEnabled || !guildId || !isUuid(alertId)) {
+      setSosError("API requise pour répondre à un SOS.");
+      return;
+    }
+
+    const previousAlerts = sosAlerts;
+
     setSosAlerts((current) =>
       mergeSosAcknowledgement(current, {
         alertId,
@@ -162,15 +155,14 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
       }),
     );
 
-    if (!apiEnabled || !guildId || !isUuid(alertId)) return;
-
     try {
       const payload = await guildOpsApi.acknowledgeAttackAlert(guildId, alertId, { response });
       if (payload?.alert) {
         setSosAlerts((current) => upsertSosAlert(current, normalizeSosAlert(payload.alert)));
       }
     } catch (error) {
-      setSosError(error?.message || "Reponse SOS enregistree ici, mais pas encore envoyee.");
+      setSosAlerts(previousAlerts);
+      setSosError(error?.message || "Réponse SOS non envoyée.");
     }
   }
 

@@ -8,14 +8,12 @@ import {
   Gamepad2,
   Globe2,
   Languages,
+  Mail,
   Search,
   Server,
   Shield,
   Users
 } from "lucide-react";
-import {
-  guilds as localGuilds
-} from "../../data/guildOpsMockData.js";
 import {
   isApiConfigured
 } from "../../lib/apiClient.js";
@@ -72,15 +70,12 @@ function normalizeDirectoryGuild(guild = {}) {
     memberCount: Number(guild.memberCount || guild.member_count || 0),
     publicSlug,
     url: guild.url || `/g/${publicSlug}`,
+    unreadCount: Number(guild.unreadCount || guild.unread_count || guild.unreadMessages || guild.unread_messages || 0),
   };
 }
 
-function getLocalDirectoryGuilds() {
+function getCachedDirectoryGuilds() {
   const directoryGuilds = new Map();
-
-  localGuilds.map(normalizeDirectoryGuild).forEach((guild) => {
-    directoryGuilds.set(guild.publicSlug, guild);
-  });
 
   listPublishedSites().map(normalizeDirectoryGuild).forEach((guild) => {
     directoryGuilds.set(guild.publicSlug, guild);
@@ -221,7 +216,7 @@ function navigatePublic(event, path, onNavigate) {
 }
 
 export function PublicGuildGallery({ onNavigate }) {
-  const [guilds, setGuilds] = useState(() => getLocalDirectoryGuilds());
+  const [guilds, setGuilds] = useState(() => getCachedDirectoryGuilds());
   const [status, setStatus] = useState(isApiConfigured() ? "loading" : "ready");
   const [error, setError] = useState("");
   const [filters, setFilters] = useState({
@@ -243,13 +238,13 @@ export function PublicGuildGallery({ onNavigate }) {
       .listPublicGuildDirectory({ limit: 100 }, { signal: controller.signal })
       .then((payload) => {
         const nextGuilds = Array.isArray(payload?.guilds) ? payload.guilds.map(normalizeDirectoryGuild) : [];
-        setGuilds(nextGuilds.length ? sortDirectoryGuilds(nextGuilds) : getLocalDirectoryGuilds());
+        setGuilds(nextGuilds.length ? sortDirectoryGuilds(nextGuilds) : getCachedDirectoryGuilds());
         setError("");
         setStatus("ready");
       })
       .catch((requestError) => {
         if (controller.signal.aborted) return;
-        setGuilds(getLocalDirectoryGuilds());
+        setGuilds(getCachedDirectoryGuilds());
         setError(requestError?.message || "Galerie momentanement inaccessible.");
         setStatus("ready");
       });
@@ -491,7 +486,7 @@ export function PublicGuildGallery({ onNavigate }) {
         </div>
       </section>
 
-      {error ? <p className="gallery-sync-note">{error} Affichage des exemples locaux.</p> : null}
+      {error ? <p className="gallery-sync-note">{error} Affichage du cache local.</p> : null}
       {status === "loading" ? <p className="gallery-sync-note">Chargement des guildes...</p> : null}
 
       <section className="guild-gallery-results" aria-live="polite">
@@ -540,6 +535,10 @@ export function PublicGuildGallery({ onNavigate }) {
                                 <Users size={14} />
                                 {guild.memberCount || "Equipe"}
                               </em>
+                              <span className="gallery-guild-mail" aria-label={`${guild.unreadCount} message${guild.unreadCount > 1 ? "s" : ""} non lu${guild.unreadCount > 1 ? "s" : ""}`}>
+                                <Mail size={14} />
+                                {guild.unreadCount}
+                              </span>
                               <ArrowRight className="gallery-card-arrow" size={17} />
                             </a>
                           ))}

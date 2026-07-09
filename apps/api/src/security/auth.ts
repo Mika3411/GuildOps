@@ -4,7 +4,7 @@ import { UnauthorizedError } from "../http/errors.js";
 import { query } from "../db/pool.js";
 import { env } from "../config/env.js";
 import { assertRequestCsrf, needsCsrfCheck } from "./csrf.js";
-import { hashSessionToken } from "./sessions.js";
+import { hashCsrfToken, hashSessionToken } from "./sessions.js";
 
 export type AuthContext = {
   sessionId: string;
@@ -16,6 +16,7 @@ export type AuthContext = {
     globalRole: string;
   };
   csrfHash: string | null;
+  csrfToken: string | null;
   activeOrganization: null | {
     id: string;
     name: string;
@@ -122,9 +123,12 @@ export const requireAuth = asyncHandler(async (req, res, next) => {
     assertRequestCsrf(req, row.csrf_hash);
   }
 
+  const csrfToken = getValidCsrfToken(req, row.csrf_hash);
+
   res.locals.auth = {
     sessionId: row.session_id,
     csrfHash: row.csrf_hash,
+    csrfToken,
     user: {
       id: row.user_id,
       email: row.email,
@@ -181,4 +185,14 @@ function getSessionToken(req: Request): { token?: string; source?: "cookie" | "b
 
   const [scheme, token] = header.split(" ");
   return scheme?.toLowerCase() === "bearer" && token ? { token, source: "bearer" } : {};
+}
+
+function getValidCsrfToken(req: Request, expectedCsrfHash: string | null): string | null {
+  const cookieToken = (req.cookies as Record<string, string | undefined> | undefined)?.[env.CSRF_COOKIE_NAME];
+
+  if (!cookieToken || !expectedCsrfHash) {
+    return null;
+  }
+
+  return hashCsrfToken(cookieToken) === expectedCsrfHash ? cookieToken : null;
 }

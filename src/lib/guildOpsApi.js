@@ -27,6 +27,7 @@ export const guildOpsEndpoints = {
   guilds: {
     list: "/guilds",
     detail: (guildId) => `/guilds/${encodeURIComponent(guildId)}`,
+    modules: (guildId) => `/guilds/${encodeURIComponent(guildId)}/modules`,
     members: (guildId) => `/guilds/${encodeURIComponent(guildId)}/members`,
     memberBan: (guildId, memberId) =>
       `/guilds/${encodeURIComponent(guildId)}/members/${encodeURIComponent(memberId)}/ban`,
@@ -101,6 +102,7 @@ export const guildOpsEndpoints = {
   },
   chat: {
     conversations: (guildId) => `/guilds/${encodeURIComponent(guildId)}/conversations`,
+    invitations: (guildId) => `/guilds/${encodeURIComponent(guildId)}/message-invitations`,
     recipients: (guildId) => `/guilds/${encodeURIComponent(guildId)}/message-recipients`,
     guildMessages: (guildId) => `/guilds/${encodeURIComponent(guildId)}/messages`,
     guildMessagesRead: (guildId) => `/guilds/${encodeURIComponent(guildId)}/messages/read`,
@@ -197,6 +199,13 @@ export const guildOpsApi = {
   },
   createGuild(body) {
     return apiRequest(guildOpsEndpoints.guilds.list, { body });
+  },
+  listGuildModules(guildId, { signal } = {}) {
+    return apiRequest(guildOpsEndpoints.guilds.modules(guildId), { signal });
+  },
+  updateGuildModules(guildId, enabledModules) {
+    const body = Array.isArray(enabledModules) ? { enabledModules } : enabledModules;
+    return apiRequest(guildOpsEndpoints.guilds.modules(guildId), { body, method: "PUT" });
   },
   listGuildMembers(guildId, { signal } = {}) {
     return apiRequest(guildOpsEndpoints.guilds.members(guildId), { signal });
@@ -390,6 +399,9 @@ export const guildOpsApi = {
   },
   listMessageRecipients(guildId, { signal } = {}) {
     return apiRequest(guildOpsEndpoints.chat.recipients(guildId), { signal });
+  },
+  sendMessageInvitation(guildId, body) {
+    return apiRequest(guildOpsEndpoints.chat.invitations(guildId), { body });
   },
   listGuildMessages(guildId, query, { signal } = {}) {
     return apiRequest(guildOpsEndpoints.chat.guildMessages(guildId), { query, signal });

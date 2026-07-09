@@ -121,10 +121,10 @@ export const guildOpsModules = Object.freeze([
     benefit: "Déclencher une alerte rapide, suivre les renforts et réduire les pertes pendant les attaques.",
     route: "/app/modules/sos",
     view: "command",
-    permissionKeys: ["send_sos"],
+    permissionKeys: [],
     defaultEnabled: false,
-    complexity: MODULE_COMPLEXITY.advanced,
-    dependencies: ["wars_events"],
+    complexity: MODULE_COMPLEXITY.simple,
+    dependencies: [],
     icon: ShieldAlert,
   },
   {
@@ -174,16 +174,16 @@ export const guildOpsModules = Object.freeze([
   },
   {
     id: "messages",
-    label: "Messages",
-    navLabel: "Messages",
+    label: "Messagerie",
+    navLabel: "Messagerie",
     mobileLabel: "Messages",
     description: "Messagerie interne et chat invités.",
     benefit: "Créer des conversations internes et garder un canal d'accueil autour du site de guilde.",
     route: "/app/messages",
     view: "messages",
     permissionKeys: [],
-    defaultEnabled: false,
-    complexity: MODULE_COMPLEXITY.advanced,
+    defaultEnabled: true,
+    complexity: MODULE_COMPLEXITY.core,
     dependencies: ["site"],
     icon: Mail,
   },
@@ -233,6 +233,7 @@ export const moduleHubNavItem = Object.freeze({
 
 export const defaultSiteSections = Object.freeze({
   roster: true,
+  membership: false,
   wars: true,
   bank: true,
   diplomacy: true,
@@ -242,6 +243,7 @@ export const defaultSiteSections = Object.freeze({
 
 export const siteSectionMeta = Object.freeze([
   { key: "roster", navLabel: "Equipe" },
+  { key: "membership", navLabel: "Adhésions" },
   { key: "wars", navLabel: "Wars" },
   { key: "bank", navLabel: "Banque" },
   { key: "diplomacy", navLabel: "Diplomatie" },
@@ -266,7 +268,7 @@ export const defaultEnabledModuleIds = Object.freeze(
   guildOpsModules.filter((module) => module.defaultEnabled).map((module) => module.id),
 );
 
-const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "membership_requests", "administration"]);
+const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "messages", "administration"]);
 
 export function getDefaultEnabledModuleIds() {
   return [...defaultEnabledModuleIds];

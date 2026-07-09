@@ -3,10 +3,6 @@ import {
   useState
 } from "react";
 import {
-  bankMovements,
-  bankResources
-} from "../data/guildOpsMockData.js";
-import {
   bankRequestStatusLabels
 } from "../config/guildOpsConfig.js";
 import {
@@ -23,15 +19,15 @@ import {
 
 export function useBankController({ apiEnabled, currentUser, selectedGuild, guildOpsData, moduleEnabled = true }) {
   const [bankRequests, setBankRequests] = useState(() => (moduleEnabled ? guildOpsData.bankRequests : []));
-  const [bankStock, setBankStock] = useState(() => (moduleEnabled ? guildOpsData.bankResources || bankResources : []));
-  const [bankMovementsLog, setBankMovementsLog] = useState(() => (moduleEnabled ? guildOpsData.bankMovements || bankMovements : []));
+  const [bankStock, setBankStock] = useState(() => (moduleEnabled ? guildOpsData.bankResources : []));
+  const [bankMovementsLog, setBankMovementsLog] = useState(() => (moduleEnabled ? guildOpsData.bankMovements : []));
   const [bankCommand, setBankCommand] = useState("!banque");
   const [bankError, setBankError] = useState("");
 
   useEffect(() => {
     setBankRequests(moduleEnabled ? guildOpsData.bankRequests : []);
-    setBankStock(moduleEnabled ? guildOpsData.bankResources || bankResources : []);
-    setBankMovementsLog(moduleEnabled ? guildOpsData.bankMovements || bankMovements : []);
+    setBankStock(moduleEnabled ? guildOpsData.bankResources : []);
+    setBankMovementsLog(moduleEnabled ? guildOpsData.bankMovements : []);
     setBankError("");
   }, [guildOpsData, moduleEnabled]);
 
@@ -41,6 +37,13 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
 
   function createBankRequest(request) {
     if (!moduleEnabled) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setBankError("API requise pour créer une demande banque.");
+      return;
+    }
+
     const resource = bankStock.find((item) => getBankResourceCode(item) === request.resourceCode) || bankStock[0];
     const normalizedRequest = {
       id: `bank-req-${Date.now()}`,
@@ -56,24 +59,40 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
     };
 
     if (!normalizedRequest.resourceCode || normalizedRequest.amount <= 0) return;
+    setBankError("");
 
-    setBankRequests((current) => [normalizedRequest, ...current]);
-
-    const guildId = getApiGuildId(selectedGuild);
-    if (apiEnabled && guildId) {
-      void guildOpsApi
-        .createBankRequest(guildId, {
-          resourceCode: normalizedRequest.resourceCode,
-          amount: normalizedRequest.amount,
-          reason: normalizedRequest.reason,
-        })
-        .catch(() => {});
-    }
+    void guildOpsApi
+      .createBankRequest(guildId, {
+        resourceCode: normalizedRequest.resourceCode,
+        amount: normalizedRequest.amount,
+        reason: normalizedRequest.reason,
+      })
+      .then((payload) => {
+        const savedRequest = payload?.request || normalizedRequest;
+        setBankRequests((current) => [
+          {
+            ...normalizedRequest,
+            ...savedRequest,
+            state: bankRequestStatusLabels[savedRequest.status] || savedRequest.state || normalizedRequest.state,
+          },
+          ...current,
+        ]);
+      })
+      .catch((error) => {
+        setBankError(error?.message || "Création de demande banque impossible.");
+      });
   }
 
   function updateBankRequestStatus(id, status) {
     if (!moduleEnabled) return;
     if (!can(currentUser, "manage_bank")) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setBankError("API requise pour modifier une demande banque.");
+      return;
+    }
+
     const request = bankRequests.find((item) => item.id === id);
     if (!request) return;
     const previousRequests = bankRequests;
@@ -124,40 +143,46 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
       ]);
     }
 
-    const guildId = getApiGuildId(selectedGuild);
-    if (apiEnabled && guildId) {
-      void guildOpsApi
-        .updateBankRequestStatus(guildId, id, status)
-        .then((payload) => {
-          if (!payload?.request) return;
-          setBankRequests((current) =>
-            current.map((item) =>
-              item.id === id
-                ? {
-                    ...item,
-                    ...payload.request,
-                    state: bankRequestStatusLabels[payload.request.status] || payload.request.status,
-                  }
-                : item,
-            ),
-          );
-        })
-        .catch((error) => {
-          setBankRequests(previousRequests);
-          setBankStock(previousStock);
-          setBankMovementsLog(previousMovements);
-          setBankError(error?.message || "Mise a jour de la demande banque impossible.");
-        });
-    }
+    void guildOpsApi
+      .updateBankRequestStatus(guildId, id, status)
+      .then((payload) => {
+        if (!payload?.request) return;
+        setBankRequests((current) =>
+          current.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  ...payload.request,
+                  state: bankRequestStatusLabels[payload.request.status] || payload.request.status,
+                }
+              : item,
+          ),
+        );
+      })
+      .catch((error) => {
+        setBankRequests(previousRequests);
+        setBankStock(previousStock);
+        setBankMovementsLog(previousMovements);
+        setBankError(error?.message || "Mise a jour de la demande banque impossible.");
+      });
   }
 
   function addBankMovement(movement) {
     if (!moduleEnabled) return;
     if (!can(currentUser, "manage_bank")) return;
+    const guildId = getApiGuildId(selectedGuild);
+
+    if (!apiEnabled || !guildId) {
+      setBankError("API requise pour enregistrer un mouvement banque.");
+      return;
+    }
+
     const resource = bankStock.find((item) => getBankResourceCode(item) === movement.resourceCode);
     const amount = Number(movement.amount) || 0;
     if (!resource || amount <= 0) return;
     const resourceCode = getBankResourceCode(resource);
+    const previousStock = bankStock;
+    const previousMovements = bankMovementsLog;
 
     setBankStock((current) =>
       current.map((item) =>
@@ -189,42 +214,45 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
       ...current,
     ]);
 
-    const guildId = getApiGuildId(selectedGuild);
-    if (apiEnabled && guildId) {
-      void guildOpsApi
-        .createBankMovement(guildId, {
-          type: movement.type,
-          resourceCode,
-          amount,
-          note: movement.note || (movement.type === "in" ? "Depot banque" : "Sortie banque"),
-        })
-        .catch(() => {});
-    }
+    void guildOpsApi
+      .createBankMovement(guildId, {
+        type: movement.type,
+        resourceCode,
+        amount,
+        note: movement.note || (movement.type === "in" ? "Depot banque" : "Sortie banque"),
+      })
+      .catch((error) => {
+        setBankStock(previousStock);
+        setBankMovementsLog(previousMovements);
+        setBankError(error?.message || "Mouvement banque non enregistré.");
+      });
   }
 
   function recordBankCommand(createdAt) {
     if (!moduleEnabled) return;
-    setBankMovementsLog((current) => [
-      {
-        id: `mov-${createdAt}`,
-        time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-        type: "command",
-        resourceCode: "summary",
-        resource: "Commande",
-        amount: 0,
-        unit: "",
-        actor: currentUser.displayName,
-        note: `${bankCommand} executee dans le chat`,
-      },
-      ...current,
-    ]);
-
     const guildId = getApiGuildId(selectedGuild);
-    if (apiEnabled && guildId) {
-      void guildOpsApi
-        .runBankCommand(guildId, { command: bankCommand, context: { source: "public-chat" } })
-        .catch(() => {});
-    }
+
+    if (!apiEnabled || !guildId) return;
+
+    void guildOpsApi
+      .runBankCommand(guildId, { command: bankCommand, context: { source: "public-chat" } })
+      .then(() => {
+        setBankMovementsLog((current) => [
+          {
+            id: `mov-${createdAt}`,
+            time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+            type: "command",
+            resourceCode: "summary",
+            resource: "Commande",
+            amount: 0,
+            unit: "",
+            actor: currentUser.displayName,
+            note: `${bankCommand} executee dans le chat`,
+          },
+          ...current,
+        ]);
+      })
+      .catch(() => {});
   }
 
   return {

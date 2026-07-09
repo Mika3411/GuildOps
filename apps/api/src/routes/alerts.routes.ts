@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { database, query, withClient, type Queryable } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
-import { BadRequestError, ForbiddenError, NotFoundError } from "../http/errors.js";
+import { BadRequestError, NotFoundError } from "../http/errors.js";
 import { addGuildAlertClient, publishGuildAlertEvent } from "../realtime/alerts.js";
 import { getAuth, requireAuth, type AuthContext } from "../security/auth.js";
 import { validate } from "../http/validate.js";
@@ -157,8 +157,7 @@ alertsRouter.post(
     const auth = getAuth(res);
     const { guildId } = req.params as GuildParams;
     const body = req.body as CreateAttackAlertBody;
-    const access = await assertGuildAccess(database, guildId, auth.user.id);
-    await assertCanSendSos(database, guildId, auth, access.organization_role);
+    await assertGuildAccess(database, guildId, auth.user.id);
 
     const alert = await withClient(async (client) => {
       await client.query("BEGIN");
@@ -259,8 +258,7 @@ alertsRouter.post(
   asyncHandler(async (req, res) => {
     const auth = getAuth(res);
     const { guildId, alertId } = req.params as AlertParams;
-    const access = await assertGuildAccess(database, guildId, auth.user.id);
-    await assertCanSendSos(database, guildId, auth, access.organization_role);
+    await assertGuildAccess(database, guildId, auth.user.id);
     const alert = await getAttackAlertById(guildId, alertId, auth.user.id);
     await enqueueReminderJobs(database, guildId, alertId);
 
@@ -442,37 +440,6 @@ function toAlertResource(row: AlertRow): AlertResource {
     acknowledgementSummary: asAcknowledgementSummary(row.acknowledgementSummary),
     myAcknowledgement: asAcknowledgement(row.myAcknowledgement)
   };
-}
-
-async function assertCanSendSos(
-  db: Queryable,
-  guildId: string,
-  auth: AuthContext,
-  organizationRole: string
-): Promise<void> {
-  if (["owner", "admin"].includes(organizationRole) || auth.user.globalRole === "admin") {
-    return;
-  }
-
-  const result = await db.query<{ allowed: boolean }>(
-    `
-      SELECT true AS allowed
-      FROM guild_members gm
-      JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
-      JOIN role_permissions rp ON rp.role_id = gmr.role_id
-      JOIN permissions p ON p.id = rp.permission_id
-      WHERE gm.guild_id = $1
-        AND gm.user_id = $2
-        AND gm.status = 'active'
-        AND p.key = 'send_sos'
-      LIMIT 1
-    `,
-    [guildId, auth.user.id]
-  );
-
-  if (!result.rows[0]?.allowed) {
-    throw new ForbiddenError("Permission send_sos is required");
-  }
 }
 
 async function assertAttackAlertExists(guildId: string, alertId: string): Promise<void> {

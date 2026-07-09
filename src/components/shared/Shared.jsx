@@ -49,6 +49,59 @@ export function PanelHeader({ icon: Icon, title, meta, action }) {
   );
 }
 
+function PremiumHeroGlyph({ icon: Icon, variant = "crest" }) {
+  if (!Icon) return null;
+
+  return (
+    <span className={`premium-hero-glyph is-${variant}`} aria-hidden="true">
+      <svg className="premium-hero-glyph-frame" viewBox="0 0 120 132" focusable="false">
+        <path className="premium-glyph-shadow" d="M60 5l43 16v56L60 126 17 77V21L60 5Z" />
+        <path className="premium-glyph-back" d="M60 12l35 13v48L60 116 25 73V25l35-13Z" />
+        <path className="premium-glyph-top" d="M38 19h44l10 11-32 13-32-13 10-11Z" />
+        <path className="premium-glyph-frame-line" d="M60 20l27 10v38L60 102 33 68V30l27-10Z" />
+        <path className="premium-glyph-core" d="M60 32l18 7v24L60 86 42 63V39l18-7Z" />
+        <path className="premium-glyph-notches" d="M37 35l23-9 23 9M39 67l21 25 21-25M28 48h11M81 48h11M47 108h26" />
+        <circle className="premium-glyph-rivet" cx="33" cy="30" r="2" />
+        <circle className="premium-glyph-rivet" cx="87" cy="30" r="2" />
+        <circle className="premium-glyph-rivet" cx="38" cy="72" r="2" />
+        <circle className="premium-glyph-rivet" cx="82" cy="72" r="2" />
+        <path className="premium-glyph-sheen" d="M36 28l34-12 14 7-48 19Z" />
+      </svg>
+      <Icon className="premium-hero-glyph-icon" />
+    </span>
+  );
+}
+
+export function ModuleHero({
+  badge = 0,
+  className = "",
+  crest,
+  eyebrow,
+  icon: Icon = Shield,
+  mark,
+  metric,
+  title,
+}) {
+  const displayBadge = Number(badge || 0) > 0 ? badge : "";
+
+  return (
+    <section className={`panel wide-panel message-space-hero module-space-hero${className ? ` ${className}` : ""}`}>
+      <div className="message-space-mark module-space-mark">
+        {mark || <PremiumHeroGlyph icon={Icon} variant="mark" />}
+        {displayBadge ? <span>{displayBadge}</span> : null}
+      </div>
+      <span>
+        <small>{eyebrow}</small>
+        <strong>{title}</strong>
+      </span>
+      {metric ? <em>{metric}</em> : null}
+      <div className="message-hero-crest module-hero-crest" aria-hidden="true">
+        {crest || <PremiumHeroGlyph icon={Icon} variant="crest" />}
+      </div>
+    </section>
+  );
+}
+
 export function EmptyState({ compact = false, icon: Icon = CircleHelp, text, title }) {
   return (
     <div className={`empty-card ${compact ? "compact" : ""}`}>
@@ -331,25 +384,29 @@ export function PermissionsMatrix({ currentUser }) {
           <div key={role.role} className="permission-row">
             <RolePill role={role.role} />
             <span>
-              {role.modules.map((module) => (
-                <button
-                  key={module}
-                  type="button"
-                  className={enabled[`${role.role}-${module}`] ? "is-enabled" : ""}
-                  disabled={roleGuard.disabled}
-                  title={roleGuard.title}
-                  onClick={() =>
-                    can(currentUser, "manage_roles")
-                      ? setEnabled((current) => ({
-                          ...current,
-                          [`${role.role}-${module}`]: !current[`${role.role}-${module}`],
-                        }))
-                      : undefined
-                  }
-                >
-                  {module}
-                </button>
-              ))}
+              {role.modules.length ? (
+                role.modules.map((module) => (
+                  <button
+                    key={module}
+                    type="button"
+                    className={enabled[`${role.role}-${module}`] ? "is-enabled" : ""}
+                    disabled={roleGuard.disabled}
+                    title={roleGuard.title}
+                    onClick={() =>
+                      can(currentUser, "manage_roles")
+                        ? setEnabled((current) => ({
+                            ...current,
+                            [`${role.role}-${module}`]: !current[`${role.role}-${module}`],
+                          }))
+                        : undefined
+                    }
+                  >
+                    {module}
+                  </button>
+                ))
+              ) : (
+                <em>Accès membre</em>
+              )}
             </span>
           </div>
         ))}

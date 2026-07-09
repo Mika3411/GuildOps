@@ -38,8 +38,8 @@ export function createApp(): express.Express {
       }
     })
   );
-  app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: false, limit: "1mb" }));
+  app.use(express.json({ limit: "3mb" }));
+  app.use(express.urlencoded({ extended: false, limit: "3mb" }));
 
   morgan.token("request-id", (_req, res) => String(res.getHeader("x-request-id") ?? "-"));
   app.use(morgan(":method :url :status :res[content-length] - :response-time ms :request-id"));

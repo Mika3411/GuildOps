@@ -7,7 +7,13 @@ import { BadRequestError, ForbiddenError, NotFoundError } from "../http/errors.j
 import { validate } from "../http/validate.js";
 import { getAuth, requireAuth } from "../security/auth.js";
 import { assertGuildAccess, assertOrganizationAccess } from "./access.js";
-import { seedDefaultGuildModules } from "./guild-modules.service.js";
+import {
+  isGuildModuleKey,
+  listGuildModules,
+  seedDefaultGuildModules,
+  syncGuildModules,
+  withDefaultGuildModuleKeys
+} from "./guild-modules.service.js";
 import { languageSchema, slugify, slugSchema, uuidSchema } from "./helpers.js";
 
 export const guildsRouter = Router();
@@ -87,6 +93,18 @@ const unblockGuildMemberBodySchema = z
   .strict()
   .default({});
 
+const CLIENT_ONLY_GUILD_MODULE_KEYS = ["administration", "member_space", "shop"] as const;
+const CLIENT_ONLY_GUILD_MODULE_KEY_SET = new Set<string>(CLIENT_ONLY_GUILD_MODULE_KEYS);
+const enabledModulesSchema = z.array(z.string().trim().min(1).max(80)).max(20);
+
+const guildModulesBodySchema = z
+  .object({
+    enabledModules: enabledModulesSchema.optional(),
+    enabled_modules: enabledModulesSchema.optional(),
+    modules: enabledModulesSchema.optional()
+  })
+  .strict();
+
 const publishGuildSiteBodySchema = z
   .object({
     publicSlug: slugSchema.optional(),
@@ -117,6 +135,9 @@ const publishGuildSiteBodySchema = z
     pages_json: z.record(z.string(), z.unknown()).optional(),
     seoJson: z.record(z.string(), z.unknown()).optional(),
     seo_json: z.record(z.string(), z.unknown()).optional(),
+    enabledModules: enabledModulesSchema.optional(),
+    enabled_modules: enabledModulesSchema.optional(),
+    modules: enabledModulesSchema.optional(),
     status: z.enum(["draft", "published", "archived"]).default("published")
   })
   .passthrough();
@@ -364,6 +385,50 @@ guildsRouter.get(
   })
 );
 
+guildsRouter.get(
+  "/guilds/:guildId/modules",
+  requireAuth,
+  validate({ params: guildIdParamsSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildIdParamsSchema>;
+    await assertGuildAccess(database, guildId, auth.user.id);
+
+    const modules = await listGuildModules(database, guildId);
+
+    res.json({
+      modules,
+      enabledModules: getEnabledGuildModuleKeys(modules)
+    });
+  })
+);
+
+guildsRouter.put(
+  "/guilds/:guildId/modules",
+  requireAuth,
+  validate({ params: guildIdParamsSchema, body: guildModulesBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as unknown as z.infer<typeof guildIdParamsSchema>;
+    const body = req.body as z.infer<typeof guildModulesBodySchema>;
+    const moduleInput = getEnabledModuleInput(body);
+
+    if (moduleInput === null) {
+      throw new BadRequestError("enabledModules is required");
+    }
+
+    assertKnownGuildModuleInput(moduleInput);
+
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageSite(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const enabledModules = await syncGuildModules(database, guildId, moduleInput, auth.user.id);
+    const modules = await listGuildModules(database, guildId);
+
+    res.json({ enabledModules, modules });
+  })
+);
+
 guildsRouter.post(
   "/guilds/:guildId/site/publish",
   requireAuth,
@@ -374,6 +439,10 @@ guildsRouter.post(
     const body = req.body as z.infer<typeof publishGuildSiteBodySchema>;
     const access = await assertGuildAccess(database, guildId, auth.user.id);
     await assertCanManageSite(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+    const moduleInput = getEnabledModuleInput(body as Record<string, unknown>);
+    if (moduleInput !== null) {
+      assertKnownGuildModuleInput(moduleInput);
+    }
 
     const publicSlug = body.publicSlug || body.public_slug || slugify(body.title);
     const guildName = body.guildName || body.guild_name || body.title;
@@ -409,116 +478,134 @@ guildsRouter.post(
       description: [body.tagline, body.objective || heroText].filter(Boolean).join(" ")
     };
 
-    await query("UPDATE guilds SET is_public = $2, updated_at = now() WHERE id = $1", [
-      guildId,
-      body.status === "published"
-    ]);
+    const publishResult = await withClient(async (client) => {
+      await client.query("BEGIN");
 
-    const result = await query(
-      `
-        INSERT INTO guild_sites (
-          guild_id,
-          public_slug,
-          title,
-          guild_name,
-          game,
-          realm,
-          tagline,
-          objective,
-          theme,
-          colors_json,
-          typography_json,
-          sections_json,
-          hero_text,
-          invite_token,
-          invite_rotated_at,
-          invite_rotated_by,
-          theme_json,
-          pages_json,
-          seo_json,
-          status,
-          published_at
-        )
-        VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9,
-          $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, now(), $15,
-          $16::jsonb, $17::jsonb, $18::jsonb,
-          $19,
-          CASE WHEN $19 = 'published' THEN now() ELSE NULL END
-        )
-        ON CONFLICT (guild_id)
-        DO UPDATE SET
-          public_slug = EXCLUDED.public_slug,
-          title = EXCLUDED.title,
-          guild_name = EXCLUDED.guild_name,
-          game = EXCLUDED.game,
-          realm = EXCLUDED.realm,
-          tagline = EXCLUDED.tagline,
-          objective = EXCLUDED.objective,
-          theme = EXCLUDED.theme,
-          colors_json = EXCLUDED.colors_json,
-          typography_json = EXCLUDED.typography_json,
-          sections_json = EXCLUDED.sections_json,
-          hero_text = EXCLUDED.hero_text,
-          invite_token = COALESCE(NULLIF(guild_sites.invite_token, ''), EXCLUDED.invite_token),
-          invite_rotated_at = COALESCE(guild_sites.invite_rotated_at, EXCLUDED.invite_rotated_at),
-          invite_rotated_by = COALESCE(guild_sites.invite_rotated_by, EXCLUDED.invite_rotated_by),
-          theme_json = EXCLUDED.theme_json,
-          pages_json = EXCLUDED.pages_json,
-          seo_json = EXCLUDED.seo_json,
-          status = EXCLUDED.status,
-          published_at = CASE WHEN EXCLUDED.status = 'published' THEN now() ELSE guild_sites.published_at END,
-          updated_at = now()
-        RETURNING
-          id::text,
-          guild_id::text AS "guildId",
-          public_slug::text AS "publicSlug",
-          title,
-          guild_name AS "guildName",
-          game,
-          realm,
-          tagline,
-          objective,
-          theme,
-          colors_json AS colors,
-          typography_json AS typography,
-          sections_json AS sections,
-          hero_text AS "heroText",
-          invite_token AS "inviteToken",
-          invite_rotated_at AS "inviteRotatedAt",
-          CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "memberInviteUrl",
-          CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "member_invite_url",
-          theme_json AS "themeJson",
-          pages_json AS "pagesJson",
-          seo_json AS "seoJson",
-          status,
-          (status = 'published') AS published,
-          published_at AS "publishedAt"
-      `,
-      [
-        guildId,
-        publicSlug,
-        body.title,
-        guildName,
-        body.game ?? "",
-        body.realm ?? "",
-        body.tagline ?? "",
-        body.objective ?? heroText,
-        body.theme ?? "camp-nord",
-        JSON.stringify(colors),
-        JSON.stringify(typography),
-        JSON.stringify(sections),
-        heroText,
-        inviteToken,
-        auth.user.id,
-        JSON.stringify(themeJson),
-        JSON.stringify(pagesJson),
-        JSON.stringify(seoJson),
-        body.status
-      ]
-    );
+      try {
+        await client.query("UPDATE guilds SET is_public = $2, updated_at = now() WHERE id = $1", [
+          guildId,
+          body.status === "published"
+        ]);
 
-    res.json({ site: result.rows[0] });
+        const result = await client.query(
+          `
+            INSERT INTO guild_sites (
+              guild_id,
+              public_slug,
+              title,
+              guild_name,
+              game,
+              realm,
+              tagline,
+              objective,
+              theme,
+              colors_json,
+              typography_json,
+              sections_json,
+              hero_text,
+              invite_token,
+              invite_rotated_at,
+              invite_rotated_by,
+              theme_json,
+              pages_json,
+              seo_json,
+              status,
+              published_at
+            )
+            VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9,
+              $10::jsonb, $11::jsonb, $12::jsonb, $13, $14, now(), $15,
+              $16::jsonb, $17::jsonb, $18::jsonb,
+              $19,
+              CASE WHEN $19 = 'published' THEN now() ELSE NULL END
+            )
+            ON CONFLICT (guild_id)
+            DO UPDATE SET
+              public_slug = EXCLUDED.public_slug,
+              title = EXCLUDED.title,
+              guild_name = EXCLUDED.guild_name,
+              game = EXCLUDED.game,
+              realm = EXCLUDED.realm,
+              tagline = EXCLUDED.tagline,
+              objective = EXCLUDED.objective,
+              theme = EXCLUDED.theme,
+              colors_json = EXCLUDED.colors_json,
+              typography_json = EXCLUDED.typography_json,
+              sections_json = EXCLUDED.sections_json,
+              hero_text = EXCLUDED.hero_text,
+              invite_token = COALESCE(NULLIF(guild_sites.invite_token, ''), EXCLUDED.invite_token),
+              invite_rotated_at = COALESCE(guild_sites.invite_rotated_at, EXCLUDED.invite_rotated_at),
+              invite_rotated_by = COALESCE(guild_sites.invite_rotated_by, EXCLUDED.invite_rotated_by),
+              theme_json = EXCLUDED.theme_json,
+              pages_json = EXCLUDED.pages_json,
+              seo_json = EXCLUDED.seo_json,
+              status = EXCLUDED.status,
+              published_at = CASE WHEN EXCLUDED.status = 'published' THEN now() ELSE guild_sites.published_at END,
+              updated_at = now()
+            RETURNING
+              id::text,
+              guild_id::text AS "guildId",
+              public_slug::text AS "publicSlug",
+              title,
+              guild_name AS "guildName",
+              game,
+              realm,
+              tagline,
+              objective,
+              theme,
+              colors_json AS colors,
+              typography_json AS typography,
+              sections_json AS sections,
+              hero_text AS "heroText",
+              invite_token AS "inviteToken",
+              invite_rotated_at AS "inviteRotatedAt",
+              CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "memberInviteUrl",
+              CONCAT('/join/', public_slug::text, '?invite=', invite_token) AS "member_invite_url",
+              theme_json AS "themeJson",
+              pages_json AS "pagesJson",
+              seo_json AS "seoJson",
+              status,
+              (status = 'published') AS published,
+              published_at AS "publishedAt"
+          `,
+          [
+            guildId,
+            publicSlug,
+            body.title,
+            guildName,
+            body.game ?? "",
+            body.realm ?? "",
+            body.tagline ?? "",
+            body.objective ?? heroText,
+            body.theme ?? "camp-nord",
+            JSON.stringify(colors),
+            JSON.stringify(typography),
+            JSON.stringify(sections),
+            heroText,
+            inviteToken,
+            auth.user.id,
+            JSON.stringify(themeJson),
+            JSON.stringify(pagesJson),
+            JSON.stringify(seoJson),
+            body.status
+          ]
+        );
+        const enabledModules = moduleInput !== null
+          ? await syncGuildModules(client, guildId, moduleInput, auth.user.id)
+          : null;
+
+        await client.query("COMMIT");
+        return { enabledModules, site: result.rows[0] };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+
+    res.json({
+      site: publishResult.site,
+      ...(publishResult.enabledModules ? { enabledModules: publishResult.enabledModules } : {})
+    });
   })
 );
 
@@ -1870,6 +1957,35 @@ function extractInviteToken(value: string): string {
   } catch {
     return "";
   }
+}
+
+function getEnabledModuleInput(body: Record<string, unknown>): string[] | null {
+  const moduleValue = body.enabledModules ?? body.enabled_modules ?? body.modules;
+
+  if (moduleValue === undefined) return null;
+  if (!Array.isArray(moduleValue)) return null;
+
+  return moduleValue
+    .map((moduleKey) => String(moduleKey).trim())
+    .filter(Boolean);
+}
+
+function assertKnownGuildModuleInput(moduleKeys: readonly string[]): void {
+  const unknownModuleKeys = moduleKeys.filter(
+    (moduleKey) => !isGuildModuleKey(moduleKey) && !CLIENT_ONLY_GUILD_MODULE_KEY_SET.has(moduleKey)
+  );
+
+  if (unknownModuleKeys.length > 0) {
+    throw new BadRequestError("Unknown guild module keys", { moduleKeys: unknownModuleKeys });
+  }
+}
+
+function getEnabledGuildModuleKeys(modules: Array<{ moduleKey: string; status: string }>): string[] {
+  return withDefaultGuildModuleKeys(
+    modules
+      .filter((module) => module.status === "enabled")
+      .map((module) => module.moduleKey)
+  );
 }
 
 function stringBodyValue(value: unknown): string {

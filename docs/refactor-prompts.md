@@ -33,7 +33,7 @@ Objectif:
 - Découper `src/components/GuildOpsViews.jsx` en modules par domaine:
   - `src/components/layout/`
   - `src/components/command/`
-  - `src/components/recruitment/`
+  - `src/components/membership-requests/` ou le dossier admin existant qui porte la vue Adhésions
   - `src/components/wars/`
   - `src/components/bank/`
   - `src/components/diplomacy/`
@@ -67,7 +67,7 @@ Objectif:
   - `src/lib/transforms/events.js`
   - `src/lib/transforms/sos.js`
   - `src/lib/transforms/bank.js`
-  - `src/lib/transforms/recruitment.js`
+  - `src/lib/transforms/membershipRequests.js` si la normalisation des demandes d'adhésion est extraite
   - `src/lib/transforms/shared.js`
 - Conserver un export central `src/lib/guildOpsTransforms.js` qui ré-exporte les fonctions, pour limiter le blast radius.
 
@@ -95,7 +95,7 @@ Objectif:
   - `useEventsController`
   - `useSosController`
   - `useBankController`
-  - `useRecruitmentController`
+  - `useMembershipRequestsController`
 - Chaque hook doit encapsuler l'état, les handlers et les appels API de son domaine.
 
 Contraintes:
@@ -156,4 +156,3 @@ Validation:
 - Lance `npm run build`.
 - Donne un court rapport: dépendances nettoyées, imports encore suspects, prochaine dette prioritaire.
 ```
-

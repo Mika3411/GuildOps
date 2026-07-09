@@ -1,6 +1,6 @@
 # GuildOps Render Architecture
 
-GuildOps is a Render-only SaaS platform for mobile strategy guild leaders. It lets guilds create public sites and manage recruitment, wars, event attendance, attack alerts, diplomacy, resources, private forums, messaging, public guest chat, automatic translation, multi-guild worlds, and guild merges.
+GuildOps is a Render-only SaaS platform for mobile strategy guild leaders. It lets guilds create public sites and manage membership requests, wars, event attendance, attack alerts, diplomacy, resources, private forums, messaging, public guest chat, automatic translation, multi-guild worlds, and guild merges.
 
 Supabase is intentionally not used.
 
@@ -50,7 +50,7 @@ Responsibilities:
 
 - Auth, sessions, RBAC/ABAC permissions.
 - Tenant/guild/world routing.
-- CRUD for guild sites, recruitment, events, attendance, roles, objectives, diplomacy, bank, forum, messages.
+- CRUD for guild sites, membership requests, events, attendance, roles, objectives, diplomacy, bank, forum, messages.
 - File upload endpoint backed by Render disk.
 - SSE or WebSocket real-time gateway.
 - SQL job producers for alerts, reminders, translation and notification work.
@@ -87,7 +87,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE TYPE guild_role_code AS ENUM (
-  'member', 'officer', 'diplomat', 'banker', 'recruiter', 'admin', 'owner'
+  'member', 'officer', 'diplomat', 'banker', 'admin', 'owner'
 );
 
 CREATE TYPE attendance_status AS ENUM ('pending', 'confirmed', 'maybe', 'absent');
@@ -194,25 +194,21 @@ CREATE TABLE guild_site_pages (
   UNIQUE (guild_id, slug)
 );
 
-CREATE TABLE recruitment_posts (
+CREATE TABLE membership_requests (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   guild_id uuid NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
-  world_id uuid REFERENCES worlds(id) ON DELETE SET NULL,
-  title text NOT NULL,
-  requirements_json jsonb NOT NULL DEFAULT '{}',
-  status text NOT NULL DEFAULT 'draft',
-  created_by uuid NOT NULL REFERENCES users(id),
-  published_at timestamptz
-);
-
-CREATE TABLE applications (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  recruitment_post_id uuid NOT NULL REFERENCES recruitment_posts(id) ON DELETE CASCADE,
-  applicant_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
-  guest_email citext,
-  payload_json jsonb NOT NULL DEFAULT '{}',
-  status text NOT NULL DEFAULT 'new',
-  created_at timestamptz NOT NULL DEFAULT now()
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  nickname text NOT NULL,
+  message text NOT NULL DEFAULT '',
+  source text NOT NULL DEFAULT 'public'
+    CHECK (source IN ('public', 'manual')),
+  status text NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'approved', 'refused', 'cancelled')),
+  requested_at timestamptz NOT NULL DEFAULT now(),
+  decided_at timestamptz,
+  decided_by uuid REFERENCES users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE events (
@@ -355,7 +351,7 @@ CREATE TABLE messages (
 CREATE TABLE translations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   source_table text NOT NULL
-    CHECK (source_table IN ('private_messages', 'public_chat_messages', 'forum_posts', 'alerts', 'recruitment_posts')),
+    CHECK (source_table IN ('private_messages', 'public_chat_messages', 'forum_posts', 'alerts')),
   source_id uuid NOT NULL,
   source_language varchar(12) NOT NULL DEFAULT 'auto',
   target_language varchar(12) NOT NULL,
@@ -369,7 +365,7 @@ CREATE TABLE translations (
 CREATE TABLE translation_jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   source_table text NOT NULL
-    CHECK (source_table IN ('private_messages', 'public_chat_messages', 'forum_posts', 'alerts', 'recruitment_posts')),
+    CHECK (source_table IN ('private_messages', 'public_chat_messages', 'forum_posts', 'alerts')),
   source_id uuid NOT NULL,
   source_language varchar(12) NOT NULL DEFAULT 'auto',
   target_language varchar(12) NOT NULL,
@@ -469,6 +465,9 @@ CREATE TABLE audit_logs (
 );
 
 CREATE INDEX idx_memberships_guild ON memberships(guild_id);
+CREATE INDEX idx_membership_requests_guild_status ON membership_requests(guild_id, status, requested_at DESC);
+CREATE INDEX idx_membership_requests_pending ON membership_requests(guild_id, requested_at DESC)
+  WHERE status = 'pending';
 CREATE INDEX idx_events_guild_starts ON events(guild_id, starts_at);
 CREATE INDEX idx_messages_conversation_created ON messages(conversation_id, created_at);
 CREATE INDEX idx_attack_alerts_guild_status ON attack_alerts(guild_id, status, created_at DESC);
@@ -485,52 +484,29 @@ GuildOps should use two checks:
 
 ### Permission keys
 
-- `guild.site.read`
-- `guild.site.manage`
-- `recruitment.read`
-- `recruitment.manage`
-- `members.read`
-- `members.manage`
-- `roles.manage`
-- `war.read`
-- `war.manage`
-- `attendance.write.self`
-- `attendance.write.any`
-- `objectives.manage`
-- `sos.create`
-- `sos.broadcast`
-- `sos.resolve`
-- `diplomacy.read`
-- `diplomacy.manage`
-- `bank.read`
-- `bank.request`
-- `bank.approve`
-- `bank.manage`
-- `forum.read`
-- `forum.write`
-- `forum.moderate`
-- `messages.read`
-- `messages.write`
-- `messages.moderate`
-- `chat.public.write`
-- `translation.manage`
-- `guild.merge`
-- `audit.read`
-- `admin.manage`
+- `manage_site`
+- `approve_members` (frontend label: `Adhésions`)
+- `manage_events`
+- `send_sos`
+- `manage_diplomacy`
+- `manage_bank`
+- `moderate_forum`
+- `manage_members`
+- `manage_roles`
+- `admin_all`
 
 ### Default role mapping
 
 | Role | Main permissions |
 | --- | --- |
-| `member` | attendance self, chat, forum read/write, bank request, messages |
-| `officer` | war management, objectives, attendance any, SOS create/resolve |
-| `diplomat` | diplomacy manage, coordinates, NAP notes |
-| `banker` | bank approve/manage, ledger, resource history |
-| `recruiter` | recruitment manage, applications, public site recruitment sections |
-| `admin` | members, roles, site, audit, merge |
-| `owner` | all permissions, billing/export/destructive actions |
+| `membre` | SOS access |
+| `officier` | membership approvals, events, SOS, forum moderation, member management |
+| `diplomate` | SOS, diplomacy, coordinates, NAP notes |
+| `banquier` | SOS, bank management, ledger, resource history |
+| `admin` | site, membership approvals, events, SOS, diplomacy, bank, forum, members, roles, admin bypass |
+| organization `owner` | organization-level ownership, billing/export/destructive actions |
 
-Implementation rule: never trust client-visible role names. The API resolves permissions from `membership_roles -> role_permissions`.
+Implementation rule: never trust client-visible role names. The API resolves permissions from guild member roles through `role_permissions -> permissions`.
 
 ## 5. API Routes
 
@@ -560,14 +536,12 @@ Prefix: `/api/v1`.
 - `PUT /guilds/:guildId/site/pages/:slug`
 - `POST /guilds/:guildId/site/publish`
 
-### Recruitment and directory
+### Membership requests and directory
 
 - `GET /directory/guilds?game=&server=&language=&style=`
-- `POST /guilds/:guildId/recruitment/posts`
-- `PATCH /guilds/:guildId/recruitment/posts/:postId`
-- `POST /recruitment/posts/:postId/applications`
-- `GET /guilds/:guildId/applications`
-- `PATCH /guilds/:guildId/applications/:applicationId`
+- `POST /public/guilds/:slug/membership-requests`
+- `GET /guilds/:guildId/membership-requests`
+- `PATCH /guilds/:guildId/membership-requests/:requestId`
 
 ### Wars, events, attendance
 
@@ -754,7 +728,7 @@ GuildOps/
         components/
         features/
           guild-site/
-          recruitment/
+          membership-requests/
           wars/
           attendance/
           alerts/
@@ -783,7 +757,7 @@ GuildOps/
           users/
           guilds/
           worlds/
-          recruitment/
+          membership-requests/
           events/
           attendance/
           alerts/
@@ -839,7 +813,7 @@ GuildOps/
 ## 11. MVP Build Order
 
 1. Auth, sessions, guilds, memberships, roles.
-2. Public guild site + recruitment + directory search.
+2. Public guild site + membership requests + directory search.
 3. Events and attendance.
 4. SOS alerts + SSE notifications.
 5. Bank and `!banque`.

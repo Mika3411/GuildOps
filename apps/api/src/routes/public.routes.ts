@@ -5,6 +5,7 @@ import { asyncHandler } from "../http/async-handler.js";
 import { ConflictError, ForbiddenError, NotFoundError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
 import { getAuth, requireAuth } from "../security/auth.js";
+import { getActiveGuildModuleSet } from "./guild-modules.service.js";
 import { slugSchema, slugify } from "./helpers.js";
 import { buildMePayload, setActiveContext } from "./me.service.js";
 
@@ -59,6 +60,8 @@ type PublicGuildSiteRow = {
   colors?: Record<string, unknown> | null;
   typography?: Record<string, unknown> | null;
   sections?: Record<string, unknown> | null;
+  enabledModules?: string[] | null;
+  enabled_modules?: string[] | null;
   themeJson?: Record<string, unknown> | null;
   theme_json?: Record<string, unknown> | null;
   pagesJson?: Record<string, unknown> | null;
@@ -493,16 +496,18 @@ publicRouter.get(
     }
 
     const siteBase = toPublicGuildSiteResource(guild);
+    const activeModuleSet = await getActiveGuildModuleSet(database, siteBase.guildId);
+    const enabledModules = [...activeModuleSet];
     const publicEvents =
-      isPublicWarsSectionEnabled(siteBase.sections) && (await isPublicWarsModuleEnabled(siteBase.guildId))
+      activeModuleSet.has("wars_events")
         ? await getPublicWarsSnapshot(siteBase.guildId, siteBase.realm)
         : createEmptyPublicWarsSnapshot();
     const members = isPublicRosterSectionEnabled(siteBase.sections) ? await getPublicGuildMembers(siteBase.guildId) : [];
     const publicForum =
-      isPublicForumSectionEnabled(siteBase.sections) && (await isPublicForumModuleEnabled(siteBase.guildId))
+      activeModuleSet.has("forum")
         ? await getPublicForumSnapshot(siteBase.guildId)
         : createEmptyPublicForumSnapshot();
-    const site = { ...siteBase, members, publicEvents, publicForum };
+    const site = { ...siteBase, enabledModules, members, publicEvents, publicForum };
 
     res.json({ site, guild: site, members });
   })
@@ -770,6 +775,7 @@ export function toPublicGuildSiteResource(row: PublicGuildSiteRow) {
     colors: asRecord(row.colors) ?? asRecord(themeJson.colors) ?? {},
     typography: asRecord(row.typography) ?? asRecord(themeJson.typography) ?? {},
     sections: asRecord(row.sections) ?? asRecord(pagesJson.sections) ?? {},
+    enabledModules: Array.isArray(row.enabledModules || row.enabled_modules) ? (row.enabledModules || row.enabled_modules) : [],
     themeJson,
     pagesJson,
     seoJson,
@@ -965,16 +971,8 @@ function getPublicBankPrivacyLabel(mode: PublicBankMode, domain: "resources" | "
   return domain === "resources" ? "Stocks reserves" : "Demandes reservees";
 }
 
-function isPublicWarsSectionEnabled(sections: Record<string, unknown>) {
-  return sections.wars !== false;
-}
-
 function isPublicRosterSectionEnabled(sections: Record<string, unknown>) {
   return sections.roster !== false;
-}
-
-function isPublicForumSectionEnabled(sections: Record<string, unknown>) {
-  return sections.forum !== false;
 }
 
 async function getPublicGuildMembers(guildId: string) {
@@ -1018,23 +1016,6 @@ function toPublicGuildMemberResource(row: PublicGuildMemberRow) {
     status: asString(row.status),
     roleCodes: Array.isArray(row.roleCodes) ? row.roleCodes : Array.isArray(row.role_codes) ? row.role_codes : []
   };
-}
-
-async function isPublicForumModuleEnabled(guildId: string) {
-  const result = await query<{ active: boolean }>(
-    `
-      SELECT EXISTS (
-        SELECT 1
-        FROM guild_modules
-        WHERE guild_id = $1
-          AND module_key = 'forum'
-          AND status = 'enabled'
-      ) AS active
-    `,
-    [guildId]
-  );
-
-  return Boolean(result.rows[0]?.active);
 }
 
 async function getPublicForumSnapshot(guildId: string) {
@@ -1168,23 +1149,6 @@ function createEmptyPublicForumSnapshot() {
       note: "Le forum n'est pas configure ou reste reserve aux membres."
     }
   };
-}
-
-async function isPublicWarsModuleEnabled(guildId: string) {
-  const result = await query<{ active: boolean }>(
-    `
-      SELECT EXISTS (
-        SELECT 1
-        FROM guild_modules
-        WHERE guild_id = $1
-          AND module_key = 'wars_events'
-          AND status = 'enabled'
-      ) AS active
-    `,
-    [guildId]
-  );
-
-  return Boolean(result.rows[0]?.active);
 }
 
 async function getPublicWarsSnapshot(guildId: string, fallbackRealm: string): Promise<PublicWarsSnapshot> {

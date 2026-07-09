@@ -161,7 +161,7 @@ export const DESIGN_OPTIONS = [
     files: 16,
     delivery: "Template builder instantané",
     license: "Usage guilde",
-    shopDescription: "Une vitrine sombre et premium pour guildes sélectives qui veulent inspirer confiance avant recrutement.",
+    shopDescription: "Une vitrine sombre et premium pour guildes sélectives qui veulent inspirer confiance.",
     accent: "violet",
   },
 ];
@@ -171,7 +171,6 @@ const PURCHASED_DESIGNS_STORAGE_KEY = "guildops:purchased-designs:v1";
 export const FREE_DESIGN_IDS = Object.freeze(DESIGN_OPTIONS.filter((option) => option.tier !== "premium").map((option) => option.id));
 const DEFAULT_OBJECTIVE = "Coordonner les membres actifs, les wars et les consignes sans chaos.";
 const DEFAULT_OBJECTIVE_TAG = "Operations";
-const LEGACY_RECRUITMENT_OBJECTIVE = "Recruter des joueurs actifs et coordonner les wars sans chaos.";
 const OPERATIONAL_SECTION_KEYS = Object.freeze(["wars", "bank", "diplomacy", "forum"]);
 
 function normalizeEnabledModules(value) {
@@ -309,6 +308,8 @@ export function buildGuildSitePayload(draft, guild = {}) {
     typography_json: normalized.typography,
     sections: normalized.sections,
     sections_json: normalized.sections,
+    publicEvents: normalized.publicEvents,
+    public_events: normalized.publicEvents,
     publicDiplomacy: normalized.publicDiplomacy,
     public_diplomacy: normalized.publicDiplomacy,
     publicForum: normalized.publicForum,
@@ -479,15 +480,6 @@ export function normalizeSections(value = {}) {
   Object.keys(DEFAULT_SECTIONS).forEach((key) => {
     normalized[key] = Boolean(rawSections[key] ?? DEFAULT_SECTIONS[key]);
   });
-
-  const hasLegacyRecruitment = rawSections.recruitment === true;
-  const hasOperationalSection = OPERATIONAL_SECTION_KEYS.some((key) => normalized[key]);
-
-  if (hasLegacyRecruitment && !hasOperationalSection) {
-    OPERATIONAL_SECTION_KEYS.forEach((key) => {
-      normalized[key] = true;
-    });
-  }
 
   return normalized;
 }
@@ -811,11 +803,9 @@ function stringValue(value, fallback) {
 }
 
 function normalizeObjective(value) {
-  const objective = stringValue(value, DEFAULT_OBJECTIVE);
-  return objective === LEGACY_RECRUITMENT_OBJECTIVE ? DEFAULT_OBJECTIVE : objective;
+  return stringValue(value, DEFAULT_OBJECTIVE);
 }
 
 function normalizeObjectiveTag(value) {
-  const tag = stringValue(value, DEFAULT_OBJECTIVE_TAG);
-  return tag.toLowerCase() === "recrutement" ? DEFAULT_OBJECTIVE_TAG : tag;
+  return stringValue(value, DEFAULT_OBJECTIVE_TAG);
 }

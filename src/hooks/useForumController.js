@@ -3,9 +3,6 @@ import {
   useState
 } from "react";
 import {
-  forumThreads
-} from "../data/guildOpsMockData.js";
-import {
   guildOpsApi
 } from "../lib/guildOpsApi.js";
 import {
@@ -13,10 +10,7 @@ import {
 } from "../lib/rbac.js";
 import {
   appendUniqueById,
-  buildLocalForumCategories,
   buildLocalForumCounters,
-  buildLocalForumPosts,
-  buildLocalForumThreads,
   createForumCategoryDraft,
   createForumThreadDraft,
   createLocalPagination,
@@ -28,19 +22,15 @@ import {
 } from "../lib/guildOpsTransforms.js";
 
 export function useForumController({ apiEnabled, currentUser, selectedGuild, moduleEnabled = true }) {
-  const [forumCategories, setForumCategories] = useState(() => (moduleEnabled && !apiEnabled ? buildLocalForumCategories(forumThreads) : []));
+  const [forumCategories, setForumCategories] = useState([]);
   const [forumRoles, setForumRoles] = useState([]);
-  const [forumCounters, setForumCounters] = useState(() =>
-    moduleEnabled && !apiEnabled ? buildLocalForumCounters(forumThreads) : { categories: 0, threads: 0, posts: 0, locked: 0 },
-  );
+  const [forumCounters, setForumCounters] = useState(() => ({ categories: 0, threads: 0, posts: 0, locked: 0 }));
   const [forumCanManage, setForumCanManage] = useState(() => moduleEnabled && can(currentUser, "moderate_forum"));
-  const [activeForumCategoryId, setActiveForumCategoryId] = useState(() =>
-    moduleEnabled && !apiEnabled ? buildLocalForumCategories(forumThreads)[0]?.id || "" : "",
-  );
-  const [forumThreadsState, setForumThreadsState] = useState(() => buildLocalForumThreads(moduleEnabled && !apiEnabled ? forumThreads : []));
-  const [activeForumThread, setActiveForumThread] = useState(() => (moduleEnabled && !apiEnabled ? buildLocalForumThreads(forumThreads)[0] || null : null));
-  const [forumPosts, setForumPosts] = useState(() => (moduleEnabled && !apiEnabled ? buildLocalForumPosts(buildLocalForumThreads(forumThreads)[0]) : []));
-  const [forumThreadPagination, setForumThreadPagination] = useState(() => createLocalPagination(moduleEnabled && !apiEnabled ? forumThreads.length : 0));
+  const [activeForumCategoryId, setActiveForumCategoryId] = useState("");
+  const [forumThreadsState, setForumThreadsState] = useState([]);
+  const [activeForumThread, setActiveForumThread] = useState(null);
+  const [forumPosts, setForumPosts] = useState([]);
+  const [forumThreadPagination, setForumThreadPagination] = useState(() => createLocalPagination(0));
   const [forumPostPagination, setForumPostPagination] = useState(() => createLocalPagination(1));
   const [forumThreadDraft, setForumThreadDraft] = useState(() => createForumThreadDraft());
   const [forumReplyDraft, setForumReplyDraft] = useState("");
@@ -50,26 +40,24 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
   const [forumLoading, setForumLoading] = useState(false);
 
   useEffect(() => {
-    const demoForumThreads = moduleEnabled && !apiEnabled ? forumThreads : [];
-    const localForumCategories = moduleEnabled && !apiEnabled ? buildLocalForumCategories(demoForumThreads) : [];
-    const localForumThreads = buildLocalForumThreads(demoForumThreads);
-    setForumCategories(localForumCategories);
+    if (!moduleEnabled || !apiEnabled) {
+      setForumCategories([]);
+      setForumRoles([]);
+      setForumCounters({ categories: 0, threads: 0, posts: 0, locked: 0 });
+      setActiveForumCategoryId("");
+      setForumThreadsState([]);
+      setActiveForumThread(null);
+      setForumPosts([]);
+      setForumThreadPagination(createLocalPagination(0));
+      setForumPostPagination(createLocalPagination(0));
+    }
+
     if (!moduleEnabled) setForumRoles([]);
-    setForumCounters(moduleEnabled && !apiEnabled ? buildLocalForumCounters(demoForumThreads) : { categories: 0, threads: 0, posts: 0, locked: 0 });
     setForumCanManage(moduleEnabled && can(currentUser, "moderate_forum"));
-    const localForumCategoryId = localForumCategories.find((category) => category.id === activeForumCategoryId)?.id || localForumCategories[0]?.id || "";
-    setActiveForumCategoryId(localForumCategoryId);
     setForumThreadDraft((current) => ({
       ...current,
-      categoryId: localForumCategories.some((category) => category.id === current.categoryId)
-        ? current.categoryId
-        : localForumCategoryId,
+      categoryId: moduleEnabled && apiEnabled ? current.categoryId : "",
     }));
-    setForumThreadsState(localForumThreads);
-    setActiveForumThread((current) => localForumThreads.find((thread) => thread.id === current?.id) || localForumThreads[0] || null);
-    setForumPosts((current) => (moduleEnabled && !apiEnabled ? current.length ? current : buildLocalForumPosts(localForumThreads[0]) : []));
-    setForumThreadPagination(createLocalPagination(localForumThreads.length));
-    setForumPostPagination(createLocalPagination(1));
   }, [apiEnabled, currentUser, moduleEnabled]);
 
   useEffect(() => {
@@ -115,12 +103,9 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     const guildId = getApiGuildId(selectedGuild);
 
     if (!moduleEnabled || !apiEnabled || !guildId) {
-      const localThreads = buildLocalForumThreads(moduleEnabled && !apiEnabled ? forumThreads : []).filter(
-        (thread) => !activeForumCategoryId || thread.categoryId === activeForumCategoryId,
-      );
-      setForumThreadsState(localThreads);
-      setForumThreadPagination(createLocalPagination(localThreads.length));
-      setActiveForumThread((current) => localThreads.find((thread) => thread.id === current?.id) || localThreads[0] || null);
+      setForumThreadsState([]);
+      setForumThreadPagination(createLocalPagination(0));
+      setActiveForumThread(null);
       return undefined;
     }
 
@@ -164,8 +149,8 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     }
 
     if (!apiEnabled || !guildId) {
-      setForumPosts(buildLocalForumPosts(activeForumThread));
-      setForumPostPagination(createLocalPagination(1));
+      setForumPosts([]);
+      setForumPostPagination(createLocalPagination(0));
       return undefined;
     }
 
@@ -230,15 +215,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     if (!forumCanManage) return;
 
     if (!apiEnabled || !getApiGuildId(selectedGuild)) {
-      setForumCategories((current) => {
-        const category = {
-          ...normalized,
-          id: normalized.id || `local-category-${Date.now()}`,
-          permissions: { canRead: true, canPost: true, canModerate: true },
-        };
-        return [category, ...current.filter((item) => item.id !== category.id)];
-      });
-      setForumCategoryDraft(createForumCategoryDraft());
+      setForumError("API requise pour enregistrer une catégorie.");
       return;
     }
 
@@ -269,9 +246,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     if (!forumCanManage || !categoryId) return;
 
     if (!apiEnabled || !guildId) {
-      setForumCategories((current) =>
-        current.map((category) => (category.id === categoryId ? { ...category, rolePermissions: permissions } : category)),
-      );
+      setForumError("API requise pour modifier les permissions forum.");
       return;
     }
 
@@ -295,23 +270,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     if (!draft.title || !draft.body || !draft.categoryId) return;
 
     if (!apiEnabled || !getApiGuildId(selectedGuild)) {
-      const localThread = normalizeForumThread({
-        id: `local-thread-${Date.now()}`,
-        categoryId: draft.categoryId,
-        categoryName: forumCategories.find((category) => category.id === draft.categoryId)?.name || "General",
-        title: draft.title,
-        authorName: currentUser.displayName,
-        preview: draft.body,
-        pinned: draft.pinned,
-        locked: draft.locked,
-        postCount: 1,
-        replyCount: 0,
-        createdAt: new Date().toISOString(),
-      });
-      setForumThreadsState((current) => [localThread, ...current]);
-      setActiveForumThread(localThread);
-      setForumPosts(buildLocalForumPosts(localThread, draft.body, currentUser.displayName));
-      setForumThreadDraft(createForumThreadDraft({ categoryId: draft.categoryId }));
+      setForumError("API requise pour créer un sujet.");
       return;
     }
 
@@ -334,9 +293,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     if (!thread || !forumCanManage) return;
 
     if (!apiEnabled || !guildId) {
-      const updated = { ...thread, ...patch };
-      setActiveForumThread(updated);
-      setForumThreadsState((current) => current.map((item) => (item.id === thread.id ? updated : item)));
+      setForumError("API requise pour modifier un sujet.");
       return;
     }
 
@@ -364,30 +321,16 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     const body = forumReplyDraft.trim();
     if (!body || !activeForumThread) return;
 
-    const guildId = getApiGuildId(selectedGuild);
     const editingPostId = forumEditingPostId;
-    setForumReplyDraft("");
-    setForumEditingPostId("");
+    const guildId = getApiGuildId(selectedGuild);
 
     if (!apiEnabled || !guildId) {
-      if (editingPostId) {
-        setForumPosts((current) =>
-          current.map((post) => (post.id === editingPostId ? { ...post, body, edited: true, editedAt: new Date().toISOString() } : post)),
-        );
-      } else {
-        setForumPosts((current) => [
-          ...current,
-          normalizeForumPost({
-            id: `local-post-${Date.now()}`,
-            threadId: activeForumThread.id,
-            authorName: currentUser.displayName,
-            body,
-            createdAt: new Date().toISOString(),
-          }),
-        ]);
-      }
+      setForumError("API requise pour envoyer une réponse forum.");
       return;
     }
+
+    setForumReplyDraft("");
+    setForumEditingPostId("");
 
     try {
       const payload = editingPostId
@@ -415,9 +358,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     if (!post || !activeForumThread) return;
 
     if (!apiEnabled || !guildId) {
-      setForumPosts((current) =>
-        current.map((item) => (item.id === post.id ? { ...item, deleted: true, deletedAt: new Date().toISOString(), body: "" } : item)),
-      );
+      setForumError("API requise pour supprimer un message forum.");
       return;
     }
 

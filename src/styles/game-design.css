@@ -1,0 +1,2350 @@
+/* Game HUD pass for the private GuildOps workspace. */
+.app-shell {
+  --hud-panel: rgba(4, 12, 15, 0.93);
+  --hud-panel-strong: rgba(8, 18, 22, 0.97);
+  --hud-panel-blue: rgba(6, 16, 29, 0.92);
+  --hud-border: rgba(238, 176, 67, 0.35);
+  --hud-border-cyan: rgba(196, 154, 74, 0.34);
+  --hud-border-red: rgba(184, 75, 75, 0.42);
+  --hud-gold: #d9a747;
+  --hud-cyan: #c49a4a;
+  --hud-lime: #e2b345;
+  --hud-red: #c34f51;
+  --hud-chamfer: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+  position: relative;
+  background:
+    linear-gradient(rgba(217, 167, 71, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 154, 74, 0.02) 1px, transparent 1px),
+    radial-gradient(circle at 74% 12%, rgba(217, 167, 71, 0.1), transparent 22rem),
+    linear-gradient(180deg, rgba(5, 8, 6, 0.16), rgba(4, 7, 5, 0.74)),
+    url("/assets/command-map-texture.png") center / cover fixed,
+    #030604;
+  background-size: 44px 44px, 44px 44px, auto, auto, auto, auto;
+}
+
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0 52%, rgba(217, 167, 71, 0.035) 52% 53%, transparent 53% 100%),
+    radial-gradient(circle at 78% 18%, rgba(93, 53, 20, 0.18), transparent 24rem);
+  background-size: auto, auto;
+  mix-blend-mode: screen;
+}
+
+.sidebar,
+.workspace {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar {
+  gap: 18px;
+  padding: 20px 14px;
+  border-right-color: rgba(238, 176, 67, 0.28);
+  background:
+    linear-gradient(rgba(217, 167, 71, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 154, 74, 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(6, 11, 8, 0.98), rgba(3, 7, 5, 0.95));
+  background-size: 30px 30px, 30px 30px, auto;
+  box-shadow:
+    inset -1px 0 0 rgba(196, 154, 74, 0.16),
+    18px 0 50px rgba(0, 0, 0, 0.32);
+}
+
+.brand-lockup {
+  padding: 8px 10px 18px;
+  color: #f8f2df;
+  font-size: 1.7rem;
+  font-weight: 950;
+}
+
+.brand-mark,
+.avatar.crest,
+.message-space-mark {
+  border-radius: 0;
+  clip-path: polygon(50% 0, 92% 18%, 92% 72%, 50% 100%, 8% 72%, 8% 18%);
+}
+
+.faction-crest {
+  --crest-a: var(--hud-gold);
+  --crest-b: #6f4a1e;
+  width: 56px;
+  height: 64px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--crest-a), transparent 78%));
+}
+
+.faction-crest.is-compact {
+  width: 34px;
+  height: 39px;
+}
+
+.faction-crest svg,
+.comms-crest-art {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.faction-crest-wing {
+  fill: rgba(3, 10, 12, 0.92);
+  stroke: color-mix(in srgb, var(--crest-a), transparent 26%);
+  stroke-width: 1.3;
+}
+
+.faction-crest-back {
+  fill: rgba(2, 8, 10, 0.94);
+  stroke: rgba(0, 0, 0, 0.8);
+  stroke-width: 2;
+}
+
+.faction-crest-cap {
+  fill: color-mix(in srgb, var(--crest-a), black 52%);
+  stroke: color-mix(in srgb, var(--crest-a), white 12%);
+  stroke-width: 1.4;
+}
+
+.faction-crest-frame {
+  fill: color-mix(in srgb, var(--crest-b), transparent 52%);
+  stroke: var(--crest-a);
+  stroke-width: 2.7;
+}
+
+.faction-crest-fill {
+  fill: rgba(6, 18, 21, 0.96);
+  stroke: color-mix(in srgb, var(--crest-a), white 10%);
+  stroke-width: 1.4;
+}
+
+.faction-crest-notch,
+.faction-crest-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--crest-a), white 18%);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.faction-crest-notch {
+  stroke-width: 1.1;
+  opacity: 0.55;
+}
+
+.faction-crest-symbol {
+  fill: color-mix(in srgb, var(--crest-a), white 10%);
+  opacity: 0.9;
+}
+
+.faction-crest-rivet {
+  fill: color-mix(in srgb, var(--crest-a), white 16%);
+  stroke: rgba(0, 0, 0, 0.45);
+  stroke-width: 0.8;
+}
+
+.faction-crest-sheen {
+  fill: rgba(255, 255, 255, 0.14);
+  opacity: 0.75;
+}
+
+.faction-crest-line {
+  stroke-width: 2.7;
+  opacity: 0.92;
+}
+
+.guild-shield-art {
+  width: 74%;
+  height: 74%;
+  overflow: visible;
+  filter: drop-shadow(0 0 12px rgba(244, 180, 63, 0.26));
+}
+
+.guild-shield-art.is-small {
+  width: 18px;
+  height: 21px;
+  filter: drop-shadow(0 0 7px rgba(244, 180, 63, 0.2));
+}
+
+.guild-shield-shadow {
+  fill: rgba(2, 8, 10, 0.96);
+  stroke: rgba(0, 0, 0, 0.82);
+  stroke-width: 2;
+}
+
+.guild-shield-frame {
+  fill: rgba(62, 48, 18, 0.88);
+  stroke: var(--hud-gold);
+  stroke-width: 2.4;
+}
+
+.guild-shield-face {
+  fill: rgba(5, 16, 16, 0.94);
+  stroke: rgba(255, 215, 104, 0.78);
+  stroke-width: 1.3;
+}
+
+.guild-shield-sigil {
+  fill: rgba(244, 180, 63, 0.62);
+  stroke: rgba(255, 234, 157, 0.88);
+  stroke-width: 1.2;
+}
+
+.guild-shield-line {
+  fill: none;
+  stroke: rgba(2, 8, 10, 0.82);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.brand-mark {
+  width: 52px;
+  height: 52px;
+  border-color: rgba(244, 180, 63, 0.84);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(244, 180, 63, 0.35), transparent 36%),
+    rgba(19, 25, 16, 0.9);
+  color: var(--hud-gold);
+  box-shadow: 0 0 0 1px rgba(244, 180, 63, 0.16), 0 0 28px rgba(244, 180, 63, 0.12);
+}
+
+.nav-item {
+  position: relative;
+  overflow: hidden;
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 0;
+  color: #9fb2bb;
+  clip-path: var(--hud-chamfer);
+  font-weight: 760;
+}
+
+.nav-item > svg {
+  width: 28px;
+  height: 30px;
+  padding: 5px;
+  border: 1px solid rgba(154, 180, 192, 0.2);
+  clip-path: polygon(50% 0, 92% 18%, 92% 72%, 50% 100%, 8% 72%, 8% 18%);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(196, 154, 74, 0.12), transparent 46%),
+    rgba(3, 12, 15, 0.74);
+  stroke-width: 2.4;
+}
+
+.nav-item.is-active > svg {
+  border-color: rgba(244, 180, 63, 0.62);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(244, 180, 63, 0.22), transparent 46%),
+    rgba(31, 25, 10, 0.88);
+  filter: drop-shadow(0 0 10px rgba(244, 180, 63, 0.22));
+}
+
+.nav-item:hover {
+  border-color: rgba(196, 154, 74, 0.18);
+  background: rgba(196, 154, 74, 0.055);
+  color: #e6fbff;
+}
+
+.nav-item.is-active {
+  border-color: rgba(244, 180, 63, 0.58);
+  background:
+    linear-gradient(90deg, rgba(244, 180, 63, 0.24), rgba(244, 180, 63, 0.04)),
+    rgba(3, 10, 12, 0.82);
+  color: #ffd15f;
+  box-shadow:
+    inset 4px 0 0 var(--hud-gold),
+    inset 0 0 0 1px rgba(244, 180, 63, 0.1);
+}
+
+.badge-dot,
+.notice-dot,
+.message-row i {
+  border-radius: 6px;
+  background: var(--hud-red);
+  box-shadow: 0 0 18px rgba(255, 79, 82, 0.34);
+}
+
+.guild-switcher,
+.realm-clock {
+  border: 1px solid var(--hud-border);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(135deg, rgba(244, 180, 63, 0.08), transparent 32%),
+    rgba(5, 14, 17, 0.84);
+}
+
+.guild-switcher {
+  padding: 13px;
+}
+
+.section-label {
+  color: #bd9651;
+  font-weight: 900;
+}
+
+.guild-row {
+  min-height: 39px;
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+.guild-row.is-selected {
+  border-color: rgba(244, 180, 63, 0.42);
+  background: rgba(244, 180, 63, 0.13);
+  color: #ffd15f;
+}
+
+.secondary-full {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+.realm-clock {
+  padding: 14px;
+}
+
+.realm-clock strong {
+  color: var(--hud-cyan);
+  font-size: 1.18rem;
+  font-weight: 950;
+}
+
+.realm-clock strong small,
+.realm-clock-zone-picker span {
+  color: #bd9651;
+}
+
+.realm-clock-zone-picker select {
+  border-radius: 0;
+  border-color: rgba(238, 176, 67, 0.28);
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.08), transparent 68%),
+    rgba(3, 10, 12, 0.86);
+  color: #f8f2df;
+  font-weight: 780;
+}
+
+.workspace {
+  padding: 18px 24px 30px;
+}
+
+.site-builder-topbar {
+  position: relative;
+  grid-template-columns: minmax(230px, 300px) minmax(340px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 0 0 18px;
+  border-bottom-color: rgba(238, 176, 67, 0.22);
+}
+
+.site-builder-topbar .site-url-field,
+.site-builder-topbar .top-actions {
+  grid-column: auto;
+}
+
+.site-builder-topbar .top-actions {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+
+.top-guild-card,
+.site-url-field,
+.icon-button,
+.user-chip,
+.publish-action,
+.primary-action,
+.teal-action,
+.ghost-action,
+.danger-action,
+.link-action.inline {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+.top-guild-card,
+.site-url-field,
+.user-chip,
+.publish-action {
+  position: relative;
+  overflow: hidden;
+}
+
+.top-site-switcher {
+  z-index: 30;
+}
+
+.top-guild-card::after,
+.site-url-field::after,
+.user-chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.56;
+  background: url("/assets/game-hud/frame-chip.svg") center / 100% 100% no-repeat;
+}
+
+.top-guild-card > *,
+.site-url-field > *,
+.user-chip > * {
+  position: relative;
+  z-index: 1;
+}
+
+.top-guild-card {
+  min-height: 70px;
+  padding: 9px 12px;
+  border-color: rgba(238, 176, 67, 0.28);
+  background:
+    linear-gradient(135deg, rgba(244, 180, 63, 0.12), transparent 46%),
+    var(--hud-panel-strong);
+}
+
+.top-guild-card.is-open {
+  border-color: rgba(244, 180, 63, 0.68);
+  box-shadow: 0 0 24px rgba(244, 180, 63, 0.12);
+}
+
+.top-guild-card strong {
+  color: #f8f2df;
+  font-size: 1.08rem;
+  font-weight: 950;
+}
+
+.top-guild-card small,
+.site-url-field input,
+.user-chip small {
+  color: #9ed4e5;
+}
+
+.top-site-menu {
+  border-radius: 0;
+  border-color: rgba(238, 176, 67, 0.36);
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(rgba(217, 167, 71, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 154, 74, 0.02) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(6, 15, 18, 0.98), rgba(3, 8, 10, 0.98));
+  background-size: 24px 24px, 24px 24px, auto;
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.46),
+    inset 0 0 0 1px rgba(244, 180, 63, 0.06);
+}
+
+.top-site-option {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  color: #f8f2df;
+}
+
+.top-site-option:hover,
+.top-site-option:focus-visible,
+.top-site-option.is-selected {
+  border-color: rgba(244, 180, 63, 0.5);
+  background:
+    linear-gradient(90deg, rgba(244, 180, 63, 0.18), rgba(244, 180, 63, 0.04)),
+    rgba(3, 10, 12, 0.9);
+}
+
+.top-site-option small {
+  color: #9ed4e5;
+}
+
+.top-site-option em {
+  color: #ffd15f;
+}
+
+.top-site-option-mark {
+  filter: drop-shadow(0 0 8px rgba(244, 180, 63, 0.18));
+}
+
+.site-url-field {
+  min-width: 0;
+  min-height: 56px;
+  border-color: rgba(196, 154, 74, 0.22);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.08), transparent 44%),
+    rgba(3, 10, 12, 0.84);
+}
+
+.site-url-field input {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon-button {
+  width: 46px;
+  min-height: 46px;
+  border-color: rgba(154, 180, 192, 0.24);
+  background: rgba(5, 14, 18, 0.92);
+}
+
+.icon-button::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  pointer-events: none;
+  border: 1px solid rgba(154, 180, 192, 0.16);
+  clip-path: polygon(50% 0, 92% 18%, 92% 72%, 50% 100%, 8% 72%, 8% 18%);
+  background: rgba(196, 154, 74, 0.025);
+}
+
+.icon-button svg {
+  position: relative;
+  z-index: 1;
+  stroke-width: 2.35;
+  filter: drop-shadow(0 0 7px rgba(196, 154, 74, 0.18));
+}
+
+.icon-button .notice-dot {
+  top: 3px;
+  right: 3px;
+  z-index: 3;
+  min-width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 236, 219, 0.68);
+  border-radius: 999px;
+  background: #e7353c;
+  color: #fff8f0;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(54, 0, 0, 0.85);
+  box-shadow:
+    0 0 0 2px rgba(2, 8, 10, 0.92),
+    0 0 16px rgba(231, 53, 60, 0.5);
+}
+
+.icon-button:hover,
+.icon-button:focus-visible {
+  border-color: rgba(196, 154, 74, 0.42);
+  color: var(--hud-cyan);
+}
+
+.user-chip {
+  flex: 0 1 190px;
+  min-height: 46px;
+  padding: 7px 12px;
+  border-color: rgba(238, 176, 67, 0.24);
+  background: rgba(5, 14, 18, 0.92);
+}
+
+.publish-action {
+  min-height: 58px;
+  padding: 0 24px;
+  border: 1px solid rgba(226, 179, 69, 0.9);
+  background:
+    linear-gradient(180deg, #f2cc64, #b27625),
+    var(--hud-lime);
+  color: #1b1105;
+  font-weight: 950;
+  box-shadow:
+    0 0 0 1px rgba(226, 179, 69, 0.24),
+    0 16px 42px rgba(122, 77, 25, 0.24);
+}
+
+.panel {
+  border-color: rgba(197, 155, 74, 0.22);
+  border-radius: 0;
+  background:
+    linear-gradient(rgba(217, 167, 71, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196, 154, 74, 0.018) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(12, 18, 12, 0.94), rgba(5, 10, 7, 0.92));
+  background-size: 28px 28px, 28px 28px, auto;
+  box-shadow:
+    0 26px 70px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.panel-header {
+  border-bottom-color: rgba(238, 176, 67, 0.18);
+}
+
+.panel-header h2,
+.message-inbox-header strong,
+.message-thread-title strong {
+  font-weight: 950;
+}
+
+.messages-page {
+  gap: 12px;
+}
+
+.view-with-module-hero {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.view-with-module-hero > .builder-layout,
+.view-with-module-hero > .page-grid {
+  min-width: 0;
+}
+
+.message-space-hero {
+  position: relative;
+  min-height: 204px;
+  grid-template-columns: 116px minmax(0, 1fr) minmax(250px, 0.32fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  margin: 0 0 10px;
+  padding: 22px 34px;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(7, 10, 7, 0.96), rgba(7, 10, 7, 0.72) 45%, rgba(9, 8, 5, 0.4)),
+    linear-gradient(180deg, rgba(217, 167, 71, 0.08), rgba(5, 8, 5, 0.86)),
+    url("/assets/command-map-texture.png") center / cover,
+    url("/assets/guild-camp-hero.png") center right / cover;
+  box-shadow:
+    inset 0 0 0 1px rgba(196, 154, 74, 0.06),
+    0 26px 70px rgba(0, 0, 0, 0.36);
+}
+
+.module-space-hero {
+  margin-bottom: 0;
+  grid-template-columns: 132px minmax(420px, 1fr) minmax(440px, 0.46fr);
+  padding: 21px 38px 20px;
+  background:
+    linear-gradient(90deg, rgba(1, 8, 11, 0.98) 0%, rgba(2, 15, 20, 0.9) 32%, rgba(3, 12, 15, 0.76) 100%),
+    radial-gradient(circle at 48% 34%, rgba(66, 243, 255, 0.18), transparent 24rem),
+    radial-gradient(circle at 82% 54%, rgba(255, 81, 74, 0.15), transparent 19rem),
+    linear-gradient(rgba(66, 243, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(66, 243, 255, 0.026) 1px, transparent 1px),
+    url("/assets/command-map-texture.png") center / cover,
+    #02090d;
+  background-size: auto, auto, auto, 34px 34px, 34px 34px, cover, auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(224, 163, 61, 0.12),
+    0 24px 64px rgba(0, 0, 0, 0.38);
+}
+
+.message-space-hero::before,
+.message-space-hero::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.message-space-hero::before {
+  inset: 0;
+  z-index: 1;
+  background: url("/assets/game-hud/frame-hero.svg") center / 100% 100% no-repeat;
+}
+
+.message-space-hero::after {
+  z-index: 0;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border: 0;
+  transform: none;
+  opacity: 0.92;
+  background: url("/assets/game-hud/ornament-hero.svg") center / 100% 100% no-repeat;
+}
+
+.module-space-hero::before {
+  opacity: 0.98;
+  filter: drop-shadow(0 0 9px rgba(224, 163, 61, 0.16));
+}
+
+.module-space-hero::after {
+  opacity: 1;
+  mix-blend-mode: screen;
+}
+
+.message-space-mark {
+  z-index: 2;
+  grid-row: 1 / span 2;
+  width: 92px;
+  height: 92px;
+  border-color: rgba(139, 201, 139, 0.42);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(217, 167, 71, 0.18), transparent 48%),
+    rgba(8, 16, 10, 0.84);
+  color: var(--hud-cyan);
+}
+
+.module-space-mark {
+  width: 106px;
+  height: 106px;
+  border-color: rgba(66, 243, 255, 0.42);
+  background:
+    radial-gradient(circle at 50% 48%, rgba(66, 243, 255, 0.16), transparent 48%),
+    linear-gradient(180deg, rgba(7, 31, 39, 0.84), rgba(2, 9, 13, 0.96));
+  color: var(--msg-cyan, var(--hud-cyan));
+  filter: drop-shadow(0 0 18px rgba(66, 243, 255, 0.12));
+}
+
+.module-space-mark .module-hero-icon {
+  width: 56px;
+  height: 56px;
+  stroke-width: 1.65;
+  filter: drop-shadow(0 0 12px rgba(66, 243, 255, 0.24));
+}
+
+:is(.view-site-hero-frame, .view-command-hero-frame) .module-space-mark {
+  overflow: hidden;
+  isolation: isolate;
+  border-color: rgba(244, 180, 63, 0.5);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(244, 180, 63, 0.18), transparent 42%),
+    linear-gradient(180deg, rgba(16, 20, 13, 0.94), rgba(3, 9, 10, 0.98));
+  color: var(--hud-gold);
+  filter: drop-shadow(0 0 14px rgba(244, 180, 63, 0.1));
+}
+
+:is(.view-site-hero-frame, .view-command-hero-frame) .premium-hero-glyph {
+  --premium-glyph-a: #d9a747;
+  --premium-glyph-b: #d9a747;
+  --premium-glyph-deep: rgba(3, 11, 12, 0.98);
+}
+
+:is(.view-site-hero-frame, .view-command-hero-frame) .premium-hero-glyph.is-mark {
+  width: 70%;
+  height: 76%;
+  filter:
+    drop-shadow(0 0 10px rgba(217, 167, 71, 0.2))
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.42));
+}
+
+.premium-hero-glyph {
+  --premium-glyph-a: var(--msg-cyan, var(--hud-cyan));
+  --premium-glyph-b: var(--msg-gold, var(--hud-gold));
+  --premium-glyph-deep: rgba(2, 10, 13, 0.96);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  color: rgba(255, 238, 190, 0.9);
+}
+
+.premium-hero-glyph.is-mark {
+  width: 82%;
+  height: 88%;
+  filter:
+    drop-shadow(0 0 12px color-mix(in srgb, var(--premium-glyph-a), transparent 78%))
+    drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
+}
+
+.premium-hero-glyph.is-crest {
+  width: 132px;
+  height: 146px;
+  filter:
+    drop-shadow(0 0 18px color-mix(in srgb, var(--premium-glyph-b), transparent 76%))
+    drop-shadow(0 16px 22px rgba(0, 0, 0, 0.55));
+}
+
+.premium-hero-glyph-frame {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.premium-glyph-shadow {
+  fill: rgba(0, 0, 0, 0.56);
+  stroke: rgba(0, 0, 0, 0.72);
+  stroke-width: 2.4;
+}
+
+.premium-glyph-back {
+  fill: var(--premium-glyph-deep);
+  stroke: color-mix(in srgb, var(--premium-glyph-b), transparent 24%);
+  stroke-width: 2;
+}
+
+.premium-glyph-top {
+  fill: color-mix(in srgb, var(--premium-glyph-b), black 48%);
+  stroke: color-mix(in srgb, var(--premium-glyph-b), white 14%);
+  stroke-width: 1.35;
+}
+
+.premium-glyph-frame-line {
+  fill: color-mix(in srgb, var(--premium-glyph-b), transparent 74%);
+  stroke: color-mix(in srgb, var(--premium-glyph-b), white 10%);
+  stroke-width: 2.4;
+}
+
+.premium-glyph-core {
+  fill: rgba(4, 20, 25, 0.92);
+  stroke: color-mix(in srgb, var(--premium-glyph-a), transparent 24%);
+  stroke-width: 1.5;
+}
+
+.premium-glyph-notches {
+  fill: none;
+  stroke: color-mix(in srgb, var(--premium-glyph-a), white 4%);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.25;
+  opacity: 0.64;
+}
+
+.premium-glyph-rivet {
+  fill: color-mix(in srgb, var(--premium-glyph-b), white 18%);
+  stroke: rgba(0, 0, 0, 0.44);
+  stroke-width: 0.8;
+}
+
+.premium-glyph-sheen {
+  fill: rgba(255, 255, 255, 0.12);
+  opacity: 0.74;
+}
+
+.premium-hero-glyph-icon {
+  position: absolute;
+  width: 38%;
+  height: 38%;
+  color: rgba(255, 242, 206, 0.9);
+  stroke-width: 1.65;
+  filter:
+    drop-shadow(0 0 9px color-mix(in srgb, var(--premium-glyph-a), transparent 62%))
+    drop-shadow(0 2px 0 rgba(0, 0, 0, 0.42));
+}
+
+.premium-hero-glyph.is-mark .premium-hero-glyph-icon {
+  width: 42%;
+  height: 42%;
+}
+
+.premium-hero-glyph.is-crest .premium-hero-glyph-icon {
+  transform: translateY(-3px);
+}
+
+.message-space-mark .comms-crest-art {
+  width: 86%;
+  height: 86%;
+}
+
+.comms-outer {
+  fill: rgba(5, 9, 6, 0.96);
+  stroke: rgba(217, 167, 71, 0.48);
+  stroke-width: 2;
+}
+
+.comms-inner {
+  fill: rgba(22, 31, 17, 0.9);
+  stroke: rgba(139, 201, 139, 0.68);
+  stroke-width: 1.7;
+}
+
+.comms-scroll,
+.comms-ribbon {
+  fill: rgba(217, 167, 71, 0.78);
+  stroke: rgba(255, 232, 161, 0.82);
+  stroke-width: 1.5;
+}
+
+.comms-seal {
+  fill: rgba(184, 75, 75, 0.86);
+  stroke: rgba(255, 214, 156, 0.75);
+  stroke-width: 1.2;
+}
+
+.comms-line,
+.comms-rune {
+  fill: none;
+  stroke: rgba(43, 29, 13, 0.72);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.comms-line {
+  stroke-width: 2.6;
+}
+
+.comms-rune {
+  stroke-width: 2.2;
+  opacity: 0.85;
+}
+
+.message-space-mark > span:not(.premium-hero-glyph) {
+  top: 4px;
+  right: -3px;
+}
+
+.module-space-mark > span:not(.premium-hero-glyph) {
+  top: 6px;
+  right: -6px;
+  background: var(--msg-red, #ff514a);
+  box-shadow: 0 0 0 2px rgba(2, 10, 14, 0.95), 0 0 16px rgba(255, 81, 74, 0.32);
+}
+
+.message-space-hero > span,
+.message-space-hero em {
+  position: relative;
+  z-index: 2;
+}
+
+.message-space-hero small {
+  color: var(--hud-cyan);
+  font-size: 0.92rem;
+  font-weight: 950;
+}
+
+.module-space-hero > span {
+  align-self: center;
+  margin-top: -10px;
+}
+
+.module-space-hero small {
+  color: var(--msg-cyan, var(--hud-cyan));
+  text-shadow: 0 0 14px rgba(66, 243, 255, 0.28);
+}
+
+.message-space-hero strong {
+  max-width: 760px;
+  color: transparent;
+  background:
+    linear-gradient(180deg, #fff8df 0%, #f1f4ed 32%, #b8c3c5 48%, #ffffff 56%, #7f8d90 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.18);
+  font-family: "Arial Narrow", "Roboto Condensed", Impact, Inter, sans-serif;
+  font-size: clamp(2.85rem, 4.1vw, 4.05rem);
+  line-height: 0.9;
+  text-transform: uppercase;
+  text-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.32),
+    0 0 18px rgba(255, 255, 255, 0.06);
+}
+
+.module-space-hero strong {
+  font-size: 3.65rem;
+  letter-spacing: 0;
+  text-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.44),
+    0 0 22px rgba(255, 255, 255, 0.08);
+}
+
+.message-space-hero em {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+  min-height: 42px;
+  border-color: rgba(255, 79, 82, 0.48);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background: rgba(46, 6, 10, 0.7);
+  color: #ff7f81;
+}
+
+.module-space-hero em {
+  margin-top: -8px;
+  min-width: 134px;
+  border-color: rgba(255, 81, 74, 0.52);
+  background:
+    linear-gradient(90deg, rgba(255, 81, 74, 0.2), transparent 76%),
+    rgba(44, 5, 10, 0.82);
+  color: #ff8680;
+  box-shadow: inset 0 0 0 1px rgba(255, 81, 74, 0.12);
+}
+
+.message-hero-crest,
+.message-hero-mode {
+  position: relative;
+  z-index: 2;
+}
+
+.message-hero-crest {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  justify-self: center;
+  width: 118px;
+  height: 126px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(238, 176, 67, 0.34);
+  clip-path: polygon(50% 0, 93% 17%, 93% 72%, 50% 100%, 7% 72%, 7% 17%);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(244, 180, 63, 0.26), transparent 38%),
+    linear-gradient(180deg, rgba(244, 180, 63, 0.15), rgba(3, 10, 12, 0.88));
+  color: rgba(244, 180, 63, 0.78);
+  opacity: 0.9;
+  filter: drop-shadow(0 0 24px rgba(244, 180, 63, 0.16));
+}
+
+.module-hero-crest {
+  justify-self: start;
+  align-self: center;
+  width: 136px;
+  height: 150px;
+  margin-left: 12px;
+  border: 0;
+  background: transparent;
+  opacity: 0.96;
+  filter:
+    drop-shadow(0 0 16px rgba(224, 163, 61, 0.22))
+    drop-shadow(0 14px 20px rgba(0, 0, 0, 0.5));
+}
+
+.module-hero-crest > .module-hero-icon {
+  width: 86px;
+  height: 86px;
+  color: rgba(224, 163, 61, 0.86);
+  stroke-width: 1.25;
+}
+
+.message-hero-mode {
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  width: min(100%, 258px);
+  min-height: 86px;
+  align-self: end;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 16px 20px;
+  border: 1px solid rgba(196, 154, 74, 0.34);
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.16), rgba(196, 154, 74, 0.04)),
+    rgba(2, 14, 17, 0.88);
+  box-shadow:
+    inset 0 -3px 0 rgba(196, 154, 74, 0.46),
+    0 0 36px rgba(196, 154, 74, 0.08);
+}
+
+.module-hero-mode {
+  width: 270px;
+  min-height: 88px;
+  padding: 15px 21px 14px;
+  border-color: rgba(66, 243, 255, 0.33);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.16), rgba(66, 243, 255, 0.035)),
+    rgba(2, 15, 20, 0.9);
+  box-shadow:
+    inset 0 -3px 0 rgba(66, 243, 255, 0.64),
+    inset 0 0 0 1px rgba(224, 163, 61, 0.14),
+    0 0 34px rgba(66, 243, 255, 0.1);
+}
+
+.message-hero-mode::before {
+  inset: -1px;
+  z-index: 0;
+  opacity: 0.98;
+  background: url("/assets/game-hud/frame-chip.svg") center / 100% 100% no-repeat;
+}
+
+.message-hero-mode > * {
+  position: relative;
+  z-index: 1;
+}
+
+.message-hero-mode small,
+.message-hero-mode span {
+  color: #9fb2bb;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.message-hero-mode strong {
+  color: var(--hud-cyan);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.1;
+  text-shadow: none;
+}
+
+.module-hero-mode strong {
+  color: var(--msg-cyan, var(--hud-cyan));
+  font-size: 1.02rem;
+}
+
+.message-inbox-workspace {
+  position: relative;
+  min-height: min(640px, calc(100vh - 456px));
+  grid-template-columns: minmax(340px, 0.58fr) minmax(0, 1fr);
+  grid-template-rows: minmax(420px, 1fr) auto;
+  gap: 0;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    radial-gradient(circle at 32% 16%, rgba(196, 154, 74, 0.12), transparent 24rem),
+    radial-gradient(circle at 78% 20%, rgba(87, 50, 22, 0.16), transparent 28rem),
+    linear-gradient(180deg, rgba(6, 11, 7, 0.88), rgba(3, 7, 5, 0.94)),
+    url("/assets/command-map-texture.png") center / cover;
+  background-size: auto, auto, auto, auto;
+}
+
+.message-inbox-workspace::before,
+.message-inbox-workspace::after,
+.message-row::before,
+.thread-message::after,
+.thread-input-box::before,
+.message-hero-mode::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.message-inbox-workspace::before {
+  inset: 0;
+  z-index: 0;
+  opacity: 0.95;
+  background: url("/assets/game-hud/frame-workspace.svg") center / 100% 100% no-repeat;
+}
+
+.message-inbox-workspace::after {
+  inset: 0;
+  z-index: 1;
+  opacity: 0.86;
+  background: url("/assets/game-hud/ornament-workspace.svg") center / 100% 100% no-repeat;
+}
+
+.message-inbox-workspace > * {
+  position: relative;
+  z-index: 3;
+}
+
+.message-inbox-pane,
+.message-thread-panel,
+.thread-input {
+  border-radius: 0;
+  clip-path: none;
+}
+
+.message-inbox-pane {
+  border-width: 0 1px 0 0;
+  border-color: rgba(238, 176, 67, 0.24);
+  background:
+    radial-gradient(circle at 20% 16%, rgba(196, 154, 74, 0.1), transparent 18rem),
+    linear-gradient(180deg, rgba(8, 15, 9, 0.94), rgba(4, 9, 6, 0.92));
+  background-size: auto, auto;
+  box-shadow: none;
+}
+
+.message-inbox-header,
+.message-thread-header {
+  min-height: 76px;
+  border-bottom-color: rgba(238, 176, 67, 0.18);
+}
+
+.message-inbox-header strong,
+.message-thread-title strong {
+  color: #f8f2df;
+}
+
+.message-inbox-actions button,
+.message-inbox-status,
+.message-recipient-search input,
+.message-group-actions button,
+.message-email-invite button,
+.message-thread-actions button,
+.message-member-picker button,
+.message-participant-chip {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+.message-inbox-actions button {
+  min-height: 36px;
+  border-color: rgba(196, 154, 74, 0.38);
+  background: rgba(196, 154, 74, 0.11);
+}
+
+.message-inbox-status {
+  min-height: 54px;
+  border-color: rgba(196, 154, 74, 0.45);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.18), transparent 74%),
+    rgba(2, 14, 17, 0.82);
+  color: var(--hud-cyan);
+}
+
+.message-recipient-search {
+  border-bottom-color: rgba(238, 176, 67, 0.15);
+}
+
+.message-recipient-search label > span {
+  color: #bfcad0;
+}
+
+.message-recipient-search input,
+.thread-input textarea {
+  border-color: rgba(196, 154, 74, 0.27);
+  background: rgba(2, 9, 13, 0.82);
+}
+
+.message-recipient-result .faction-crest {
+  width: 36px;
+  height: 41px;
+}
+
+.message-list {
+  gap: 9px;
+  padding: 13px;
+}
+
+.message-row {
+  position: relative;
+  overflow: hidden;
+  min-height: 88px;
+  border-color: rgba(154, 180, 192, 0.15);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.08), transparent 62%),
+    rgba(8, 16, 10, 0.72);
+}
+
+.message-row::before {
+  inset: 0;
+  z-index: 0;
+  opacity: 0.94;
+  background: url("/assets/game-hud/frame-row.svg") center / 100% 100% no-repeat;
+}
+
+.message-row-main {
+  position: relative;
+  z-index: 1;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 12px;
+  padding-right: 8px;
+}
+
+.message-row time {
+  color: #9fb2bb;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.message-row i {
+  margin-left: 0;
+}
+
+.message-row:hover {
+  border-color: rgba(196, 154, 74, 0.3);
+  transform: translateY(-1px);
+}
+
+.message-row.is-active {
+  border-color: rgba(196, 154, 74, 0.66);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.18), rgba(78, 45, 18, 0.08) 72%),
+    rgba(10, 24, 13, 0.9);
+  box-shadow:
+    inset 4px 0 0 var(--hud-cyan),
+    0 0 22px rgba(98, 64, 22, 0.18);
+}
+
+.message-row .faction-crest {
+  width: 46px;
+  height: 52px;
+}
+
+.message-row-action {
+  position: relative;
+  z-index: 1;
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  opacity: 0;
+  transform: translateX(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.message-row:hover .message-row-action,
+.message-row:focus-within .message-row-action {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.message-thread-panel {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  border: 0;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(196, 154, 74, 0.09), transparent 22rem),
+    linear-gradient(180deg, rgba(5, 12, 8, 0.98), rgba(3, 7, 5, 0.92));
+  background-size: auto, auto;
+  box-shadow: none;
+}
+
+.message-thread-header {
+  display: grid;
+  grid-template-columns: minmax(220px, auto) minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+}
+
+.message-thread-title strong {
+  font-size: 1.15rem;
+}
+
+.message-thread-title .faction-crest {
+  width: 34px;
+  height: 38px;
+}
+
+.message-thread-participant-strip {
+  position: relative;
+  min-width: 0;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-left: 1px solid rgba(238, 176, 67, 0.24);
+  border-bottom: 1px solid rgba(238, 176, 67, 0.16);
+  background: rgba(244, 180, 63, 0.045);
+}
+
+.message-thread-participant-strip::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+  background: url("/assets/game-hud/frame-chip.svg") center / 100% 100% no-repeat;
+}
+
+.message-thread-participant-strip > * {
+  position: relative;
+  z-index: 1;
+}
+
+.message-thread-participant-strip > span {
+  color: #9fb2bb;
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.message-thread-participant-strip div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.message-thread-participant-strip .faction-crest {
+  width: 25px;
+  height: 29px;
+}
+
+.message-thread-participant-strip strong {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(196, 154, 74, 0.15);
+  color: var(--hud-cyan);
+  font-size: 0.82rem;
+}
+
+.message-member-picker {
+  grid-row: 2;
+}
+
+.message-participants-panel {
+  display: none;
+}
+
+.message-thread-title small {
+  color: #9ed4e5;
+}
+
+.message-thread-actions button.is-add {
+  border-color: rgba(196, 154, 74, 0.54);
+  background: rgba(196, 154, 74, 0.12);
+}
+
+.message-thread-actions button.is-danger {
+  border-color: rgba(255, 79, 82, 0.42);
+  background: rgba(255, 79, 82, 0.12);
+}
+
+.thread-feed {
+  grid-row: 3;
+  padding: 32px 34px;
+}
+
+.thread-message {
+  position: relative;
+  width: min(74%, 620px);
+  min-height: 0;
+  margin-left: 62px;
+  border-color: rgba(196, 154, 74, 0.42);
+  border-radius: 8px;
+  clip-path: none;
+  background:
+    linear-gradient(135deg, rgba(196, 154, 74, 0.14), transparent 62%),
+    rgba(22, 54, 29, 0.58);
+  overflow: hidden;
+}
+
+.thread-message::after {
+  display: none;
+}
+
+.thread-message > * {
+  position: relative;
+  z-index: 1;
+}
+
+.thread-message-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.thread-message-crest {
+  position: absolute;
+  z-index: 2;
+  left: -58px;
+  top: 3px;
+  width: 50px;
+  height: 58px;
+}
+
+.thread-message.is-own {
+  margin-right: 62px;
+  margin-left: auto;
+  border-color: rgba(238, 176, 67, 0.42);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(244, 180, 63, 0.12), transparent 62%),
+    rgba(30, 35, 38, 0.82);
+}
+
+.thread-message.is-own .thread-message-crest {
+  right: -58px;
+  left: auto;
+}
+
+.thread-message strong {
+  color: #88fff8;
+}
+
+.thread-message.is-own strong {
+  color: #ffd15f;
+}
+
+.thread-input {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px 18px;
+  border-width: 1px 0 0;
+  border-color: rgba(238, 176, 67, 0.24);
+  background:
+    linear-gradient(90deg, rgba(196, 154, 74, 0.08), transparent 58%),
+    rgba(5, 10, 6, 0.92);
+  box-shadow: none;
+}
+
+.thread-input > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+.thread-input-box {
+  position: relative;
+  min-width: 0;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid rgba(154, 180, 192, 0.22);
+  clip-path: var(--hud-chamfer);
+  background: rgba(3, 9, 13, 0.74);
+}
+
+.thread-input-box::before {
+  inset: 0;
+  z-index: 0;
+  opacity: 0.92;
+  background: url("/assets/game-hud/frame-input.svg") center / 100% 100% no-repeat;
+}
+
+.thread-input-box svg {
+  position: relative;
+  z-index: 1;
+  color: #9fb2bb;
+}
+
+.thread-input textarea {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+.thread-input-box textarea {
+  position: relative;
+  z-index: 1;
+  min-height: 62px;
+  max-height: 120px;
+  padding: 22px 4px;
+  border: 0;
+  background: transparent;
+  clip-path: none;
+  resize: none;
+  box-shadow: none;
+}
+
+.thread-input button {
+  min-width: 156px;
+  min-height: 64px;
+  border-color: rgba(196, 154, 74, 0.5);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(180deg, rgba(196, 154, 74, 0.2), rgba(196, 154, 74, 0.08)),
+    rgba(3, 22, 25, 0.95);
+  color: var(--hud-cyan);
+  text-transform: uppercase;
+}
+
+.guest-chat,
+.translation-panel {
+  border-color: rgba(238, 176, 67, 0.22);
+  clip-path: var(--hud-chamfer);
+}
+
+.mobile-guild-card,
+.mobile-tab-rail,
+.mobile-bottom-nav {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+/* Messaging reference alignment. */
+.messages-page {
+  --hud-cyan: #42f3ff;
+  --msg-cyan: #42f3ff;
+  --msg-cyan-dim: rgba(66, 243, 255, 0.22);
+  --msg-cyan-line: rgba(66, 243, 255, 0.62);
+  --msg-gold: #e0a33d;
+  --msg-gold-line: rgba(224, 163, 61, 0.58);
+  --msg-red: #ff514a;
+  --msg-panel: rgba(2, 10, 14, 0.94);
+  --msg-panel-soft: rgba(5, 18, 24, 0.82);
+}
+
+.messages-page .message-space-hero {
+  min-height: 204px;
+  grid-template-columns: 132px minmax(420px, 1fr) minmax(440px, 0.46fr);
+  padding: 21px 38px 20px;
+  background:
+    linear-gradient(90deg, rgba(1, 8, 11, 0.98) 0%, rgba(2, 15, 20, 0.9) 32%, rgba(3, 12, 15, 0.76) 100%),
+    radial-gradient(circle at 48% 34%, rgba(66, 243, 255, 0.18), transparent 24rem),
+    radial-gradient(circle at 82% 54%, rgba(255, 81, 74, 0.15), transparent 19rem),
+    linear-gradient(rgba(66, 243, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(66, 243, 255, 0.026) 1px, transparent 1px),
+    url("/assets/command-map-texture.png") center / cover,
+    #02090d;
+  background-size: auto, auto, auto, 34px 34px, 34px 34px, cover, auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(224, 163, 61, 0.12),
+    0 24px 64px rgba(0, 0, 0, 0.38);
+}
+
+.messages-page .message-space-hero::before {
+  opacity: 0.98;
+  filter: drop-shadow(0 0 9px rgba(224, 163, 61, 0.16));
+}
+
+.messages-page .message-space-hero::after {
+  opacity: 1;
+  mix-blend-mode: screen;
+}
+
+.messages-page .message-space-mark {
+  width: 106px;
+  height: 106px;
+  border-color: rgba(66, 243, 255, 0.42);
+  background:
+    radial-gradient(circle at 50% 48%, rgba(66, 243, 255, 0.16), transparent 48%),
+    linear-gradient(180deg, rgba(7, 31, 39, 0.84), rgba(2, 9, 13, 0.96));
+  color: var(--msg-cyan);
+  filter: drop-shadow(0 0 18px rgba(66, 243, 255, 0.12));
+}
+
+.messages-page .signal-tower-art {
+  width: 98px;
+  height: 102px;
+  overflow: visible;
+}
+
+.messages-page .signal-tower-shell {
+  fill: rgba(2, 12, 16, 0.94);
+  stroke: rgba(66, 243, 255, 0.46);
+  stroke-width: 2;
+}
+
+.messages-page .signal-tower-inner {
+  fill: rgba(5, 23, 29, 0.78);
+  stroke: rgba(66, 243, 255, 0.34);
+  stroke-width: 1.6;
+}
+
+.messages-page .signal-tower-spikes,
+.messages-page .signal-tower-beam,
+.messages-page .signal-tower-lines,
+.messages-page .signal-tower-waves {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.messages-page .signal-tower-spikes {
+  stroke: rgba(66, 243, 255, 0.22);
+  stroke-width: 1.3;
+}
+
+.messages-page .signal-tower-beam {
+  fill: rgba(66, 243, 255, 0.12);
+  stroke: rgba(66, 243, 255, 0.82);
+  stroke-width: 2.4;
+}
+
+.messages-page .signal-tower-lines {
+  stroke: rgba(178, 251, 255, 0.86);
+  stroke-width: 1.9;
+}
+
+.messages-page .signal-tower-waves {
+  stroke: rgba(66, 243, 255, 0.46);
+  stroke-width: 1.55;
+}
+
+.messages-page .message-space-mark > span:not(.premium-hero-glyph) {
+  top: 6px;
+  right: -6px;
+  background: var(--msg-red);
+  box-shadow: 0 0 0 2px rgba(2, 10, 14, 0.95), 0 0 16px rgba(255, 81, 74, 0.32);
+}
+
+.messages-page .message-space-hero > span {
+  align-self: center;
+  margin-top: -10px;
+}
+
+.messages-page .message-space-hero small {
+  color: var(--msg-cyan);
+  font-size: 0.92rem;
+  text-shadow: 0 0 14px rgba(66, 243, 255, 0.28);
+}
+
+.messages-page .message-space-hero strong {
+  font-size: 3.65rem;
+  letter-spacing: 0;
+  text-shadow:
+    0 3px 0 rgba(0, 0, 0, 0.44),
+    0 0 22px rgba(255, 255, 255, 0.08);
+}
+
+.messages-page .message-space-hero em {
+  margin-top: -8px;
+  min-width: 134px;
+  border-color: rgba(255, 81, 74, 0.52);
+  background:
+    linear-gradient(90deg, rgba(255, 81, 74, 0.2), transparent 76%),
+    rgba(44, 5, 10, 0.82);
+  color: #ff8680;
+  box-shadow: inset 0 0 0 1px rgba(255, 81, 74, 0.12);
+}
+
+.messages-page .message-hero-crest {
+  justify-self: start;
+  align-self: center;
+  width: 136px;
+  height: 150px;
+  margin-left: 12px;
+  border: 0;
+  background: transparent;
+  opacity: 0.96;
+  filter:
+    drop-shadow(0 0 16px rgba(224, 163, 61, 0.22))
+    drop-shadow(0 14px 20px rgba(0, 0, 0, 0.5));
+}
+
+.messages-page .message-hero-crest .faction-crest {
+  width: 124px;
+  height: 142px;
+}
+
+.messages-page .message-hero-mode {
+  width: 270px;
+  min-height: 88px;
+  padding: 15px 21px 14px;
+  border-color: rgba(66, 243, 255, 0.33);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.16), rgba(66, 243, 255, 0.035)),
+    rgba(2, 15, 20, 0.9);
+  box-shadow:
+    inset 0 -3px 0 rgba(66, 243, 255, 0.64),
+    inset 0 0 0 1px rgba(224, 163, 61, 0.14),
+    0 0 34px rgba(66, 243, 255, 0.1);
+}
+
+.messages-page .message-hero-mode small,
+.messages-page .message-hero-mode span {
+  color: #a9bdc4;
+}
+
+.messages-page .message-hero-mode strong {
+  color: var(--msg-cyan);
+  font-size: 1.02rem;
+}
+
+.messages-page .message-inbox-workspace {
+  min-height: min(676px, calc(100vh - 356px));
+  grid-template-columns: minmax(360px, 0.49fr) minmax(0, 1fr);
+  background:
+    radial-gradient(circle at 28% 14%, rgba(66, 243, 255, 0.11), transparent 18rem),
+    radial-gradient(circle at 72% 12%, rgba(255, 81, 74, 0.08), transparent 22rem),
+    linear-gradient(rgba(66, 243, 255, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(66, 243, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(2, 10, 14, 0.98), rgba(1, 6, 8, 0.95)),
+    url("/assets/command-map-texture.png") center / cover,
+    #02080b;
+  background-size: auto, auto, 30px 30px, 30px 30px, auto, cover, auto;
+}
+
+.messages-page .message-inbox-workspace::before {
+  opacity: 1;
+}
+
+.messages-page .message-inbox-workspace::after {
+  opacity: 0.52;
+  mix-blend-mode: screen;
+}
+
+.messages-page .message-inbox-pane {
+  border-color: rgba(224, 163, 61, 0.34);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(66, 243, 255, 0.09), transparent 16rem),
+    linear-gradient(180deg, rgba(3, 15, 20, 0.96), rgba(1, 9, 12, 0.93));
+}
+
+.messages-page .message-thread-panel {
+  background:
+    radial-gradient(circle at 72% 18%, rgba(66, 243, 255, 0.08), transparent 18rem),
+    linear-gradient(180deg, rgba(3, 13, 17, 0.96), rgba(1, 7, 10, 0.94));
+}
+
+.messages-page .message-inbox-header,
+.messages-page .message-thread-header {
+  min-height: 72px;
+  border-bottom-color: rgba(224, 163, 61, 0.26);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.045), transparent 62%),
+    rgba(1, 8, 10, 0.4);
+}
+
+.messages-page .message-inbox-header span svg,
+.messages-page .message-thread-actions .is-add svg {
+  color: var(--msg-cyan);
+}
+
+.messages-page .message-inbox-header strong,
+.messages-page .message-thread-title strong {
+  color: #f7f2e7;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
+}
+
+.messages-page .message-thread-title small,
+.messages-page .message-recipient-search label > span,
+.messages-page .message-thread-participant-strip > span {
+  color: #9fddeb;
+}
+
+.messages-page .message-inbox-status {
+  display: none;
+}
+
+.messages-page .message-inbox-actions button {
+  min-height: 38px;
+  border-color: rgba(66, 243, 255, 0.5);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.18), rgba(66, 243, 255, 0.04)),
+    rgba(2, 18, 23, 0.9);
+  color: var(--msg-cyan);
+}
+
+.messages-page .message-inbox-actions em {
+  color: var(--msg-cyan);
+}
+
+.messages-page .message-recipient-search {
+  padding: 14px 16px 18px;
+  border-bottom-color: rgba(224, 163, 61, 0.18);
+}
+
+.messages-page .message-recipient-search input {
+  min-height: 42px;
+  border-color: rgba(66, 243, 255, 0.2);
+  background: rgba(1, 8, 12, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(224, 163, 61, 0.08);
+}
+
+.messages-page .message-list {
+  gap: 9px;
+  padding: 12px 15px 20px;
+}
+
+.messages-page .message-row {
+  min-height: 82px;
+  border-color: rgba(66, 243, 255, 0.13);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.055), transparent 68%),
+    rgba(2, 13, 17, 0.78);
+}
+
+.messages-page .message-row::before {
+  opacity: 0.78;
+}
+
+.messages-page .message-row:hover {
+  border-color: rgba(66, 243, 255, 0.35);
+}
+
+.messages-page .message-row.is-active {
+  border-color: rgba(66, 243, 255, 0.76);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.2), rgba(66, 243, 255, 0.07) 62%, rgba(224, 163, 61, 0.08)),
+    rgba(2, 20, 25, 0.94);
+  box-shadow:
+    inset 4px 0 0 var(--msg-cyan),
+    0 0 22px rgba(66, 243, 255, 0.16);
+}
+
+.messages-page .message-row .faction-crest {
+  width: 50px;
+  height: 57px;
+}
+
+.messages-page .message-row i {
+  background: var(--msg-red);
+  color: #fff4ee;
+  box-shadow: 0 0 12px rgba(255, 81, 74, 0.28);
+}
+
+.messages-page .message-thread-header {
+  grid-template-columns: minmax(236px, auto) minmax(280px, 1fr) auto;
+  padding: 13px 22px;
+}
+
+.messages-page .message-thread-title .faction-crest {
+  width: 39px;
+  height: 45px;
+}
+
+.messages-page .message-thread-participant-strip {
+  min-height: 50px;
+  border-color: rgba(224, 163, 61, 0.24);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.09), transparent 72%),
+    rgba(2, 12, 16, 0.74);
+}
+
+.messages-page .message-thread-participant-strip::before {
+  opacity: 1;
+}
+
+.messages-page .message-thread-participant-strip strong {
+  border-radius: 999px;
+  background: rgba(224, 163, 61, 0.23);
+  color: #ffd36e;
+}
+
+.messages-page .message-thread-actions {
+  gap: 12px;
+}
+
+.messages-page .message-thread-actions button {
+  min-width: 48px;
+  min-height: 48px;
+  border-color: rgba(66, 243, 255, 0.34);
+  background:
+    linear-gradient(180deg, rgba(66, 243, 255, 0.15), rgba(66, 243, 255, 0.04)),
+    rgba(2, 16, 21, 0.92);
+  color: var(--msg-cyan);
+}
+
+.messages-page .message-thread-actions button.is-add {
+  border-color: rgba(66, 243, 255, 0.54);
+  background:
+    linear-gradient(180deg, rgba(66, 243, 255, 0.18), rgba(66, 243, 255, 0.055)),
+    rgba(2, 18, 23, 0.94);
+}
+
+.messages-page .message-thread-actions button.is-danger {
+  min-width: 50px;
+  width: 50px;
+  padding-inline: 0;
+  border-color: rgba(255, 81, 74, 0.48);
+  background:
+    linear-gradient(180deg, rgba(255, 81, 74, 0.18), rgba(255, 81, 74, 0.045)),
+    rgba(25, 5, 8, 0.92);
+  color: var(--msg-red);
+  font-size: 0;
+}
+
+.messages-page .message-thread-actions button.is-danger svg {
+  width: 19px;
+  height: 19px;
+}
+
+.messages-page .thread-feed {
+  padding: 30px 38px 28px;
+  background:
+    linear-gradient(rgba(66, 243, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(66, 243, 255, 0.016) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+.messages-page .thread-message {
+  width: min(70%, 640px);
+  min-height: 0;
+  padding: 10px 14px;
+  line-height: 1.26;
+  border-color: rgba(66, 243, 255, 0.42);
+  border-radius: 8px;
+  clip-path: none;
+  background:
+    linear-gradient(135deg, rgba(66, 243, 255, 0.16), rgba(66, 243, 255, 0.035) 65%),
+    rgba(3, 39, 42, 0.72);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+}
+
+.messages-page .thread-message::after {
+  display: none;
+}
+
+.messages-page .thread-message.is-own {
+  border-color: rgba(224, 163, 61, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(224, 163, 61, 0.12), rgba(224, 163, 61, 0.035) 66%),
+    rgba(32, 24, 12, 0.9);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+}
+
+.messages-page .thread-message.is-own::after {
+  display: none;
+}
+
+.messages-page .thread-message.is-own .thread-message-crest {
+  filter:
+    drop-shadow(0 0 12px rgba(245, 184, 73, 0.24))
+    saturate(1.22);
+}
+
+.messages-page .thread-message-copy {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+}
+
+.messages-page .thread-message-copy > strong,
+.messages-page .thread-message-copy > span:not(.thread-message-actions),
+.messages-page .thread-message-media {
+  grid-column: 1 / -1;
+}
+
+.messages-page .thread-message-reply {
+  border: 1px solid rgba(224, 163, 61, 0.28);
+  border-left: 3px solid rgba(66, 243, 255, 0.62);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.09), transparent 72%),
+    rgba(1, 10, 14, 0.66);
+}
+
+.messages-page .thread-message.is-own .thread-message-reply {
+  border-left-color: rgba(245, 184, 73, 0.72);
+  background:
+    linear-gradient(90deg, rgba(245, 184, 73, 0.12), transparent 72%),
+    rgba(18, 12, 5, 0.62);
+}
+
+.messages-page .thread-message-reply small {
+  color: #9fddeb;
+}
+
+.messages-page .thread-message-reply span {
+  color: #d9edf0;
+}
+
+.messages-page .thread-message.is-own .thread-message-reply small {
+  color: #ffd06b;
+}
+
+.messages-page .thread-message.is-own .thread-message-reply span {
+  color: #fff3d1;
+}
+
+.messages-page .thread-message-media img {
+  max-width: min(100%, 340px);
+  max-height: min(36vh, 240px);
+  border-color: rgba(66, 243, 255, 0.34);
+  border-radius: 6px;
+  clip-path: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 10px 24px rgba(0, 0, 0, 0.24);
+}
+
+.messages-page .thread-message.is-own .thread-message-media img {
+  border-color: rgba(224, 163, 61, 0.22);
+}
+
+.messages-page .thread-message strong {
+  color: var(--msg-cyan);
+}
+
+.messages-page .thread-message.is-own strong {
+  color: #ffd06b;
+}
+
+.messages-page .thread-message.is-own span {
+  color: #fff3d1;
+}
+
+.messages-page .thread-message small {
+  color: #9badb3;
+  font-size: 0.74rem;
+}
+
+.messages-page .thread-message.is-own small {
+  color: #d8ba79;
+}
+
+.messages-page .thread-message-meta {
+  display: flex;
+  grid-column: 1;
+}
+
+.messages-page .thread-message.is-own .thread-message-meta {
+  color: #d8ba79;
+}
+
+.messages-page .thread-read-status {
+  color: #9fddeb;
+}
+
+.messages-page .thread-message.is-own .thread-read-status {
+  color: #ffd06b;
+}
+
+.messages-page .thread-read-status:focus-visible {
+  color: var(--msg-cyan);
+}
+
+.messages-page .thread-message.is-own .thread-read-status:focus-visible {
+  color: #fff3d1;
+}
+
+.messages-page .thread-read-tooltip {
+  border-color: rgba(66, 243, 255, 0.24);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.1), rgba(66, 243, 255, 0.025)),
+    rgba(1, 8, 11, 0.98);
+  color: #e7f8fb;
+}
+
+.messages-page .thread-message.is-own .thread-read-tooltip {
+  border-color: rgba(245, 184, 73, 0.34);
+  background:
+    linear-gradient(90deg, rgba(245, 184, 73, 0.13), rgba(245, 184, 73, 0.035)),
+    rgba(18, 12, 5, 0.98);
+  color: #fff3d1;
+}
+
+.messages-page .thread-message-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  grid-column: 2;
+  justify-self: end;
+  width: auto;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.messages-page .thread-message-action {
+  min-height: 24px;
+  padding: 0 7px;
+  border-color: rgba(66, 243, 255, 0.28);
+  border-radius: 6px;
+  clip-path: none;
+  background: rgba(2, 15, 20, 0.82);
+  color: #a9bdc4;
+}
+
+.messages-page .thread-message-action:hover,
+.messages-page .thread-message-action:focus-visible {
+  border-color: rgba(66, 243, 255, 0.54);
+  color: var(--msg-cyan);
+}
+
+.messages-page .thread-message-action.is-like.is-active {
+  border-color: rgba(255, 81, 74, 0.58);
+  background:
+    linear-gradient(90deg, rgba(255, 81, 74, 0.2), rgba(255, 81, 74, 0.05)),
+    rgba(35, 5, 10, 0.82);
+  color: #ff8680;
+}
+
+.messages-page .thread-message.is-own .thread-message-action {
+  border-color: rgba(224, 163, 61, 0.24);
+  background: rgba(24, 16, 6, 0.76);
+}
+
+.messages-page .thread-message.is-own .thread-message-action:hover,
+.messages-page .thread-message.is-own .thread-message-action:focus-visible {
+  border-color: rgba(245, 184, 73, 0.62);
+  color: #ffd06b;
+}
+
+.messages-page .thread-input {
+  border-color: rgba(224, 163, 61, 0.22);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.07), transparent 58%),
+    rgba(1, 8, 11, 0.94);
+}
+
+.messages-page .thread-input-box {
+  border-color: rgba(66, 243, 255, 0.22);
+  background: rgba(2, 11, 15, 0.82);
+}
+
+.messages-page .thread-input-box svg {
+  color: #9bb5bd;
+}
+
+.messages-page .thread-reply-target {
+  border-color: rgba(224, 163, 61, 0.32);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(245, 184, 73, 0.12), transparent 68%),
+    rgba(19, 13, 5, 0.78);
+}
+
+.messages-page .thread-reply-target small {
+  color: #d8ba79;
+}
+
+.messages-page .thread-reply-target strong {
+  color: #fff3d1;
+}
+
+.messages-page .thread-reply-target button {
+  border-color: rgba(245, 184, 73, 0.34);
+  color: #ffd06b;
+}
+
+.messages-page .thread-input textarea {
+  color: #eff8fb;
+}
+
+.messages-page .thread-input button {
+  border-color: rgba(66, 243, 255, 0.52);
+  background:
+    linear-gradient(180deg, rgba(66, 243, 255, 0.19), rgba(66, 243, 255, 0.055)),
+    rgba(2, 22, 28, 0.95);
+  color: var(--msg-cyan);
+}
+
+.messages-page .thread-input .thread-reply-target button {
+  width: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-color: rgba(245, 184, 73, 0.34);
+  background:
+    linear-gradient(90deg, rgba(245, 184, 73, 0.12), rgba(245, 184, 73, 0.03)),
+    rgba(20, 13, 5, 0.82);
+  color: #ffd06b;
+}
+
+.messages-page .thread-emoji-picker {
+  width: min(100%, 392px);
+  border-color: rgba(66, 243, 255, 0.26);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.1), rgba(66, 243, 255, 0.025)),
+    linear-gradient(180deg, rgba(224, 163, 61, 0.055), transparent),
+    rgba(1, 8, 11, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(224, 163, 61, 0.08),
+    0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+.messages-page .thread-input .thread-emoji-option {
+  min-width: 34px;
+  min-height: 34px;
+  border-color: rgba(66, 243, 255, 0.22);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(180deg, rgba(66, 243, 255, 0.1), rgba(66, 243, 255, 0.025)),
+    rgba(2, 15, 20, 0.82);
+  color: #e7f8fb;
+  font-size: 1.05rem;
+  text-shadow: 0 0 10px rgba(66, 243, 255, 0.1);
+}
+
+.messages-page .thread-input .thread-emoji-option:hover,
+.messages-page .thread-input .thread-emoji-option:focus-visible {
+  border-color: rgba(66, 243, 255, 0.55);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.messages-page .thread-attachment-preview {
+  border-color: rgba(66, 243, 255, 0.24);
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.1), transparent 68%),
+    rgba(1, 10, 14, 0.74);
+}
+
+.messages-page .thread-attachment-preview img {
+  border-radius: 0;
+  clip-path: var(--hud-chamfer);
+}
+
+.messages-page .thread-attachment-preview small {
+  color: #9fddeb;
+}
+
+.messages-page .thread-attachment-preview strong {
+  color: #e7f8fb;
+}
+
+.messages-page .thread-attachment-preview button,
+.messages-page .thread-input-box .thread-attach-button,
+.messages-page .thread-input-box .thread-emoji-toggle {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-color: rgba(66, 243, 255, 0.28);
+  background:
+    linear-gradient(90deg, rgba(66, 243, 255, 0.12), rgba(66, 243, 255, 0.03)),
+    rgba(2, 15, 20, 0.82);
+  color: #9fddeb;
+}
+
+.messages-page .thread-attachment-preview button:hover,
+.messages-page .thread-attachment-preview button:focus-visible,
+.messages-page .thread-input-box .thread-attach-button:hover,
+.messages-page .thread-input-box .thread-attach-button:focus-visible,
+.messages-page .thread-input-box .thread-emoji-toggle:hover,
+.messages-page .thread-input-box .thread-emoji-toggle:focus-visible,
+.messages-page .thread-input-box .thread-emoji-toggle.is-active {
+  border-color: rgba(66, 243, 255, 0.52);
+  color: var(--msg-cyan);
+}
+
+@media (max-width: 1180px) {
+  .messages-page .message-space-hero {
+    grid-template-columns: 112px minmax(0, 1fr);
+    height: auto;
+  }
+
+  .messages-page .message-space-hero strong {
+    font-size: 3rem;
+  }
+
+  .messages-page .message-hero-crest {
+    display: none;
+  }
+
+  .messages-page .message-hero-mode {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    align-self: end;
+  }
+}
+
+@media (max-width: 760px) {
+  .messages-page .message-space-hero {
+    grid-template-columns: 78px minmax(0, 1fr);
+    min-height: 184px;
+    padding: 18px;
+  }
+
+  .messages-page .message-space-mark {
+    width: 74px;
+    height: 74px;
+  }
+
+  .messages-page .signal-tower-art {
+    width: 70px;
+    height: 74px;
+  }
+
+  .messages-page .message-space-hero strong {
+    font-size: 2.3rem;
+  }
+
+  .messages-page .message-hero-mode {
+    width: min(100%, 230px);
+    min-height: 76px;
+  }
+
+  .messages-page .message-inbox-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-page .message-thread-header {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-page .thread-message {
+    width: calc(100% - 56px);
+    padding: 10px 12px;
+  }
+
+  .messages-page .thread-message-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-page .thread-message-meta,
+  .messages-page .thread-message-actions {
+    grid-column: 1;
+    justify-self: start;
+  }
+
+  .messages-page .thread-message-media img {
+    max-width: min(100%, 280px);
+    max-height: min(32vh, 190px);
+  }
+
+  .messages-page .thread-message-action {
+    min-height: 24px;
+    padding: 0 7px;
+  }
+}

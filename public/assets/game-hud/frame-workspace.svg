@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 680" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="wgold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#583716"/>
+      <stop offset=".14" stop-color="#e6ad45"/>
+      <stop offset=".48" stop-color="#75501e"/>
+      <stop offset=".82" stop-color="#e6ad45"/>
+      <stop offset="1" stop-color="#543415"/>
+    </linearGradient>
+    <linearGradient id="wcyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#18545a"/>
+      <stop offset=".5" stop-color="#3bd9df"/>
+      <stop offset="1" stop-color="#18545a"/>
+    </linearGradient>
+  </defs>
+  <path d="M18 18H426L454 2H1582L1598 18V662L1580 678H18L2 662V42Z" fill="none" stroke="#493217" stroke-opacity=".82" stroke-width="2"/>
+  <path d="M38 38H1562V640H38Z" fill="none" stroke="#33351f" stroke-opacity=".5" stroke-width="1"/>
+  <path d="M18 18H426L454 2H606M1582 2L1598 18V92M1598 586V662L1580 678H1416M18 678L2 662V574M2 42L18 18" fill="none" stroke="url(#wgold)" stroke-width="2.4"/>
+  <path d="M38 38H194M38 38V116M1408 38H1562M1562 38V122M38 554V640H210M1402 640H1562V528" fill="none" stroke="url(#wgold)" stroke-width="1.65"/>
+  <path d="M38 38L72 72M194 38L160 72M1408 38L1446 76M1562 122L1526 86M38 554L76 592M210 640L172 602M1402 640L1440 602M1562 528L1524 566" fill="none" stroke="#e9b75b" stroke-opacity=".62" stroke-width="1"/>
+  <path d="M580 38V640M584 38V640" fill="none" stroke="url(#wgold)" stroke-opacity=".42" stroke-width="1"/>
+  <path d="M608 24H760M792 24H850M1212 656H1414M214 656H302M604 52H744M778 52H830" fill="none" stroke="url(#wcyan)" stroke-opacity=".5" stroke-width="1.25"/>
+  <path d="M66 58H176M66 80H122M1434 58H1536M1474 80H1536M70 610H166M1420 610H1532" fill="none" stroke="#e6ad45" stroke-opacity=".34" stroke-width="1.2"/>
+  <path d="M38 38H254M1348 38H1562M38 640H254M1348 640H1562M580 38V640" fill="none" stroke="#f1cf86" stroke-opacity=".13" stroke-width="5"/>
+</svg>

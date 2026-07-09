@@ -7,6 +7,7 @@ import {
   buildLocalForumCounters,
   buildLocalForumPosts,
   buildLocalForumThreads,
+  buildLocalOutgoingMessage,
   buildLocalThreadMessages,
   buildPublicDiplomacySnapshot,
   buildSosSummary,
@@ -17,9 +18,12 @@ import {
   formatRequestAmount,
   formatResourceAmount,
   getDefaultConversation,
+  getConversationParticipantIds,
+  getConversationParticipantsTitle,
   getEnabledSiteSections,
   getPublicRouteSegment,
   getVisibleSiteSections,
+  isGroupConversation,
   messageMatchesConversation,
   mergeSosAcknowledgement,
   normalizeApiConversation,
@@ -30,6 +34,7 @@ import {
   normalizeForumCategory,
   normalizeForumPost,
   normalizeForumThread,
+  normalizeLocalMessageRecipients,
   normalizeNapAgreement,
   normalizeSosAcknowledgement,
   normalizeSosAlert,
@@ -55,7 +60,7 @@ test("messages: local conversations, unread counts, matching and upsert keep cur
   assert.equal(countLocalUnread(messages), 2);
 
   const threadMessages = buildLocalThreadMessages(messages, conversations[0]);
-  assert.equal(threadMessages.length, 2);
+  assert.equal(threadMessages.length, 1);
   assert.equal(threadMessages[0].id, "local-thread-m1");
   assert.equal(threadMessages[0].translationStatus, "original");
 
@@ -84,6 +89,35 @@ test("messages: local conversations, unread counts, matching and upsert keep cur
   const upserted = upsertConversationFromMessage([getDefaultConversation()], privateMessage, getDefaultConversation());
   assert.equal(upserted[0].id, "private:user-2");
   assert.equal(upserted[0].unreadCount, 1);
+
+  const recipients = normalizeLocalMessageRecipients(
+    [
+      { id: "user-1", name: "NordicLeader", status: "online" },
+      { id: "user-2", email: "FrostWarden@GuildOps.app", name: "FrostWarden", role: "Officier", status: "online" },
+      { id: "user-3", name: "ShieldMaiden", status: "banned" },
+    ],
+    { id: "user-1" },
+  );
+
+  assert.deepEqual(recipients.map((recipient) => recipient.id), ["user-2"]);
+  assert.equal(recipients[0].nickname, "FrostWarden");
+  assert.equal(recipients[0].email, "frostwarden@guildops.app");
+
+  const groupConversation = normalizeApiConversation({
+    type: "group",
+    participants: [
+      { id: "user-2", nickname: "FrostWarden" },
+      { id: "user-3", nickname: "ShieldMaiden" },
+    ],
+  });
+  const groupMessage = buildLocalOutgoingMessage("Go rally", groupConversation, { id: "user-1", displayName: "NordicLeader" }, "FR");
+
+  assert.equal(isGroupConversation(groupConversation), true);
+  assert.deepEqual(getConversationParticipantIds(groupConversation), ["user-2", "user-3"]);
+  assert.equal(getConversationParticipantsTitle(groupConversation.participants), "FrostWarden, ShieldMaiden");
+  assert.equal(groupMessage.conversationType, "group");
+  assert.deepEqual(groupMessage.participantIds, ["user-2", "user-3"]);
+  assert.equal(messageMatchesConversation(groupMessage, groupConversation), true);
 });
 
 test("site sections: public visibility is independent from private modules", () => {

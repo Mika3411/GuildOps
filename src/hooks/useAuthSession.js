@@ -6,24 +6,27 @@ import {
 } from "react";
 import {
   ApiError,
-  isApiConfigured
+  clearCsrfToken,
+  isApiConfigured,
+  rememberCsrfToken
 } from "../lib/apiClient.js";
 import {
   guildOpsApi
 } from "../lib/guildOpsApi.js";
 
-export function useAuthSession(fallbackUser) {
+export function useAuthSession() {
   const apiEnabled = isApiConfigured();
   const [state, setState] = useState(() => ({
     context: null,
     error: "",
     guilds: [],
     organizations: [],
-    status: apiEnabled ? "loading" : "mock",
-    user: apiEnabled ? null : fallbackUser,
+    status: apiEnabled ? "loading" : "unconfigured",
+    user: null,
   }));
 
   const applyPayload = useCallback((payload) => {
+    rememberCsrfToken(payload?.csrfToken);
     setState({
       context: payload?.context || null,
       error: "",
@@ -48,6 +51,7 @@ export function useAuthSession(fallbackUser) {
         if (signal?.aborted) return null;
 
         if (error instanceof ApiError && error.status === 401) {
+          clearCsrfToken();
           setState({
             context: null,
             error: "",
@@ -113,6 +117,7 @@ export function useAuthSession(fallbackUser) {
     try {
       await guildOpsApi.logout();
     } finally {
+      clearCsrfToken();
       setState({
         context: null,
         error: "",
@@ -148,7 +153,7 @@ export function useAuthSession(fallbackUser) {
     () => ({
       ...state,
       isApiEnabled: apiEnabled,
-      isAuthenticated: !apiEnabled || state.status === "authenticated" || state.status === "refreshing",
+      isAuthenticated: apiEnabled && (state.status === "authenticated" || state.status === "refreshing"),
       isLoading: apiEnabled && state.status === "loading",
       requiresAuth: apiEnabled && state.status === "unauthenticated",
       changePassword,

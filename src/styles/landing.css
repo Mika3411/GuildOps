@@ -1297,7 +1297,7 @@
   min-width: 0;
   min-height: 112px;
   display: grid;
-  grid-template-columns: 116px minmax(150px, 1fr) auto auto;
+  grid-template-columns: 116px minmax(150px, 1fr) auto auto auto;
   gap: 14px;
   align-items: center;
   padding: 12px;
@@ -1356,8 +1356,26 @@
 }
 
 .gallery-card-arrow {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.gallery-guild-mail {
   grid-column: 4;
   grid-row: 1;
+  min-width: 44px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(84, 223, 204, 0.34);
+  border-radius: 999px;
+  background: rgba(84, 223, 204, 0.1);
+  color: var(--landing-cyan);
+  font-size: 0.78rem;
+  font-weight: 950;
+  white-space: nowrap;
 }
 
 .gallery-guild-card em {
@@ -1555,7 +1573,7 @@
   }
 
   .gallery-guild-card {
-    grid-template-columns: 96px minmax(0, 1fr) auto;
+    grid-template-columns: 96px minmax(0, 1fr) auto auto;
     min-height: 104px;
   }
 
@@ -1728,12 +1746,18 @@
   }
 
   .gallery-guild-copy,
-  .gallery-guild-card em {
+  .gallery-guild-card em,
+  .gallery-guild-mail {
     grid-column: 1;
   }
 
   .gallery-guild-meta {
     grid-row: auto;
+  }
+
+  .gallery-guild-mail {
+    grid-row: auto;
+    justify-self: start;
   }
 
   .event-row {

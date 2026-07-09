@@ -10,10 +10,17 @@ process.env.SESSION_SECRET ??= "guildops-api-contracts-test-secret";
 const { normalizeIncomingBankStatus, normalizeStoredBankStatus } = await import("./bank.routes.js");
 const { canApproveMembershipRequests } = await import("./guilds.routes.js");
 const { canManageEvents } = await import("./events.routes.js");
-const { isGuildModuleActive, listActiveGuildModuleKeys, normalizeGuildModuleRow, seedDefaultGuildModules, withDefaultGuildModuleKeys } = await import(
-  "./guild-modules.service.js"
-);
-const { findPublicChatGuildBySlug } = await import("./messages.routes.js");
+const {
+  isGuildModuleActive,
+  listActiveGuildModuleKeys,
+  normalizeGuildModuleKeys,
+  normalizeGuildModuleRow,
+  seedDefaultGuildModules,
+  syncGuildModules,
+  withDefaultGuildModuleKeys
+} = await import("./guild-modules.service.js");
+const { buildRegistrationInvitationUrl } = await import("../notifications/email.js");
+const { findPublicChatGuildBySlug, toMessageRecipientResource } = await import("./messages.routes.js");
 const { toPublicBankSnapshotResource, toPublicGuildSiteResource } = await import("./public.routes.js");
 const { assertRequestCsrf, needsCsrfCheck } = await import("../security/csrf.js");
 const { hashCsrfToken } = await import("../security/sessions.js");
@@ -73,6 +80,34 @@ test("public guild site stays consultable when published without module data", (
 
   assert.equal(site.published, true);
   assert.deepEqual(site.sections, { roster: true, publicChat: false });
+});
+
+test("message recipients expose email and registration invitations point to signup flow", () => {
+  const recipient = toMessageRecipientResource({
+    id: "user-2",
+    display_name: "FrostWarden",
+    email: "frostwarden@guildops.app",
+    nickname: "Frost",
+    preferred_language: "fr",
+    role: "Officier",
+    status: "active"
+  });
+
+  assert.deepEqual(recipient, {
+    id: "user-2",
+    displayName: "FrostWarden",
+    email: "frostwarden@guildops.app",
+    nickname: "Frost",
+    preferredLanguage: "fr",
+    role: "Officier",
+    status: "active"
+  });
+
+  const invitationUrl = buildRegistrationInvitationUrl({
+    email: "new.member@example.com",
+  });
+
+  assert.equal(invitationUrl, "http://localhost:5173/auth/register?email=new.member%40example.com");
 });
 
 test("public bank snapshot masks requester details and omits internal history by default", () => {
@@ -190,6 +225,14 @@ test("guild module helpers normalize rows and read active module keys", async ()
     "messages",
     "multi_guilds"
   ]);
+  assert.deepEqual(normalizeGuildModuleKeys(["sos_attack", "translation", "unknown"]), [
+    "site",
+    "membership_requests",
+    "sos_attack",
+    "messages",
+    "translation",
+    "multi_guilds"
+  ]);
 
   const activeQueries: Array<{ text: string; params?: unknown[] }> = [];
   assert.equal(await isGuildModuleActive(fakeDb([{ active: true }], activeQueries), "guild-1", "bank"), true);
@@ -202,7 +245,23 @@ test("guild module helpers normalize rows and read active module keys", async ()
   const seedQueries: Array<{ text: string; params?: unknown[] }> = [];
   await seedDefaultGuildModules(fakeDb([], seedQueries), "guild-1", "user-1");
   assert.match(seedQueries[0]?.text ?? "", /INSERT INTO guild_modules/);
-  assert.deepEqual(seedQueries[0]?.params, ["guild-1", "user-1", ["site", "membership_requests", "multi_guilds"]]);
+  assert.deepEqual(seedQueries[0]?.params, ["guild-1", "user-1", ["site", "membership_requests", "messages", "multi_guilds"]]);
+
+  const syncQueries: Array<{ text: string; params?: unknown[] }> = [];
+  assert.deepEqual(await syncGuildModules(fakeDb([], syncQueries), "guild-1", ["bank"], "user-1"), [
+    "site",
+    "membership_requests",
+    "bank",
+    "messages",
+    "multi_guilds"
+  ]);
+  assert.match(syncQueries[0]?.text ?? "", /INSERT INTO guild_modules/);
+  assert.deepEqual(syncQueries[0]?.params, [
+    "guild-1",
+    "user-1",
+    ["site", "membership_requests", "bank", "messages", "multi_guilds"],
+    ["site", "membership_requests", "wars_events", "sos_attack", "bank", "diplomacy", "forum", "messages", "translation", "multi_guilds"]
+  ]);
 });
 
 test("approve_members RBAC allows dedicated membership approvers", async () => {

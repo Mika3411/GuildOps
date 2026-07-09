@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 220" preserveAspectRatio="none">
+  <defs>
+    <filter id="softGlow" x="-20%" y="-80%" width="140%" height="260%">
+      <feGaussianBlur stdDeviation="2.2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <linearGradient id="cyanTrace" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2fe9ff" stop-opacity=".08"/>
+      <stop offset=".45" stop-color="#2fe9ff" stop-opacity=".58"/>
+      <stop offset="1" stop-color="#2fe9ff" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="redTrace" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff504d" stop-opacity=".1"/>
+      <stop offset=".42" stop-color="#ff504d" stop-opacity=".74"/>
+      <stop offset="1" stop-color="#ff504d" stop-opacity=".14"/>
+    </linearGradient>
+    <linearGradient id="goldTrace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4ba55" stop-opacity=".76"/>
+      <stop offset="1" stop-color="#7a4b19" stop-opacity=".18"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M88 58H214M92 76H164M88 154H204M1326 58H1514M1432 76H1514M1308 156H1438M1468 156H1532" stroke="#e7ad4b" stroke-opacity=".35" stroke-width="1.35"/>
+    <path d="M420 64l50-24 44 18 38-28 44 22 38-14 44 22M446 142l56-34 46 18 36-24 56 34 40-24" stroke="url(#cyanTrace)" stroke-width="1.4"/>
+    <path d="M626 35l18 14M514 58l16 12M552 30l12 14M584 102l17 14M642 135l17 12M504 126l20 9" stroke="#2fe9ff" stroke-opacity=".28" stroke-width="1"/>
+    <path d="M758 42l74 42 70-20 52 38 98-32" stroke="#2fe9ff" stroke-opacity=".34" stroke-width="1.45"/>
+    <path d="M754 172l74-34 70 20 52-28 102 24" stroke="#2fe9ff" stroke-opacity=".2" stroke-width="1.25"/>
+    <path d="M932 82c28 26 62 41 102 44 54 4 86 30 112 58" stroke="url(#redTrace)" stroke-width="2.3" stroke-dasharray="9 9" filter="url(#softGlow)"/>
+    <path d="M1044 62l54 24 54-16 72 46 82-10" stroke="url(#redTrace)" stroke-width="1.55" stroke-dasharray="7 9"/>
+    <path d="M1214 42l28 24 42-16 48 31" stroke="#ff504d" stroke-opacity=".52" stroke-width="1.25"/>
+    <path d="M1110 112l24 18-24 18-24-18 24-18Z" stroke="#dca345" stroke-opacity=".58" stroke-width="1.25"/>
+    <path d="M764 58l22 17-22 17-22-17 22-17Z" stroke="#2fe9ff" stroke-opacity=".7" stroke-width="1.4"/>
+    <path d="M1200 46l18 14-18 14-18-14 18-14Z" stroke="#ff504d" stroke-opacity=".78" stroke-width="1.35"/>
+    <path d="M1238 64l22 16M1218 64l-20 16M1200 46v-20M1192 31h16" stroke="#ff504d" stroke-opacity=".52" stroke-width="1.1"/>
+    <path d="M766 63v23M754 75h24M758 69l16 12M774 69l-16 12" stroke="#2fe9ff" stroke-opacity=".6" stroke-width="1"/>
+    <path d="M1135 130l-14 10M1086 130l-14-10M1110 112v-18M1101 101h18" stroke="#dca345" stroke-opacity=".5" stroke-width="1"/>
+  </g>
+  <g filter="url(#softGlow)">
+    <circle cx="470" cy="40" r="2.4" fill="#2fe9ff" opacity=".52"/>
+    <circle cx="552" cy="30" r="2.1" fill="#2fe9ff" opacity=".48"/>
+    <circle cx="634" cy="38" r="2.2" fill="#2fe9ff" opacity=".42"/>
+    <circle cx="764" cy="75" r="3.4" fill="#2fe9ff" opacity=".75"/>
+    <circle cx="954" cy="102" r="2.6" fill="#ff504d" opacity=".7"/>
+    <circle cx="1034" cy="126" r="2.7" fill="#ff504d" opacity=".72"/>
+    <circle cx="1110" cy="130" r="2.8" fill="#dca345" opacity=".64"/>
+    <circle cx="1200" cy="60" r="3.2" fill="#ff504d" opacity=".82"/>
+    <circle cx="1306" cy="106" r="2.4" fill="#ff504d" opacity=".62"/>
+  </g>
+  <g fill="none" stroke="url(#goldTrace)" stroke-linecap="round" stroke-linejoin="round" opacity=".38">
+    <path d="M962 26h88M1068 26h34M1168 190h112M1304 190h46"/>
+    <path d="M300 28h88M414 28h42M250 190h118"/>
+  </g>
+</svg>
