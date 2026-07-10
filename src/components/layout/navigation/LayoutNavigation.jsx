@@ -451,9 +451,14 @@ export function TopBar({
           </div>
         ) : null}
       </div>
-      <label className="site-url-field">
+      <label className={`site-url-field ${sitePublished ? "" : "is-unpublished"}`}>
         <Globe2 size={17} />
-        <input value={publicSiteUrl} aria-label="URL du site" readOnly />
+        <input
+          value={publicSiteUrl}
+          aria-label="URL du site"
+          placeholder={sitePublished ? "URL du site public" : "Site public non publie"}
+          readOnly
+        />
       </label>
       <div className="top-actions">
         <button
@@ -471,9 +476,10 @@ export function TopBar({
         <button
           className="icon-button"
           type="button"
-          aria-label="Ouvrir le site de guilde"
+          aria-label={sitePublished ? "Ouvrir le site de guilde" : "Site public non publie"}
           onClick={onOpenPublicSite}
           disabled={!sitePublished}
+          title={sitePublished ? "Ouvrir le site de guilde" : "Publie le site avant de l'ouvrir"}
         >
           <Globe2 size={19} />
         </button>
@@ -498,7 +504,7 @@ export function TopBar({
           {...getGuardProps(currentUser, "manage_site")}
         >
           <Rocket size={18} />
-          {publishingSite ? "Mise en ligne" : sitePublished ? "Mettre a jour" : "Publier"}
+          {publishingSite ? "Mise en ligne" : sitePublished ? "Mettre a jour" : "Publier le site"}
         </button>
       </div>
       {sitePublishError ? <p className="publish-error">{sitePublishError}</p> : null}

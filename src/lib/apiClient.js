@@ -62,7 +62,7 @@ export async function apiRequest(path, options = {}) {
       if (response.status === 401 || isCsrfError(apiError)) {
         clearCsrfToken();
       }
-      throw new ApiError(apiError.message || payload?.message || `API request failed with ${response.status}`, {
+      throw new ApiError(getApiErrorMessage(apiError, payload, response.status), {
         status: response.status,
         payload,
       });
@@ -147,6 +147,50 @@ function isCsrfError(error) {
   const code = String(error?.code || "").toUpperCase();
   const message = String(error?.message || "");
   return code === "FORBIDDEN" && /csrf/i.test(message);
+}
+
+function getApiErrorMessage(apiError, payload, status) {
+  const message = apiError.message || payload?.message || `API request failed with ${status}`;
+
+  if (message !== "Input validation failed") {
+    return message;
+  }
+
+  return getValidationErrorMessage(apiError.details) || "Donnees invalides. Verifiez les champs puis reessayez.";
+}
+
+function getValidationErrorMessage(details) {
+  const fieldErrors = details?.fieldErrors;
+  if (fieldErrors && typeof fieldErrors === "object") {
+    const invalidField = Object.entries(fieldErrors).find(([, errors]) => Array.isArray(errors) && errors.length);
+
+    if (invalidField) {
+      const [field, errors] = invalidField;
+      return `${getApiFieldLabel(field)} : ${errors[0]}`;
+    }
+  }
+
+  const formError = Array.isArray(details?.formErrors) ? details.formErrors[0] : "";
+  return formError || "";
+}
+
+function getApiFieldLabel(field) {
+  const labels = {
+    activeGuildId: "Guilde active",
+    activeOrganizationId: "Organisation active",
+    email: "Email",
+    gameName: "Jeu",
+    guildName: "Nom de guilde",
+    name: "Nom",
+    organizationId: "Organisation",
+    publicSlug: "URL publique",
+    realm: "Royaume",
+    serverCode: "Royaume",
+    tag: "Tag",
+    title: "Titre",
+  };
+
+  return labels[field] || field;
 }
 
 function getCsrfToken() {

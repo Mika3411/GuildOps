@@ -221,8 +221,17 @@ export function useGuildOpsController() {
       "";
     const bootstrapSiteMatchesGuild = !bootstrapSiteName || slugify(bootstrapSiteName) === draftSlug;
 
-    setSiteDraft(createGuildSiteDraft(selectedGuild, storedSite || (bootstrapSiteMatchesGuild ? guildOpsData.site : {})));
+    const nextDraft = createGuildSiteDraft(selectedGuild, storedSite || (bootstrapSiteMatchesGuild ? guildOpsData.site : {}));
+    const nextPublished = Boolean(
+      storedSite?.published ||
+        storedSite?.status === "published" ||
+        nextDraft.published ||
+        nextDraft.status === "published",
+    );
+
+    setSiteDraft(nextDraft);
     setLastPublishedSite(storedSite);
+    setSitePublished(nextPublished);
     setSitePublishError("");
   }, [guildOpsData.site, selectedGuild]);
 
@@ -531,8 +540,16 @@ export function useGuildOpsController() {
     [eventsController.activeEvents, eventsController.warSummary],
   );
 
-  const publicSitePath = `/g/${slugify(siteDraft.guildName)}`;
-  const publicSiteUrl = `${window.location.origin}${publicSitePath}`;
+  const hasPublishedPublicSite = Boolean(
+    siteDraft.published ||
+      siteDraft.status === "published" ||
+      lastPublishedSite?.published ||
+      lastPublishedSite?.status === "published" ||
+      sitePublished,
+  );
+  const publicSiteSlug = slugify(lastPublishedSite?.slug || lastPublishedSite?.publicSlug || siteDraft.slug || siteDraft.guildName);
+  const publicSitePath = hasPublishedPublicSite && publicSiteSlug ? `/g/${publicSiteSlug}` : "";
+  const publicSiteUrl = publicSitePath ? `${window.location.origin}${publicSitePath}` : "";
 
   function persistEnabledModuleIds(nextModuleIds, previousModuleIds) {
     const normalizedModuleIds = normalizeEnabledModuleIds(nextModuleIds);
@@ -707,6 +724,12 @@ export function useGuildOpsController() {
   }
 
   function openPublicSite() {
+    if (!publicSitePath) {
+      setSitePublishError("Publie le site pour ouvrir une page publique. La guilde privee est deja creee.");
+      navigateToView("command");
+      return;
+    }
+
     navigateToPath(publicSitePath);
   }
 

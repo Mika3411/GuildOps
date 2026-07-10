@@ -156,6 +156,15 @@
   font-size: 0.96rem;
 }
 
+.site-url-field.is-unpublished {
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(179, 216, 230, 0.72);
+}
+
+.site-url-field.is-unpublished input::placeholder {
+  color: rgba(179, 216, 230, 0.72);
+}
+
 .publish-action {
   min-width: 0;
   max-width: 100%;
