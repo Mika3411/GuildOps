@@ -401,6 +401,17 @@
   line-height: 1.4;
 }
 
+.checkbox-row span {
+  display: grid;
+  gap: 2px;
+}
+
+.checkbox-row small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 .checkbox-row input {
   flex: 0 0 auto;
   width: 18px;

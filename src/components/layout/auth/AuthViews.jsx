@@ -345,7 +345,7 @@ export function GuildOnboarding({ creating, currentUser, error, onCreateGuild, o
     serverCode: normalizeRealmCodeForGame("", "Whiteout Survival"),
     playStyle: "Guerre organisee",
     description: "",
-    isPublic: true,
+    isPublic: false,
   });
 
   function updateField(key, value) {
@@ -400,13 +400,13 @@ export function GuildOnboarding({ creating, currentUser, error, onCreateGuild, o
           <span className="status-pill live">Prêt à démarrer</span>
           <h1>Créer le profil de guilde</h1>
           <p>
-            {currentUser.displayName || "Commandant"}, commence par un profil propre, publie un site partageable, envoie le lien,
-            puis active les modules opérationnels quand ta guilde en a besoin.
+            {currentUser.displayName || "Commandant"}, commence par une guilde privée. Le site public reste optionnel et peut
+            être préparé plus tard depuis les modules.
           </p>
           <div className="onboarding-steps" aria-label="Étapes de démarrage">
             <span>Profil</span>
-            <span>Site publié</span>
-            <span>Lien partagé</span>
+            <span>Modules</span>
+            <span>Site optionnel</span>
             <span>Opérations</span>
           </div>
         </div>
@@ -450,7 +450,10 @@ export function GuildOnboarding({ creating, currentUser, error, onCreateGuild, o
           </label>
           <label className="checkbox-row">
             <input type="checkbox" checked={form.isPublic} onChange={(event) => updateField("isPublic", event.target.checked)} />
-            <span>Préparer un site de guilde brouillon publiable</span>
+            <span>
+              Préparer aussi un site public brouillon
+              <small>Laisse décoché pour créer seulement la guilde privée.</small>
+            </span>
           </label>
           {error ? <p className="auth-error">{error}</p> : null}
           <button className="primary-action" type="submit" disabled={creating}>
