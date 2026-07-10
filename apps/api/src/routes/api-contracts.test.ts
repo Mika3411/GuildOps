@@ -24,6 +24,7 @@ const { findPublicChatGuildBySlug, toMessageRecipientResource } = await import("
 const { toPublicBankSnapshotResource, toPublicGuildSiteResource } = await import("./public.routes.js");
 const { assertRequestCsrf, needsCsrfCheck } = await import("../security/csrf.js");
 const { hashCsrfToken } = await import("../security/sessions.js");
+const { getRuntimeConfigurationStatus } = await import("../config/env.js");
 
 test("bank request status keeps refused as the stored API status", () => {
   assert.equal(normalizeIncomingBankStatus("refused"), "refused");
@@ -286,6 +287,34 @@ test("CSRF checks exempt login/register but protect unsafe authenticated request
   assert.throws(
     () => assertRequestCsrf(fakeRequest("POST", "/api/v1/guilds/guild-1/events", token, "other-token"), hashCsrfToken(token)),
     /CSRF token is missing or invalid/
+  );
+});
+
+test("production readiness reports missing auth secrets", () => {
+  assert.deepEqual(
+    getRuntimeConfigurationStatus({
+      DATABASE_URL: "postgres://example.com/guildops",
+      isProduction: true,
+      PASSWORD_PEPPER: undefined,
+      SESSION_SECRET: undefined
+    }),
+    {
+      ok: false,
+      missingEnv: ["SESSION_SECRET", "PASSWORD_PEPPER"]
+    }
+  );
+
+  assert.deepEqual(
+    getRuntimeConfigurationStatus({
+      DATABASE_URL: "postgres://example.com/guildops",
+      isProduction: true,
+      PASSWORD_PEPPER: "pepper",
+      SESSION_SECRET: "secret"
+    }),
+    {
+      ok: true,
+      missingEnv: []
+    }
   );
 });
 

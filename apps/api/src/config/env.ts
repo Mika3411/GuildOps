@@ -33,6 +33,35 @@ export const env = {
   isProduction: parsed.data.NODE_ENV === "production"
 };
 
+type RuntimeConfigurationInput = Pick<
+  typeof env,
+  "DATABASE_URL" | "PASSWORD_PEPPER" | "SESSION_SECRET" | "isProduction"
+>;
+
+export type RuntimeConfigurationStatus = {
+  ok: boolean;
+  missingEnv: string[];
+};
+
+export function getRuntimeConfigurationStatus(config: RuntimeConfigurationInput = env): RuntimeConfigurationStatus {
+  const missingEnv = [
+    ["DATABASE_URL", config.DATABASE_URL],
+    ...(config.isProduction
+      ? [
+          ["SESSION_SECRET", config.SESSION_SECRET],
+          ["PASSWORD_PEPPER", config.PASSWORD_PEPPER]
+        ]
+      : [])
+  ]
+    .filter((entry): entry is [string, undefined] => !entry[1])
+    .map(([key]) => key);
+
+  return {
+    ok: missingEnv.length === 0,
+    missingEnv
+  };
+}
+
 export function getCorsOrigins(): string[] {
   return (env.CORS_ORIGIN ?? "")
     .split(",")

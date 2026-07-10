@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { getRuntimeConfigurationStatus } from "../config/env.js";
 import { checkDatabase } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
 import { alertsRouter } from "./alerts.routes.js";
@@ -41,9 +42,21 @@ v1Router.get("/", (_req, res) => {
 v1Router.get(
   "/readyz",
   asyncHandler(async (_req, res) => {
+    const configuration = getRuntimeConfigurationStatus();
+
+    if (!configuration.ok) {
+      res.status(503).json({
+        ok: false,
+        configuration,
+        checkedAt: new Date().toISOString()
+      });
+      return;
+    }
+
     const database = await checkDatabase();
     res.json({
       ok: true,
+      configuration,
       database,
       checkedAt: new Date().toISOString()
     });
