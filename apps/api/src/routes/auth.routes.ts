@@ -1,9 +1,10 @@
 import { Router } from "express";
 import type { Response } from "express";
 import { z } from "zod";
+import { getRuntimeConfigurationStatus } from "../config/env.js";
 import { database, query, withClient } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
-import { BadRequestError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "../http/errors.js";
+import { BadRequestError, ConfigurationError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
 import {
   isTransactionalEmailConfigured,
@@ -93,6 +94,7 @@ authRouter.post(
   validate({ body: registerBodySchema }),
   asyncHandler(async (req, res) => {
     const body = req.body as z.infer<typeof registerBodySchema>;
+    assertAuthRuntimeReady();
     throwIfRateLimited(res, (await consumeAuthRateLimit("register", req, body.email)).hit);
 
     const passwordHash = await hashPassword(body.password);
@@ -179,6 +181,7 @@ authRouter.post(
   validate({ body: loginBodySchema }),
   asyncHandler(async (req, res) => {
     const body = req.body as z.infer<typeof loginBodySchema>;
+    assertAuthRuntimeReady();
     const loginRateLimit = await consumeAuthRateLimit("login", req, body.email);
     throwIfRateLimited(res, loginRateLimit.hit);
 
@@ -245,6 +248,7 @@ authRouter.post(
   validate({ body: verifyEmailBodySchema }),
   asyncHandler(async (req, res) => {
     const body = req.body as z.infer<typeof verifyEmailBodySchema>;
+    assertAuthRuntimeReady();
     const tokenHash = hashEmailVerificationToken(body.token);
 
     const result = await withClient(async (client) => {
@@ -335,6 +339,7 @@ authRouter.post(
   validate({ body: resendVerificationBodySchema }),
   asyncHandler(async (req, res) => {
     const body = req.body as z.infer<typeof resendVerificationBodySchema>;
+    assertAuthRuntimeReady();
     throwIfRateLimited(res, (await consumeAuthRateLimit("register", req, body.email)).hit);
 
     const userResult = await query<UserRow>(
@@ -414,7 +419,42 @@ function throwIfRateLimited(res: Response, hit: AuthRateLimitHit | null): void {
   if (!hit) return;
 
   res.set("Retry-After", String(hit.retryAfterSeconds));
-  throw new TooManyRequestsError(`Too many auth attempts. Retry in ${hit.retryAfterSeconds} seconds.`, hit);
+  throw new TooManyRequestsError(formatAuthRateLimitMessage(hit), hit);
+}
+
+function assertAuthRuntimeReady(): void {
+  const configuration = getRuntimeConfigurationStatus();
+
+  if (!configuration.ok) {
+    throw new ConfigurationError("Auth runtime configuration is incomplete", {
+      missingEnv: configuration.missingEnv
+    });
+  }
+}
+
+export function formatAuthRateLimitMessage(hit: AuthRateLimitHit): string {
+  const action = hit.action === "register" ? "d'inscription" : "de connexion";
+  return `Trop de tentatives ${action}. Reessaie dans ${formatRetryAfter(hit.retryAfterSeconds)}.`;
+}
+
+function formatRetryAfter(seconds: number): string {
+  const safeSeconds = Math.max(1, Math.ceil(seconds));
+
+  if (safeSeconds < 60) {
+    return safeSeconds === 1 ? "1 seconde" : `${safeSeconds} secondes`;
+  }
+
+  const totalMinutes = Math.ceil(safeSeconds / 60);
+
+  if (totalMinutes < 60) {
+    return totalMinutes === 1 ? "1 minute" : `${totalMinutes} minutes`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  const hourLabel = hours === 1 ? "1 heure" : `${hours} heures`;
+
+  return minutes === 0 ? hourLabel : `${hourLabel} ${minutes} min`;
 }
 
 function toPublicUser(row: UserRow): PublicUser {

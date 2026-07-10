@@ -52,9 +52,9 @@ const authRateLimitRules: Record<AuthRateLimitAction, AuthRateLimitRule[]> = {
     { bucket: "ip_email", limit: 5, windowSeconds: 15 * 60, label: "5 tentatives / 15 min par IP+email" }
   ],
   register: [
-    { bucket: "ip", limit: 5, windowSeconds: 60 * 60, label: "5 inscriptions / h par IP" },
-    { bucket: "email", limit: 3, windowSeconds: 24 * 60 * 60, label: "3 inscriptions / jour par email" },
-    { bucket: "ip_email", limit: 2, windowSeconds: 60 * 60, label: "2 inscriptions / h par IP+email" }
+    { bucket: "ip", limit: 20, windowSeconds: 15 * 60, label: "20 inscriptions / 15 min par IP" },
+    { bucket: "email", limit: 8, windowSeconds: 15 * 60, label: "8 inscriptions / 15 min par email" },
+    { bucket: "ip_email", limit: 5, windowSeconds: 15 * 60, label: "5 inscriptions / 15 min par IP+email" }
   ]
 };
 
