@@ -276,6 +276,7 @@ export function buildGuildSitePayload(draft, guild = {}) {
   const slug = slugify(title);
   const seoDescription = [normalized.tagline, normalized.objective].filter(Boolean).join(" ");
   const inviteToken = normalizeInviteToken(normalized.inviteToken) || createMemberInviteToken();
+  const inviteRotatedAt = normalized.inviteRotatedAt || undefined;
   const memberInviteUrl = buildMemberInvitePath(slug, inviteToken);
 
   return {
@@ -294,8 +295,8 @@ export function buildGuildSitePayload(draft, guild = {}) {
     hero_text: normalized.objective.trim(),
     inviteToken,
     invite_token: inviteToken,
-    inviteRotatedAt: normalized.inviteRotatedAt,
-    invite_rotated_at: normalized.inviteRotatedAt,
+    inviteRotatedAt,
+    invite_rotated_at: inviteRotatedAt,
     memberInviteUrl,
     member_invite_url: memberInviteUrl,
     theme: normalized.theme,
@@ -338,7 +339,7 @@ export function buildGuildSitePayload(draft, guild = {}) {
       tagline: normalized.tagline.trim(),
       objective: normalized.objective.trim(),
       inviteToken,
-      inviteRotatedAt: normalized.inviteRotatedAt,
+      inviteRotatedAt,
       memberInviteUrl,
       member_invite_url: memberInviteUrl,
       design: normalized.design,
@@ -348,7 +349,7 @@ export function buildGuildSitePayload(draft, guild = {}) {
       tagline: normalized.tagline.trim(),
       objective: normalized.objective.trim(),
       inviteToken,
-      inviteRotatedAt: normalized.inviteRotatedAt,
+      inviteRotatedAt,
       memberInviteUrl,
       member_invite_url: memberInviteUrl,
       design: normalized.design,
