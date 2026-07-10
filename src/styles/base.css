@@ -112,6 +112,47 @@ button:focus-visible {
   outline: none;
 }
 
+.password-input {
+  position: relative;
+  width: 100%;
+}
+
+.password-input input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.password-input-toggle {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--muted);
+}
+
+.password-input-toggle:hover,
+.password-input-toggle[aria-pressed="true"] {
+  border-color: rgba(84, 223, 204, 0.28);
+  background: rgba(84, 223, 204, 0.09);
+  color: var(--teal);
+}
+
+.password-input-toggle:disabled {
+  cursor: default;
+}
+
+.password-input-toggle svg {
+  pointer-events: none;
+}
+
 textarea {
   min-height: 76px;
   resize: vertical;

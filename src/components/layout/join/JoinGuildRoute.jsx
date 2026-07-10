@@ -22,6 +22,7 @@ import {
   savePublishedSite,
   slugify
 } from "../../../lib/guildSiteStore.js";
+import { PasswordInput } from "../../shared/PasswordInput.jsx";
 
 export function JoinGuildRoute({
   authSession,
@@ -345,10 +346,9 @@ export function JoinGuildRoute({
                 </label>
                 <label className="form-row">
                   <span>Mot de passe</span>
-                  <input
+                  <PasswordInput
                     autoComplete={isRegister ? "new-password" : "current-password"}
                     minLength={isRegister ? 10 : 1}
-                    type="password"
                     value={authForm.password}
                     onChange={(event) => updateAuthField("password", event.target.value)}
                     required

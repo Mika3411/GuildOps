@@ -19,6 +19,7 @@ import {
   getRealmPlaceholderForGame,
   normalizeRealmCodeForGame
 } from "../../../config/guildOpsConfig.js";
+import { PasswordInput } from "../../shared/PasswordInput.jsx";
 
 const emailVerificationRequests = new Map();
 
@@ -190,10 +191,9 @@ export function AuthGate({ authSession, initialMode = "login" }) {
           </label>
           <label className="form-row">
             <span>Mot de passe</span>
-            <input
+            <PasswordInput
               autoComplete={isRegister ? "new-password" : "current-password"}
               minLength={isRegister ? 10 : 1}
-              type="password"
               value={form.password}
               onChange={(event) => updateField("password", event.target.value)}
               required

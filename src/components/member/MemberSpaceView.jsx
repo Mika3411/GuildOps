@@ -17,6 +17,7 @@ import {
 import {
   PanelHeader
 } from "../shared/Shared.jsx";
+import { PasswordInput } from "../shared/PasswordInput.jsx";
 
 const LANGUAGE_OPTIONS = Object.freeze([
   { value: "fr", label: "FR - Francais" },
@@ -291,33 +292,30 @@ export function MemberSpaceView({ authSession, currentUser }) {
         <form className="member-form-grid" onSubmit={changePassword}>
           <label className="form-row wide">
             <span>Mot de passe actuel</span>
-            <input
+            <PasswordInput
               autoComplete="current-password"
               onChange={(event) => updatePasswordField("currentPassword", event.target.value)}
               required
-              type="password"
               value={passwordForm.currentPassword}
             />
           </label>
           <label className="form-row">
             <span>Nouveau mot de passe</span>
-            <input
+            <PasswordInput
               autoComplete="new-password"
               minLength={10}
               onChange={(event) => updatePasswordField("newPassword", event.target.value)}
               required
-              type="password"
               value={passwordForm.newPassword}
             />
           </label>
           <label className="form-row">
             <span>Confirmation</span>
-            <input
+            <PasswordInput
               autoComplete="new-password"
               minLength={10}
               onChange={(event) => updatePasswordField("confirmPassword", event.target.value)}
               required
-              type="password"
               value={passwordForm.confirmPassword}
             />
           </label>
