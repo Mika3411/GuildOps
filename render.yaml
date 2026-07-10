@@ -17,7 +17,7 @@ services:
     runtime: static
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     routes:
       - type: rewrite
         source: /*
@@ -48,7 +48,7 @@ services:
     preDeployCommand: npm run db:migrate
     startCommand: npm run start:prod
     healthCheckPath: /healthz
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     disk:
       name: guildops-uploads
       mountPath: /var/data/guildops/uploads
@@ -82,7 +82,7 @@ services:
     schedule: "*/5 * * * *"
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run cron:events
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
@@ -100,7 +100,7 @@ services:
     schedule: "7 * * * *"
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run cron:diplomacy
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
@@ -118,7 +118,7 @@ services:
     schedule: "17 2 * * *"
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm run cron:sessions
-    autoDeployTrigger: checksPass
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production
