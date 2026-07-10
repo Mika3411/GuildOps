@@ -1,5 +1,5 @@
 const DEFAULT_API_PREFIX = "/api/v1";
-const DEFAULT_TIMEOUT_MS = 8000;
+const DEFAULT_TIMEOUT_MS = 15000;
 const CSRF_COOKIE_NAME = "guildops_csrf";
 const CSRF_STORAGE_KEY = "guildops:csrf-token";
 
@@ -70,6 +70,22 @@ export async function apiRequest(path, options = {}) {
 
     rememberCsrfToken(payload?.csrfToken);
     return payload;
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error?.name === "AbortError") {
+      throw new ApiError("API trop lente. Reessayez dans quelques secondes.", {
+        status: 0,
+        payload: { error: { message: error.message, name: error.name } },
+      });
+    }
+
+    throw new ApiError("Connexion a l'API impossible. Verifiez la connexion puis reessayez.", {
+      status: 0,
+      payload: { error: { message: error?.message || String(error), name: error?.name || "NetworkError" } },
+    });
   } finally {
     window.clearTimeout(timeout);
     if (signal) {
