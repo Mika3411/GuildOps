@@ -23,6 +23,7 @@ The service expects:
 - `SMTP_URL` and `EMAIL_FROM` for transactional email delivery.
 
 `/healthz` is a liveness endpoint and intentionally does not require the database. Use `/api/v1/readyz` for database readiness.
+If production auth returns `CONFIGURATION_ERROR`, check `/api/v1/readyz` after the latest API deploy and verify that `SESSION_SECRET` and `PASSWORD_PEPPER` exist on `guildops-api`.
 
 ## Auth
 
