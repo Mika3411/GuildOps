@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import {
   GAME_OPTIONS,
-  PLAY_STYLE_OPTIONS,
   REALM_CODE_MAX_LENGTH,
   getRealmPlaceholderForGame,
   normalizeRealmCodeForGame
@@ -343,7 +342,6 @@ export function GuildOnboarding({ creating, currentUser, error, onCreateGuild, o
     tag: "",
     gameName: "Whiteout Survival",
     serverCode: normalizeRealmCodeForGame("", "Whiteout Survival"),
-    playStyle: "Guerre organisee",
     description: "",
     isPublic: false,
   });
@@ -435,14 +433,6 @@ export function GuildOnboarding({ creating, currentUser, error, onCreateGuild, o
               onChange={(event) => updateField("serverCode", event.target.value)}
               placeholder={getRealmPlaceholderForGame(form.gameName)}
             />
-          </label>
-          <label className="form-row">
-            <span>Style</span>
-            <select value={form.playStyle} onChange={(event) => updateField("playStyle", event.target.value)}>
-              {PLAY_STYLE_OPTIONS.map((style) => (
-                <option key={style}>{style}</option>
-              ))}
-            </select>
           </label>
           <label className="form-row wide">
             <span>Brief</span>
