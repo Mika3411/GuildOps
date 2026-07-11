@@ -589,9 +589,26 @@
   .bank-stock-cards,
   .bank-form-grid,
   .event-form-grid,
+  .forum-workspace,
   .forum-compose,
   .public-chat-form,
   .public-sections {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .forum-categories-panel,
+  .forum-threads-panel,
+  .forum-discussion-panel,
+  .forum-permissions-panel {
+    grid-column: 1;
+  }
+
+  .forum-header-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .forum-preset-list {
     grid-template-columns: minmax(0, 1fr);
   }
 
