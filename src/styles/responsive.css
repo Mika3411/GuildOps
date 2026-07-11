@@ -596,8 +596,7 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .forum-categories-panel,
-  .forum-threads-panel,
+  .forum-sidebar-panel,
   .forum-discussion-panel,
   .forum-permissions-panel {
     grid-column: 1;

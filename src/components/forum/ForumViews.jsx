@@ -9,13 +9,10 @@ import {
   Lock,
   MessageSquare,
   Plus,
-  Send,
-  Settings,
-  Shield
+  Send
 } from "lucide-react";
 import {
   getForumVisibilityLabel,
-  buildForumPermissionDraft,
   formatChatTime
 } from "../../lib/guildOpsTransforms.js";
 import {
@@ -29,38 +26,47 @@ export function ForumView(props) {
   const canPost = activeCategory?.permissions?.canPost ?? true;
   const hasCategories = props.forumCategories.length > 0;
   const [categoryComposerOpen, setCategoryComposerOpen] = useState(false);
+  const [threadComposerOpen, setThreadComposerOpen] = useState(false);
 
   useEffect(() => {
     setCategoryComposerOpen(!hasCategories && props.forumCanManage);
   }, [hasCategories, props.forumCanManage]);
 
+  useEffect(() => {
+    if (!hasCategories) setThreadComposerOpen(false);
+  }, [hasCategories]);
+
   function saveCategory(draft) {
     props.onSaveForumCategory(draft);
+    setCategoryComposerOpen(false);
+  }
+
+  function createThread() {
+    props.onCreateForumThread();
   }
 
   return (
-    <div className="page-grid two-columns forum-workspace">
-      <ForumCategoryList
+    <div className="forum-workspace">
+      <ForumSidebar
         activeCategoryId={props.activeForumCategoryId}
+        activeThread={props.activeForumThread}
         canManage={props.forumCanManage}
+        canPost={canPost}
+        categoryComposerOpen={categoryComposerOpen}
         categories={props.forumCategories}
         counters={props.forumCounters}
-        draft={props.forumCategoryDraft}
+        categoryDraft={props.forumCategoryDraft}
+        threadDraft={props.forumThreadDraft}
+        threadComposerOpen={threadComposerOpen}
         loading={props.forumLoading}
-        onChangeDraft={props.setForumCategoryDraft}
+        onChangeCategoryDraft={props.setForumCategoryDraft}
+        onChangeThreadDraft={props.setForumThreadDraft}
         onSaveCategory={saveCategory}
-        onSelect={props.onSelectForumCategory}
-        onToggleComposer={() => setCategoryComposerOpen((current) => !current)}
-        showComposer={categoryComposerOpen}
-      />
-      <ForumThreadList
-        activeThread={props.activeForumThread}
-        canPost={canPost}
-        categories={props.forumCategories}
-        draft={props.forumThreadDraft}
-        onChangeDraft={props.setForumThreadDraft}
-        onCreate={props.onCreateForumThread}
-        onSelect={props.onSelectForumThread}
+        onCreateThread={createThread}
+        onSelectCategory={props.onSelectForumCategory}
+        onSelectThread={props.onSelectForumThread}
+        onToggleCategoryComposer={() => setCategoryComposerOpen((current) => !current)}
+        onToggleThreadComposer={() => setThreadComposerOpen((current) => !current)}
         pagination={props.forumThreadPagination}
         threads={props.forumThreads}
       />
@@ -77,77 +83,80 @@ export function ForumView(props) {
         posts={props.forumPosts}
         thread={props.activeForumThread}
       />
-      {props.forumCanManage ? (
-        <ForumPermissionsPanel category={activeCategory} onSave={props.onSaveForumCategoryPermissions} roles={props.forumRoles} />
-      ) : null}
       {props.forumError ? <p className="sync-warning forum-warning">{props.forumError}</p> : null}
     </div>
   );
 }
 
-export function ForumCategoryList({
+export function ForumSidebar({
   activeCategoryId,
+  activeThread,
   canManage = false,
+  canPost = false,
+  categoryComposerOpen = false,
   categories = [],
   counters = {},
-  draft,
+  categoryDraft,
+  threadDraft,
+  threadComposerOpen = false,
   loading = false,
-  onChangeDraft,
+  onChangeCategoryDraft,
+  onChangeThreadDraft,
   onSaveCategory,
-  onSelect,
-  onToggleComposer,
-  showComposer = false,
+  onCreateThread,
+  onSelectCategory,
+  onSelectThread,
+  onToggleCategoryComposer,
+  onToggleThreadComposer,
+  pagination = {},
+  threads = [],
 }) {
+  const categoryOptions = categories.filter((category) => category.permissions?.canPost ?? true);
+  const canCreateThread = canPost && categoryOptions.length > 0;
+
   return (
-    <section className="panel forum-categories-panel">
+    <section className="panel forum-sidebar-panel">
       <PanelHeader
         icon={MessageSquare}
-        title="Categories"
+        title="Forum"
         meta={loading ? "Chargement" : `${counters.threads || 0} sujets · ${counters.posts || 0} posts`}
-        action={
-          canManage ? (
-            <span className="forum-header-tools">
-              <span className="panel-meta">{loading ? "Chargement" : `${counters.threads || 0} sujets · ${counters.posts || 0} posts`}</span>
-              <button className="forum-header-action" type="button" onClick={onToggleComposer}>
-                <Plus size={15} />
-                {showComposer ? "Fermer" : "Nouvelle"}
-              </button>
-            </span>
-          ) : null
-        }
       />
-      {showComposer ? <ForumCategoryQuickForm draft={draft} onChange={onChangeDraft} onSave={onSaveCategory} /> : null}
-      <div className="forum-category-list">
-        {categories.length ? (
-          categories.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              className={activeCategoryId === category.id ? "is-active" : ""}
-              onClick={() => onSelect(category.id)}
-            >
-              <span>
-                <strong>{category.name}</strong>
-                <small>{category.description || getForumVisibilityLabel(category.visibility)}</small>
-              </span>
-              <em>{category.threadCount}</em>
-            </button>
-          ))
-        ) : (
-          <EmptyState
-            icon={MessageSquare}
-            title={loading ? "Chargement du forum" : "Aucune categorie"}
-            text={
-              loading
-                ? "Chargement des categories..."
-                : canManage
-                  ? "Cree d'abord une categorie comme Annonces, Strategie ou Diplomatie."
-                  : "Aucune categorie disponible pour ton role."
-            }
-            compact
-          />
-        )}
+      <div className="forum-header-tools">
+        {canManage ? (
+          <button className="forum-header-action" type="button" onClick={onToggleCategoryComposer}>
+            <Plus size={15} />
+            Categorie
+          </button>
+        ) : null}
+        <button className="forum-header-action" type="button" onClick={onToggleThreadComposer} disabled={!canCreateThread}>
+          <Plus size={15} />
+          Sujet
+        </button>
       </div>
+      {categoryComposerOpen ? <ForumCategoryQuickForm draft={categoryDraft} onChange={onChangeCategoryDraft} onSave={onSaveCategory} /> : null}
+      {threadComposerOpen ? (
+        <ForumThreadQuickForm
+          canPost={canPost}
+          categories={categories}
+          draft={threadDraft}
+          onChangeDraft={onChangeThreadDraft}
+          onCreate={onCreateThread}
+        />
+      ) : null}
+      <ForumCategoryList
+        activeCategoryId={activeCategoryId}
+        canManage={canManage}
+        categories={categories}
+        loading={loading}
+        onSelect={onSelectCategory}
+      />
+      <ForumThreadList
+        activeThread={activeThread}
+        categoryOptions={categoryOptions}
+        onSelect={onSelectThread}
+        pagination={pagination}
+        threads={threads}
+      />
     </section>
   );
 }
@@ -166,10 +175,9 @@ export function ForumCategoryQuickForm({ draft = {}, onChange, onSave }) {
   return (
     <div className="forum-category-quick-form">
       <header>
-        <span className="forum-step-badge">1</span>
         <span>
-          <strong>Creer une categorie</strong>
-          <small>Une categorie regroupe les sujets du meme type.</small>
+          <strong>Nouvelle categorie</strong>
+          <small>Exemples rapides ou nom libre.</small>
         </span>
       </header>
       <div className="forum-preset-list" aria-label="Modeles de categorie">
@@ -201,7 +209,100 @@ export function ForumCategoryQuickForm({ draft = {}, onChange, onSave }) {
       </label>
       <button className="teal-action" type="button" onClick={() => onSave(draft)} disabled={!draft.name?.trim()}>
         <CheckCircle2 size={16} />
-        Creer la categorie
+        Ajouter la categorie
+      </button>
+    </div>
+  );
+}
+
+export function ForumCategoryList({ activeCategoryId, canManage = false, categories = [], loading = false, onSelect }) {
+  return (
+    <div className="forum-sidebar-section">
+      <header>
+        <strong>Categories</strong>
+        <small>{categories.length} au total</small>
+      </header>
+      <div className="forum-category-list">
+        {categories.length ? (
+          categories.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              className={activeCategoryId === category.id ? "is-active" : ""}
+              onClick={() => onSelect(category.id)}
+            >
+              <span>
+                <strong>{category.name}</strong>
+                <small>{category.description || getForumVisibilityLabel(category.visibility)}</small>
+              </span>
+              <em>{category.threadCount}</em>
+            </button>
+          ))
+        ) : (
+          <EmptyState
+            icon={MessageSquare}
+            title={loading ? "Chargement" : "Aucune categorie"}
+            text={loading ? "Chargement..." : canManage ? "Clique sur + Categorie." : "Aucune categorie disponible."}
+            compact
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function ForumThreadQuickForm({
+  canPost,
+  categories = [],
+  draft,
+  onChangeDraft,
+  onCreate,
+}) {
+  const categoryOptions = categories.filter((category) => category.permissions?.canPost ?? true);
+  const disabled = !canPost || categoryOptions.length === 0;
+  const selectedCategoryId = draft.categoryId || categoryOptions[0]?.id || "";
+
+  function updateDraft(patch) {
+    onChangeDraft((current) => ({ ...current, ...patch }));
+  }
+
+  return (
+    <div className="forum-thread-quick-form">
+      <header>
+        <strong>Nouveau sujet</strong>
+        <small>{disabled ? "Cree une categorie avant." : "Titre + premier message."}</small>
+      </header>
+      <label className="form-row">
+        <span>Categorie</span>
+        <select value={selectedCategoryId} onChange={(event) => updateDraft({ categoryId: event.target.value })} disabled={disabled}>
+          {categoryOptions.length ? null : <option value="">Aucune categorie</option>}
+          {categoryOptions.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="form-row">
+        <span>Titre</span>
+        <input
+          value={draft.title}
+          placeholder="Plan, rapport, consigne..."
+          onChange={(event) => updateDraft({ title: event.target.value })}
+          disabled={disabled}
+        />
+      </label>
+      <label className="form-row">
+        <span>Premier message</span>
+        <textarea
+          value={draft.body}
+          placeholder={disabled ? "Aucune categorie disponible" : "Lance la discussion..."}
+          onChange={(event) => updateDraft({ body: event.target.value })}
+          disabled={disabled}
+        />
+      </label>
+      <button className="teal-action" type="button" onClick={onCreate} disabled={disabled || !draft.title.trim() || !draft.body.trim()}>
+        Ajouter le sujet
       </button>
     </div>
   );
@@ -209,73 +310,17 @@ export function ForumCategoryQuickForm({ draft = {}, onChange, onSave }) {
 
 export function ForumThreadList({
   activeThread,
-  canPost,
-  categories = [],
-  draft,
-  onChangeDraft,
-  onCreate,
+  categoryOptions = [],
   onSelect,
   pagination = {},
   threads = [],
 }) {
-  const categoryOptions = categories.filter((category) => category.permissions?.canPost);
-  const disabled = !canPost || categoryOptions.length === 0;
-  const selectedCategoryId = draft.categoryId || categoryOptions[0]?.id || "";
-  const helperText =
-    categoryOptions.length === 0
-      ? "Etape 2 bloquee : cree une categorie a gauche avant de lancer un sujet."
-      : disabled
-        ? "Ton role ne peut pas poster dans cette categorie."
-        : "Un sujet = une question, une decision ou une consigne claire.";
-
-  function updateDraft(patch) {
-    onChangeDraft((current) => ({ ...current, ...patch }));
-  }
-
   return (
-    <section className="panel wide-panel forum-threads-panel">
-      <PanelHeader icon={FileText} title="Sujets" meta={`${pagination.total || threads.length} au total`} />
-      <div className="forum-compose">
-        <header className="forum-compose-intro">
-          <span className="forum-step-badge">2</span>
-          <span>
-            <strong>Nouveau sujet</strong>
-            <small>{helperText}</small>
-          </span>
-        </header>
-        <label className="form-row">
-          <span>Categorie</span>
-          <select value={selectedCategoryId} onChange={(event) => updateDraft({ categoryId: event.target.value })} disabled={disabled}>
-            {categoryOptions.length ? null : <option value="">Aucune categorie</option>}
-            {categoryOptions.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="form-row">
-          <span>Titre</span>
-          <input
-            value={draft.title}
-            placeholder="Plan, rapport, consigne..."
-            onChange={(event) => updateDraft({ title: event.target.value })}
-            disabled={disabled}
-          />
-        </label>
-        <label className="form-row wide">
-          <span>Premier message</span>
-          <textarea
-            value={draft.body}
-            placeholder={disabled ? "Message reserve a cette categorie" : "Lance la discussion de guilde..."}
-            onChange={(event) => updateDraft({ body: event.target.value })}
-            disabled={disabled}
-          />
-        </label>
-        <button className="teal-action" type="button" onClick={onCreate} disabled={disabled || !draft.title.trim() || !draft.body.trim()}>
-          Creer le sujet
-        </button>
-      </div>
+    <div className="forum-sidebar-section">
+      <header>
+        <strong>Sujets</strong>
+        <small>{pagination.total || threads.length} au total</small>
+      </header>
       <div className="forum-list">
         {threads.map((thread) => (
           <article className={`forum-row ${activeThread?.id === thread.id ? "is-active" : ""}`} key={thread.id}>
@@ -296,12 +341,12 @@ export function ForumThreadList({
           <EmptyState
             icon={FileText}
             title="Aucun sujet"
-            text={categoryOptions.length ? "Lance le premier sujet de cette categorie." : "Les sujets apparaitront ici apres la premiere categorie."}
+            text={categoryOptions.length ? "Clique sur + Sujet." : "Cree d'abord une categorie."}
             compact
           />
         )}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -384,87 +429,6 @@ export function ForumDiscussion({
           <Send size={15} />
         </button>
       </label>
-    </section>
-  );
-}
-
-export function ForumCategoryEditor({ draft, onChange, onSave }) {
-  function updateDraft(patch) {
-    onChange((current) => ({ ...current, ...patch }));
-  }
-
-  return (
-    <section className="panel forum-category-editor">
-      <PanelHeader icon={Settings} title="Categorie" meta="Moderation" />
-      <label className="form-row">
-        <span>Nom</span>
-        <input value={draft.name} onChange={(event) => updateDraft({ name: event.target.value })} />
-      </label>
-      <label className="form-row">
-        <span>Acces</span>
-        <select value={draft.visibility} onChange={(event) => updateDraft({ visibility: event.target.value })}>
-          <option value="members">Membres</option>
-          <option value="officers">Officiers</option>
-          <option value="admins">Admins</option>
-        </select>
-      </label>
-      <label className="form-row wide">
-        <span>Description</span>
-        <textarea value={draft.description} onChange={(event) => updateDraft({ description: event.target.value })} />
-      </label>
-      <button className="teal-action" type="button" onClick={() => onSave(draft)} disabled={!draft.name.trim()}>
-        Enregistrer
-      </button>
-    </section>
-  );
-}
-
-export function ForumPermissionsPanel({ category, onSave, roles = [] }) {
-  const [draft, setDraft] = useState([]);
-
-  useEffect(() => {
-    setDraft(buildForumPermissionDraft(category, roles));
-  }, [category?.id, roles]);
-
-  function togglePermission(roleId, key) {
-    setDraft((current) =>
-      current.map((permission) =>
-        permission.roleId === roleId ? { ...permission, [key]: !permission[key] } : permission,
-      ),
-    );
-  }
-
-  if (!category) return null;
-
-  return (
-    <section className="panel forum-permissions-panel">
-      <PanelHeader icon={Shield} title="Permissions" meta={category.name} />
-      <div className="forum-permission-list">
-        {draft.map((permission) => (
-          <div className="forum-permission-row" key={permission.roleId}>
-            <strong>{permission.roleName}</strong>
-            <label>
-              <input type="checkbox" checked={permission.canRead} onChange={() => togglePermission(permission.roleId, "canRead")} />
-              Lire
-            </label>
-            <label>
-              <input type="checkbox" checked={permission.canPost} onChange={() => togglePermission(permission.roleId, "canPost")} />
-              Poster
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={permission.canModerate}
-                onChange={() => togglePermission(permission.roleId, "canModerate")}
-              />
-              Moderer
-            </label>
-          </div>
-        ))}
-      </div>
-      <button className="teal-action" type="button" onClick={() => onSave(category.id, draft)}>
-        Sauver les roles
-      </button>
     </section>
   );
 }
