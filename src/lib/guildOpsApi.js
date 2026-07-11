@@ -125,6 +125,9 @@ export const guildOpsEndpoints = {
       `/guilds/${encodeURIComponent(guildId)}/forum/categories/${encodeURIComponent(categoryId)}`,
     categoryPermissions: (guildId, categoryId) =>
       `/guilds/${encodeURIComponent(guildId)}/forum/categories/${encodeURIComponent(categoryId)}/permissions`,
+    mutes: (guildId) => `/guilds/${encodeURIComponent(guildId)}/forum/mutes`,
+    mute: (guildId, memberId) =>
+      `/guilds/${encodeURIComponent(guildId)}/forum/mutes/${encodeURIComponent(memberId)}`,
     threads: (guildId) => `/guilds/${encodeURIComponent(guildId)}/forum/threads`,
     thread: (guildId, threadId) => `/guilds/${encodeURIComponent(guildId)}/forum/threads/${encodeURIComponent(threadId)}`,
     posts: (guildId, threadId) =>
@@ -457,6 +460,12 @@ export const guildOpsApi = {
       method: "PUT",
     });
   },
+  muteForumMember(guildId, body) {
+    return apiRequest(guildOpsEndpoints.forum.mutes(guildId), { body });
+  },
+  unmuteForumMember(guildId, memberId) {
+    return apiRequest(guildOpsEndpoints.forum.mute(guildId, memberId), { method: "DELETE" });
+  },
   listForumThreads(guildId, query, { signal } = {}) {
     return apiRequest(guildOpsEndpoints.forum.threads(guildId), { query, signal });
   },
@@ -471,6 +480,9 @@ export const guildOpsApi = {
       body,
       method: "PATCH",
     });
+  },
+  deleteForumThread(guildId, threadId) {
+    return apiRequest(guildOpsEndpoints.forum.thread(guildId, threadId), { method: "DELETE" });
   },
   createForumPost(guildId, threadId, body) {
     return apiRequest(guildOpsEndpoints.forum.posts(guildId, threadId), { body });

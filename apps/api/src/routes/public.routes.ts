@@ -1030,7 +1030,7 @@ async function getPublicForumSnapshot(guildId: string) {
           count(fp.id) FILTER (WHERE fp.deleted_at IS NULL)::text AS post_count,
           max(fp.created_at)::text AS last_post_at
         FROM forum_categories fc
-        LEFT JOIN forum_threads ft ON ft.category_id = fc.id
+        LEFT JOIN forum_threads ft ON ft.category_id = fc.id AND ft.visibility = 'public'
         LEFT JOIN forum_posts fp ON fp.thread_id = ft.id
         WHERE fc.guild_id = $1
           AND fc.visibility = 'public'
@@ -1068,6 +1068,7 @@ async function getPublicForumSnapshot(guildId: string) {
         LEFT JOIN forum_posts fp ON fp.thread_id = ft.id
         WHERE fc.guild_id = $1
           AND fc.visibility = 'public'
+          AND ft.visibility = 'public'
         GROUP BY ft.id, fc.name, author.nickname
         ORDER BY ft.pinned_at DESC NULLS LAST, COALESCE(ft.last_post_at, ft.created_at) DESC
         LIMIT 12
@@ -1078,7 +1079,7 @@ async function getPublicForumSnapshot(guildId: string) {
       `
         SELECT
           count(DISTINCT fc.id) FILTER (WHERE fc.visibility <> 'public')::text AS private_category_count,
-          count(DISTINCT ft.id) FILTER (WHERE fc.visibility <> 'public')::text AS private_thread_count
+          count(DISTINCT ft.id) FILTER (WHERE fc.visibility <> 'public' OR ft.visibility <> 'public')::text AS private_thread_count
         FROM forum_categories fc
         LEFT JOIN forum_threads ft ON ft.category_id = fc.id
         WHERE fc.guild_id = $1

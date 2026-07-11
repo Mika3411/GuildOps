@@ -106,6 +106,7 @@ export function createForumThreadDraft(overrides = {}) {
     categoryId: "strategy",
     title: "",
     body: "",
+    visibility: "members",
     pinned: false,
     locked: false,
     ...overrides,
@@ -165,6 +166,7 @@ export function normalizeForumThread(thread = {}) {
     authorMemberId: thread.authorMemberId || thread.author_member_id || null,
     authorName: thread.authorName || thread.author_name || thread.author || "Membre",
     title: thread.title || "Sujet de guilde",
+    visibility: thread.visibility || "members",
     pinned,
     pinnedAt: thread.pinnedAt || thread.pinned_at || null,
     locked,
@@ -179,6 +181,7 @@ export function normalizeForumThread(thread = {}) {
       canReply: thread.permissions?.canReply ?? thread.permissions?.can_reply ?? !locked,
       canModerate: thread.permissions?.canModerate ?? thread.permissions?.can_moderate ?? false,
       canEdit: thread.permissions?.canEdit ?? thread.permissions?.can_edit ?? false,
+      muted: thread.permissions?.muted ?? false,
     },
   };
 }
@@ -202,13 +205,26 @@ export function normalizeForumPost(post = {}) {
   };
 }
 
+export function normalizeForumMute(mute = {}) {
+  return {
+    id: mute.id || `${mute.memberId || mute.member_id || "member"}-mute`,
+    guildId: mute.guildId || mute.guild_id || "",
+    memberId: mute.memberId || mute.member_id || "",
+    memberName: mute.memberName || mute.member_name || mute.nickname || "Membre",
+    mutedByMemberId: mute.mutedByMemberId || mute.muted_by_member_id || null,
+    mutedByName: mute.mutedByName || mute.muted_by_name || "Moderation",
+    reason: mute.reason || "",
+    mutedAt: mute.mutedAt || mute.muted_at || new Date().toISOString(),
+  };
+}
+
 export function buildPublicForumSnapshot({ categories = [], threads = [] } = {}) {
   const normalizedCategories = categories.map(normalizeForumCategory);
   const publicCategories = normalizedCategories.filter((category) => category.visibility === "public");
   const publicCategoryIds = new Set(publicCategories.map((category) => category.id));
   const normalizedThreads = threads.map(normalizeForumThread);
   const publicThreads = normalizedThreads
-    .filter((thread) => publicCategoryIds.has(thread.categoryId))
+    .filter((thread) => publicCategoryIds.has(thread.categoryId) && thread.visibility === "public")
     .map((thread) => ({
       id: thread.id,
       categoryId: thread.categoryId,
@@ -222,7 +238,7 @@ export function buildPublicForumSnapshot({ categories = [], threads = [] } = {})
       postCount: thread.postCount,
       lastPostAt: thread.lastPostAt,
       createdAt: thread.createdAt,
-      visibility: "public",
+      visibility: thread.visibility,
     }));
 
   return {
@@ -249,7 +265,7 @@ export function buildPublicForumSnapshot({ categories = [], threads = [] } = {})
 export function getForumVisibilityLabel(visibility) {
   return (
     {
-      public: "Invités",
+      public: "Public",
       members: "Membres",
       officers: "Officiers",
       admins: "Admins",

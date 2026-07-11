@@ -587,6 +587,8 @@ CREATE TABLE forum_threads (
   category_id uuid NOT NULL REFERENCES forum_categories(id) ON DELETE CASCADE,
   author_member_id uuid REFERENCES guild_members(id) ON DELETE SET NULL,
   title text NOT NULL,
+  visibility text NOT NULL DEFAULT 'members'
+    CHECK (visibility IN ('public', 'members')),
   pinned_at timestamptz,
   pinned_by_member_id uuid REFERENCES guild_members(id) ON DELETE SET NULL,
   locked_at timestamptz,
@@ -618,6 +620,20 @@ CREATE TABLE forum_category_role_permissions (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (category_id, role_id)
+);
+
+CREATE TABLE forum_member_mutes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id uuid NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  muted_member_id uuid NOT NULL REFERENCES guild_members(id) ON DELETE CASCADE,
+  muted_by_member_id uuid REFERENCES guild_members(id) ON DELETE SET NULL,
+  reason text,
+  muted_at timestamptz NOT NULL DEFAULT now(),
+  lifted_at timestamptz,
+  lifted_by_member_id uuid REFERENCES guild_members(id) ON DELETE SET NULL,
+  lift_reason text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE TABLE private_messages (
@@ -805,6 +821,12 @@ CREATE INDEX idx_forum_categories_guild_sort ON forum_categories(guild_id, sort_
 CREATE INDEX idx_forum_category_role_permissions_role ON forum_category_role_permissions(role_id, category_id);
 CREATE INDEX idx_forum_threads_category_pinned_last
 ON forum_threads(category_id, pinned_at DESC NULLS LAST, (COALESCE(last_post_at, created_at)) DESC);
+CREATE INDEX idx_forum_threads_public_visibility
+ON forum_threads(category_id, visibility, pinned_at DESC NULLS LAST, (COALESCE(last_post_at, created_at)) DESC);
+CREATE UNIQUE INDEX idx_forum_member_mutes_active
+ON forum_member_mutes(guild_id, muted_member_id)
+WHERE lifted_at IS NULL;
+CREATE INDEX idx_forum_member_mutes_member ON forum_member_mutes(muted_member_id, lifted_at);
 CREATE INDEX idx_forum_posts_thread_visible_created ON forum_posts(thread_id, created_at)
 WHERE deleted_at IS NULL;
 CREATE INDEX idx_private_messages_sender_created ON private_messages(sender_user_id, created_at DESC);
@@ -943,6 +965,10 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER forum_category_role_permissions_set_updated_at
 BEFORE UPDATE ON forum_category_role_permissions
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER forum_member_mutes_set_updated_at
+BEFORE UPDATE ON forum_member_mutes
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER guild_merge_requests_set_updated_at

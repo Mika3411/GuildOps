@@ -13,6 +13,8 @@ export const forumRouter = Router();
 type ForumAccess = {
   canManage: boolean;
   globalRole: string;
+  mute: ForumMuteResource | null;
+  muted: boolean;
   memberId: string;
   organizationRole: string;
   roleCodes: string[];
@@ -42,6 +44,29 @@ type CategoryPermissionRow = {
 };
 
 type ForumVisibility = "public" | "members" | "officers" | "admins";
+type ForumThreadVisibility = "public" | "members";
+
+type ForumMuteRow = {
+  id: string;
+  guild_id: string;
+  muted_member_id: string;
+  muted_member_name: string | null;
+  muted_by_member_id: string | null;
+  muted_by_name: string | null;
+  reason: string | null;
+  muted_at: string;
+};
+
+type ForumMuteResource = {
+  id: string;
+  guildId: string;
+  memberId: string;
+  memberName: string;
+  mutedByMemberId: string | null;
+  mutedByName: string;
+  reason: string | null;
+  mutedAt: string;
+};
 
 const guildParamsSchema = z.object({
   guildId: uuidSchema
@@ -61,6 +86,11 @@ const postParamsSchema = z.object({
   guildId: uuidSchema,
   threadId: uuidSchema,
   postId: uuidSchema
+});
+
+const muteParamsSchema = z.object({
+  guildId: uuidSchema,
+  memberId: uuidSchema
 });
 
 const listThreadsQuerySchema = z.object({
@@ -107,6 +137,7 @@ const createThreadBodySchema = z
     categoryId: uuidSchema,
     title: z.string().trim().min(3).max(180),
     body: z.string().trim().min(1).max(8000),
+    visibility: z.enum(["public", "members"]).optional().default("members"),
     pinned: z.boolean().optional().default(false),
     locked: z.boolean().optional().default(false)
   })
@@ -116,6 +147,7 @@ const updateThreadBodySchema = z
   .object({
     categoryId: uuidSchema.optional(),
     title: z.string().trim().min(3).max(180).optional(),
+    visibility: z.enum(["public", "members"]).optional(),
     pinned: z.boolean().optional(),
     locked: z.boolean().optional()
   })
@@ -139,10 +171,18 @@ const deletePostBodySchema = z
   })
   .strict();
 
+const muteMemberBodySchema = z
+  .object({
+    memberId: uuidSchema,
+    reason: z.string().trim().max(240).nullable().optional()
+  })
+  .strict();
+
 type GuildParams = z.infer<typeof guildParamsSchema>;
 type CategoryParams = z.infer<typeof categoryParamsSchema>;
 type ThreadParams = z.infer<typeof threadParamsSchema>;
 type PostParams = z.infer<typeof postParamsSchema>;
+type MuteParams = z.infer<typeof muteParamsSchema>;
 
 forumRouter.get(
   "/guilds/:guildId/forum",
@@ -152,10 +192,16 @@ forumRouter.get(
     const auth = getAuth(res);
     const { guildId } = req.params as GuildParams;
     const access = await getForumAccess(guildId, auth);
-    const [categories, roles] = await Promise.all([listCategories(guildId, access), listForumRoles(guildId)]);
+    const [categories, roles, mutes] = await Promise.all([
+      listCategories(guildId, access),
+      listForumRoles(guildId),
+      access.canManage ? listForumMutes(guildId) : Promise.resolve([])
+    ]);
 
     res.json({
       categories,
+      currentMute: access.mute,
+      mutes,
       roles,
       canManage: access.canManage,
       counters: {
@@ -306,6 +352,71 @@ forumRouter.put(
   })
 );
 
+forumRouter.post(
+  "/guilds/:guildId/forum/mutes",
+  requireAuth,
+  validate({ params: guildParamsSchema, body: muteMemberBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId } = req.params as GuildParams;
+    const body = req.body as z.infer<typeof muteMemberBodySchema>;
+    const access = await getForumAccess(guildId, auth);
+    assertCanManageForum(access);
+
+    if (body.memberId === access.memberId) {
+      throw new BadRequestError("You cannot mute yourself");
+    }
+
+    await getGuildMemberRow(guildId, body.memberId);
+
+    const result = await query<{ id: string }>(
+      `
+        INSERT INTO forum_member_mutes (guild_id, muted_member_id, muted_by_member_id, reason, muted_at, lifted_at)
+        VALUES ($1, $2, $3, $4, now(), NULL)
+        ON CONFLICT (guild_id, muted_member_id) WHERE lifted_at IS NULL
+        DO UPDATE SET
+          muted_by_member_id = EXCLUDED.muted_by_member_id,
+          reason = EXCLUDED.reason,
+          muted_at = now(),
+          lifted_at = NULL
+        RETURNING id::text
+      `,
+      [guildId, body.memberId, access.memberId, body.reason ?? null]
+    );
+
+    res.status(201).json({ mute: await getForumMute(guildId, result.rows[0]?.id) });
+  })
+);
+
+forumRouter.delete(
+  "/guilds/:guildId/forum/mutes/:memberId",
+  requireAuth,
+  validate({ params: muteParamsSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId, memberId } = req.params as MuteParams;
+    const access = await getForumAccess(guildId, auth);
+    assertCanManageForum(access);
+
+    const result = await query<{ id: string }>(
+      `
+        UPDATE forum_member_mutes
+        SET lifted_at = now(),
+            lifted_by_member_id = $3,
+            lift_reason = 'Reactivation moderateur'
+        WHERE guild_id = $1
+          AND muted_member_id = $2
+          AND lifted_at IS NULL
+        RETURNING id::text
+      `,
+      [guildId, memberId, access.memberId]
+    );
+
+    if (!result.rows[0]) throw new NotFoundError("Forum mute not found");
+    res.status(204).end();
+  })
+);
+
 forumRouter.get(
   "/guilds/:guildId/forum/threads",
   requireAuth,
@@ -332,6 +443,7 @@ forumRouter.post(
     const category = await getCategoryRow(guildId, body.categoryId);
     const categoryAccess = await getCategoryAccess(category, access);
 
+    assertCanSpeakInForum(access);
     if (!categoryAccess.canPost) throw new ForbiddenError("You cannot post in this forum category");
     if ((body.pinned || body.locked) && !categoryAccess.canModerate) {
       throw new ForbiddenError("Forum moderation permission is required");
@@ -346,18 +458,20 @@ forumRouter.post(
               category_id,
               author_member_id,
               title,
+              visibility,
               pinned_at,
               pinned_by_member_id,
               locked_at,
               locked_by_member_id
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id::text
           `,
           [
             body.categoryId,
             access.memberId,
             body.title,
+            body.visibility,
             body.pinned ? new Date().toISOString() : null,
             body.pinned ? access.memberId : null,
             body.locked ? new Date().toISOString() : null,
@@ -423,7 +537,14 @@ forumRouter.patch(
       throw new ForbiddenError("You cannot edit this thread");
     }
 
-    if ((body.pinned !== undefined || body.locked !== undefined || body.categoryId) && !categoryAccess.canModerate) {
+    if (!categoryAccess.canModerate && body.title !== undefined) {
+      assertCanSpeakInForum(access);
+    }
+
+    if (
+      (body.pinned !== undefined || body.locked !== undefined || body.categoryId || body.visibility !== undefined) &&
+      !categoryAccess.canModerate
+    ) {
       throw new ForbiddenError("Forum moderation permission is required");
     }
 
@@ -439,10 +560,11 @@ forumRouter.patch(
         SET
           category_id = $3,
           title = $4,
-          pinned_at = $5,
-          pinned_by_member_id = $6,
-          locked_at = $7,
-          locked_by_member_id = $8
+          visibility = $5,
+          pinned_at = $6,
+          pinned_by_member_id = $7,
+          locked_at = $8,
+          locked_by_member_id = $9
         WHERE id = $1
           AND category_id IN (SELECT id FROM forum_categories WHERE guild_id = $2)
       `,
@@ -451,6 +573,7 @@ forumRouter.patch(
         guildId,
         body.categoryId ?? thread.category_id,
         body.title ?? thread.title,
+        body.visibility ?? thread.visibility,
         body.pinned === undefined ? thread.pinned_at : body.pinned ? thread.pinned_at ?? new Date().toISOString() : null,
         body.pinned === undefined ? thread.pinned_by_member_id : body.pinned ? access.memberId : null,
         body.locked === undefined ? thread.locked_at : body.locked ? thread.locked_at ?? new Date().toISOString() : null,
@@ -459,6 +582,37 @@ forumRouter.patch(
     );
 
     res.json(await getThreadWithPosts(guildId, threadId, access, { page: 1, limit: 30 }));
+  })
+);
+
+forumRouter.delete(
+  "/guilds/:guildId/forum/threads/:threadId",
+  requireAuth,
+  validate({ params: threadParamsSchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId, threadId } = req.params as ThreadParams;
+    const access = await getForumAccess(guildId, auth);
+    const thread = await getThreadRow(guildId, threadId);
+    const category = await getCategoryRow(guildId, thread.category_id);
+    const categoryAccess = await getCategoryAccess(category, access);
+
+    if (!categoryAccess.canModerate) {
+      throw new ForbiddenError("Forum moderation permission is required");
+    }
+
+    const result = await query<{ id: string }>(
+      `
+        DELETE FROM forum_threads
+        WHERE id = $1
+          AND category_id IN (SELECT id FROM forum_categories WHERE guild_id = $2)
+        RETURNING id::text
+      `,
+      [threadId, guildId]
+    );
+
+    if (!result.rows[0]) throw new NotFoundError("Forum thread not found");
+    res.status(204).end();
   })
 );
 
@@ -475,6 +629,7 @@ forumRouter.post(
     const category = await getCategoryRow(guildId, thread.category_id);
     const categoryAccess = await getCategoryAccess(category, access);
 
+    assertCanSpeakInForum(access);
     if (!categoryAccess.canPost) throw new ForbiddenError("You cannot post in this forum thread");
     if (thread.locked_at && !categoryAccess.canModerate) throw new ForbiddenError("This forum thread is locked");
 
@@ -507,6 +662,10 @@ forumRouter.patch(
     const context = await getPostContext(guildId, threadId, postId);
     const categoryAccess = await getCategoryAccess(context.category, access);
     const canEditOwn = context.post.author_member_id === access.memberId && !context.thread.locked_at && !context.post.deleted_at;
+
+    if (!categoryAccess.canModerate && canEditOwn) {
+      assertCanSpeakInForum(access);
+    }
 
     if (!categoryAccess.canModerate && !canEditOwn) {
       throw new ForbiddenError("You cannot edit this forum post");
@@ -599,10 +758,13 @@ async function getForumAccess(guildId: string, auth: AuthContext): Promise<Forum
   const roleIds = roleResult.rows.map((role) => role.role_id);
   const roleCodes = roleResult.rows.map((role) => role.role_code);
   const canManage = await canManageForum(guildId, auth.user.id, guildAccess.organization_role, auth.user.globalRole);
+  const mute = await getActiveForumMute(guildId, guildAccess.member_id);
 
   return {
     canManage,
     globalRole: auth.user.globalRole,
+    mute,
+    muted: Boolean(mute),
     memberId: guildAccess.member_id,
     organizationRole: guildAccess.organization_role,
     roleCodes,
@@ -644,6 +806,123 @@ function assertCanManageForum(access: ForumAccess): void {
   if (!access.canManage) {
     throw new ForbiddenError("Permission moderate_forum is required");
   }
+}
+
+function assertCanSpeakInForum(access: ForumAccess): void {
+  if (access.muted) {
+    throw new ForbiddenError("Vous etes en sourdine sur ce forum.");
+  }
+}
+
+async function getGuildMemberRow(guildId: string, memberId: string) {
+  const result = await query<{ id: string }>(
+    `
+      SELECT id::text
+      FROM guild_members
+      WHERE guild_id = $1
+        AND id = $2
+        AND status = 'active'
+      LIMIT 1
+    `,
+    [guildId, memberId]
+  );
+
+  if (!result.rows[0]) throw new NotFoundError("Guild member not found");
+  return result.rows[0];
+}
+
+async function getActiveForumMute(guildId: string, memberId: string): Promise<ForumMuteResource | null> {
+  const result = await query<ForumMuteRow>(
+    `
+      SELECT
+        mute.id::text,
+        mute.guild_id::text,
+        mute.muted_member_id::text,
+        muted.nickname AS muted_member_name,
+        mute.muted_by_member_id::text,
+        moderator.nickname AS muted_by_name,
+        mute.reason,
+        mute.muted_at::text
+      FROM forum_member_mutes mute
+      JOIN guild_members muted ON muted.id = mute.muted_member_id
+      LEFT JOIN guild_members moderator ON moderator.id = mute.muted_by_member_id
+      WHERE mute.guild_id = $1
+        AND mute.muted_member_id = $2
+        AND mute.lifted_at IS NULL
+      LIMIT 1
+    `,
+    [guildId, memberId]
+  );
+
+  const mute = result.rows[0];
+  return mute ? formatForumMute(mute) : null;
+}
+
+async function getForumMute(guildId: string, muteId: string | undefined): Promise<ForumMuteResource> {
+  if (!muteId) throw new NotFoundError("Forum mute not found");
+  const result = await query<ForumMuteRow>(
+    `
+      SELECT
+        mute.id::text,
+        mute.guild_id::text,
+        mute.muted_member_id::text,
+        muted.nickname AS muted_member_name,
+        mute.muted_by_member_id::text,
+        moderator.nickname AS muted_by_name,
+        mute.reason,
+        mute.muted_at::text
+      FROM forum_member_mutes mute
+      JOIN guild_members muted ON muted.id = mute.muted_member_id
+      LEFT JOIN guild_members moderator ON moderator.id = mute.muted_by_member_id
+      WHERE mute.guild_id = $1
+        AND mute.id = $2
+        AND mute.lifted_at IS NULL
+      LIMIT 1
+    `,
+    [guildId, muteId]
+  );
+
+  const mute = result.rows[0];
+  if (!mute) throw new NotFoundError("Forum mute not found");
+  return formatForumMute(mute);
+}
+
+async function listForumMutes(guildId: string): Promise<ForumMuteResource[]> {
+  const result = await query<ForumMuteRow>(
+    `
+      SELECT
+        mute.id::text,
+        mute.guild_id::text,
+        mute.muted_member_id::text,
+        muted.nickname AS muted_member_name,
+        mute.muted_by_member_id::text,
+        moderator.nickname AS muted_by_name,
+        mute.reason,
+        mute.muted_at::text
+      FROM forum_member_mutes mute
+      JOIN guild_members muted ON muted.id = mute.muted_member_id
+      LEFT JOIN guild_members moderator ON moderator.id = mute.muted_by_member_id
+      WHERE mute.guild_id = $1
+        AND mute.lifted_at IS NULL
+      ORDER BY mute.muted_at DESC
+    `,
+    [guildId]
+  );
+
+  return result.rows.map(formatForumMute);
+}
+
+function formatForumMute(row: ForumMuteRow): ForumMuteResource {
+  return {
+    id: row.id,
+    guildId: row.guild_id,
+    memberId: row.muted_member_id,
+    memberName: row.muted_member_name ?? "Membre",
+    mutedByMemberId: row.muted_by_member_id,
+    mutedByName: row.muted_by_name ?? "Moderation",
+    reason: row.reason,
+    mutedAt: row.muted_at
+  };
 }
 
 async function listCategories(guildId: string, access: ForumAccess) {
@@ -792,14 +1071,15 @@ async function getCategoryPermissionsForAccess(categoryId: string, access: Forum
 
 function computeCategoryPermissions(category: CategoryRow, permissions: CategoryPermissionRow[], access: ForumAccess) {
   if (access.canManage) {
-    return { canRead: true, canPost: true, canModerate: true };
+    return { canRead: true, canPost: !access.muted, canModerate: true };
   }
 
   const matchingPermissions = permissions.filter((permission) => access.roleIds.includes(permission.role_id));
   const hasCustomPermission = matchingPermissions.length > 0;
   const visibilityAllowsRead = canReadByVisibility(category.visibility, access);
   const canRead = hasCustomPermission ? matchingPermissions.some((permission) => permission.can_read) : visibilityAllowsRead;
-  const canPost = canRead && (hasCustomPermission ? matchingPermissions.some((permission) => permission.can_post) : visibilityAllowsRead);
+  const canPost =
+    !access.muted && canRead && (hasCustomPermission ? matchingPermissions.some((permission) => permission.can_post) : visibilityAllowsRead);
   const canModerate = matchingPermissions.some((permission) => permission.can_moderate);
 
   return { canRead, canPost, canModerate };
@@ -865,6 +1145,7 @@ async function listThreads(
           ft.author_member_id::text,
           author.nickname AS author_name,
           ft.title,
+          ft.visibility,
           ft.pinned_at::text,
           ft.locked_at::text,
           ft.last_post_at::text,
@@ -920,6 +1201,7 @@ type ThreadListRow = {
   author_member_id: string | null;
   author_name: string | null;
   title: string;
+  visibility: ForumThreadVisibility;
   pinned_at: string | null;
   locked_at: string | null;
   last_post_at: string | null;
@@ -938,6 +1220,7 @@ function formatThreadListItem(row: ThreadListRow) {
     authorMemberId: row.author_member_id,
     authorName: row.author_name ?? "Membre",
     title: row.title,
+    visibility: row.visibility,
     pinned: Boolean(row.pinned_at),
     pinnedAt: row.pinned_at,
     locked: Boolean(row.locked_at),
@@ -1009,6 +1292,7 @@ async function getThreadRow(guildId: string, threadId: string): Promise<ThreadRo
         ft.author_member_id::text,
         author.nickname AS author_name,
         ft.title,
+        ft.visibility,
         ft.pinned_at::text,
         ft.pinned_by_member_id::text,
         ft.locked_at::text,
@@ -1058,7 +1342,8 @@ function formatThreadDetail(
     permissions: {
       canReply: categoryAccess.canPost && (!thread.locked_at || categoryAccess.canModerate),
       canModerate: categoryAccess.canModerate,
-      canEdit: categoryAccess.canModerate || thread.author_member_id === access.memberId
+      canEdit: categoryAccess.canModerate || (!access.muted && thread.author_member_id === access.memberId),
+      muted: access.muted
     }
   };
 }

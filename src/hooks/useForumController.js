@@ -16,6 +16,7 @@ import {
   createLocalPagination,
   getApiGuildId,
   normalizeForumCategory,
+  normalizeForumMute,
   normalizeForumPost,
   normalizeForumRole,
   normalizeForumThread
@@ -24,6 +25,7 @@ import {
 export function useForumController({ apiEnabled, currentUser, selectedGuild, moduleEnabled = true }) {
   const [forumCategories, setForumCategories] = useState([]);
   const [forumRoles, setForumRoles] = useState([]);
+  const [forumMutes, setForumMutes] = useState([]);
   const [forumCounters, setForumCounters] = useState(() => ({ categories: 0, threads: 0, posts: 0, locked: 0 }));
   const [forumCanManage, setForumCanManage] = useState(() => moduleEnabled && can(currentUser, "moderate_forum"));
   const [activeForumCategoryId, setActiveForumCategoryId] = useState("");
@@ -43,6 +45,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     if (!moduleEnabled || !apiEnabled) {
       setForumCategories([]);
       setForumRoles([]);
+      setForumMutes([]);
       setForumCounters({ categories: 0, threads: 0, posts: 0, locked: 0 });
       setActiveForumCategoryId("");
       setForumThreadsState([]);
@@ -52,7 +55,10 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
       setForumPostPagination(createLocalPagination(0));
     }
 
-    if (!moduleEnabled) setForumRoles([]);
+    if (!moduleEnabled) {
+      setForumRoles([]);
+      setForumMutes([]);
+    }
     setForumCanManage(moduleEnabled && can(currentUser, "moderate_forum"));
     setForumThreadDraft((current) => ({
       ...current,
@@ -79,6 +85,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
         const categories = (payload?.categories || []).map(normalizeForumCategory);
         setForumCategories(categories);
         setForumRoles((payload?.roles || []).map(normalizeForumRole));
+        setForumMutes((payload?.mutes || []).map(normalizeForumMute));
         setForumCounters(payload?.counters || buildLocalForumCounters([]));
         setForumCanManage(Boolean(payload?.canManage));
         const nextCategoryId = categories.find((category) => category.id === activeForumCategoryId)?.id || categories[0]?.id || "";
@@ -194,6 +201,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     const categories = (payload?.categories || []).map(normalizeForumCategory);
     setForumCategories(categories);
     setForumRoles((payload?.roles || []).map(normalizeForumRole));
+    setForumMutes((payload?.mutes || []).map(normalizeForumMute));
     setForumCounters(payload?.counters || buildLocalForumCounters([]));
     setForumCanManage(Boolean(payload?.canManage));
   }
@@ -259,6 +267,32 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     }
   }
 
+  async function deleteForumCategory(category) {
+    const guildId = getApiGuildId(selectedGuild);
+    if (!moduleEnabled) return;
+    if (!forumCanManage || !category?.id) return;
+
+    if (!apiEnabled || !guildId) {
+      setForumError("API requise pour supprimer une categorie.");
+      return;
+    }
+
+    try {
+      await guildOpsApi.deleteForumCategory(guildId, category.id);
+      const nextCategories = forumCategories.filter((item) => item.id !== category.id);
+      setForumCategories(nextCategories);
+      const nextCategoryId = nextCategories.find((item) => item.id === activeForumCategoryId)?.id || nextCategories[0]?.id || "";
+      setActiveForumCategoryId(nextCategoryId);
+      setForumThreadsState([]);
+      setActiveForumThread(null);
+      setForumPosts([]);
+      await refreshForumSnapshot();
+      if (nextCategoryId) await refreshForumThreads(nextCategoryId);
+    } catch (error) {
+      setForumError(error?.message || "Suppression de categorie impossible.");
+    }
+  }
+
   async function createForumThread() {
     if (!moduleEnabled) return;
     const draft = {
@@ -290,7 +324,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     const guildId = getApiGuildId(selectedGuild);
     const thread = activeForumThread;
     if (!moduleEnabled) return;
-    if (!thread || !forumCanManage) return;
+    if (!thread || !(forumCanManage || thread.permissions?.canEdit || thread.permissions?.canModerate)) return;
 
     if (!apiEnabled || !guildId) {
       setForumError("API requise pour modifier un sujet.");
@@ -306,6 +340,69 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
       }
     } catch (error) {
       setForumError(error?.message || "Sujet non mis a jour.");
+    }
+  }
+
+  async function deleteForumThread(thread = activeForumThread) {
+    const guildId = getApiGuildId(selectedGuild);
+    if (!moduleEnabled) return;
+    if (!thread?.id || !(forumCanManage || thread.permissions?.canModerate)) return;
+
+    if (!apiEnabled || !guildId) {
+      setForumError("API requise pour supprimer un sujet.");
+      return;
+    }
+
+    try {
+      await guildOpsApi.deleteForumThread(guildId, thread.id);
+      const nextThreads = forumThreadsState.filter((item) => item.id !== thread.id);
+      setForumThreadsState(nextThreads);
+      setActiveForumThread(nextThreads[0] || null);
+      setForumPosts([]);
+      await Promise.all([refreshForumSnapshot(), refreshForumThreads(activeForumCategoryId)]);
+    } catch (error) {
+      setForumError(error?.message || "Suppression du sujet impossible.");
+    }
+  }
+
+  async function muteForumMember(memberId, reason = "Sourdine forum") {
+    const guildId = getApiGuildId(selectedGuild);
+    if (!moduleEnabled) return;
+    if (!forumCanManage || !memberId) return;
+
+    if (!apiEnabled || !guildId) {
+      setForumError("API requise pour mettre un membre en sourdine.");
+      return;
+    }
+
+    try {
+      const payload = await guildOpsApi.muteForumMember(guildId, { memberId, reason });
+      const mute = payload?.mute ? normalizeForumMute(payload.mute) : null;
+      if (mute) {
+        setForumMutes((current) => [mute, ...current.filter((item) => item.memberId !== mute.memberId)]);
+      }
+      await refreshForumSnapshot();
+    } catch (error) {
+      setForumError(error?.message || "Sourdine impossible.");
+    }
+  }
+
+  async function unmuteForumMember(memberId) {
+    const guildId = getApiGuildId(selectedGuild);
+    if (!moduleEnabled) return;
+    if (!forumCanManage || !memberId) return;
+
+    if (!apiEnabled || !guildId) {
+      setForumError("API requise pour reactiver un membre.");
+      return;
+    }
+
+    try {
+      await guildOpsApi.unmuteForumMember(guildId, memberId);
+      setForumMutes((current) => current.filter((item) => item.memberId !== memberId));
+      await refreshForumSnapshot();
+    } catch (error) {
+      setForumError(error?.message || "Reactivation impossible.");
     }
   }
 
@@ -379,7 +476,9 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     activeForumThread,
     beginForumPostEdit,
     createForumThread,
+    deleteForumCategory,
     deleteForumPost,
+    deleteForumThread,
     forumCanManage,
     forumCategories,
     forumCategoryDraft,
@@ -390,6 +489,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     forumPostPagination,
     forumPosts,
     forumReplyDraft,
+    forumMutes,
     forumRoles,
     forumThreadDraft,
     forumThreadPagination,
@@ -402,6 +502,8 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     setForumCategoryDraft,
     setForumReplyDraft,
     setForumThreadDraft,
+    muteForumMember,
+    unmuteForumMember,
     updateForumThreadFlags,
   };
 }

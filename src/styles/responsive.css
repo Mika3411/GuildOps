@@ -591,6 +591,7 @@
   .event-form-grid,
   .forum-workspace,
   .forum-compose,
+  .forum-thread-settings,
   .public-chat-form,
   .public-sections {
     grid-template-columns: minmax(0, 1fr);
@@ -605,6 +606,16 @@
   .forum-header-tools {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .forum-discussion-panel .forum-thread-actions {
+    width: 100%;
+    flex: 1 1 100%;
+    justify-content: stretch;
+  }
+
+  .forum-discussion-panel .forum-thread-actions button {
+    flex: 1 1 130px;
   }
 
   .forum-preset-list {
