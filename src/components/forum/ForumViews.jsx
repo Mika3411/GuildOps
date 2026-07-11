@@ -162,14 +162,31 @@ export function ForumSidebar({
 }
 
 export function ForumCategoryQuickForm({ draft = {}, onChange, onSave }) {
+  const [localDraft, setLocalDraft] = useState(() => ({
+    description: draft.description || "",
+    name: draft.name || "",
+    visibility: draft.visibility || "members",
+  }));
   const presets = [
     { name: "Annonces", description: "Informations importantes et decisions R4/R5.", visibility: "members" },
     { name: "Strategie", description: "Plans de guerre, rallys, objectifs et rapports.", visibility: "members" },
     { name: "Diplomatie", description: "NAP, alliances, ennemis et consignes royaume.", visibility: "officers" },
   ];
 
+  useEffect(() => {
+    setLocalDraft({
+      description: draft.description || "",
+      name: draft.name || "",
+      visibility: draft.visibility || "members",
+    });
+  }, [draft.id]);
+
   function updateDraft(patch) {
-    onChange((current) => ({ ...current, ...patch }));
+    setLocalDraft((current) => {
+      const next = { ...current, ...patch };
+      onChange?.(() => next);
+      return next;
+    });
   }
 
   return (
@@ -189,11 +206,11 @@ export function ForumCategoryQuickForm({ draft = {}, onChange, onSave }) {
       </div>
       <label className="form-row">
         <span>Nom</span>
-        <input value={draft.name} placeholder="Ex: Annonces" onChange={(event) => updateDraft({ name: event.target.value })} />
+        <input value={localDraft.name} placeholder="Ex: Annonces" onChange={(event) => updateDraft({ name: event.target.value })} />
       </label>
       <label className="form-row">
         <span>Acces</span>
-        <select value={draft.visibility} onChange={(event) => updateDraft({ visibility: event.target.value })}>
+        <select value={localDraft.visibility || "members"} onChange={(event) => updateDraft({ visibility: event.target.value })}>
           <option value="members">Tous les membres</option>
           <option value="officers">Officiers seulement</option>
           <option value="admins">Admins seulement</option>
@@ -202,12 +219,12 @@ export function ForumCategoryQuickForm({ draft = {}, onChange, onSave }) {
       <label className="form-row wide">
         <span>Description</span>
         <textarea
-          value={draft.description}
+          value={localDraft.description}
           placeholder="A quoi sert cette categorie ?"
           onChange={(event) => updateDraft({ description: event.target.value })}
         />
       </label>
-      <button className="teal-action" type="button" onClick={() => onSave(draft)} disabled={!draft.name?.trim()}>
+      <button className="teal-action" type="button" onClick={() => onSave(localDraft)} disabled={!localDraft.name?.trim()}>
         <CheckCircle2 size={16} />
         Ajouter la categorie
       </button>
