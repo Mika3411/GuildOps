@@ -236,9 +236,8 @@ const DEFAULT_PUBLIC_BANK_RULES = Object.freeze([
 
 publicRouter.get(
   "/directory/guilds",
-  validate({ query: directoryQuerySchema }),
   asyncHandler(async (req, res) => {
-    const filters = req.query as unknown as z.infer<typeof directoryQuerySchema>;
+    const filters = normalizeDirectoryFilters(req.query);
     const result = await listPublicDirectoryGuildRows(filters).catch((error) => {
       console.warn("Public directory unavailable; returning an empty directory response.", error);
       return { rows: [] as PublicDirectoryGuildRow[] };
@@ -353,6 +352,29 @@ publicRouter.get(
 );
 
 type DirectoryQueryFilters = z.infer<typeof directoryQuerySchema>;
+
+function normalizeDirectoryFilters(rawQuery: unknown): DirectoryQueryFilters {
+  const query = typeof rawQuery === "object" && rawQuery ? rawQuery as Record<string, unknown> : {};
+  const limit = Number.parseInt(readQueryValue(query.limit), 10);
+
+  return {
+    game: readOptionalQueryString(query.game, 1, 80),
+    server: readOptionalQueryString(query.server, 1, 80),
+    language: readOptionalQueryString(query.language, 2, 12),
+    style: readOptionalQueryString(query.style, 1, 80),
+    limit: Number.isFinite(limit) ? Math.min(100, Math.max(1, limit)) : 50
+  };
+}
+
+function readOptionalQueryString(value: unknown, minLength: number, maxLength: number) {
+  const normalized = readQueryValue(value).trim().slice(0, maxLength);
+  return normalized.length >= minLength ? normalized : undefined;
+}
+
+function readQueryValue(value: unknown) {
+  const firstValue = Array.isArray(value) ? value[0] : value;
+  return typeof firstValue === "string" ? firstValue : "";
+}
 
 function buildDirectoryWhere(filters: DirectoryQueryFilters, includeSites: boolean) {
   const where = ["g.deleted_at IS NULL", includeSites ? "(g.is_public = true OR gs.status = 'published')" : "g.is_public = true"];
