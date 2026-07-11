@@ -244,8 +244,9 @@ export function PublicGuildGallery({ onNavigate }) {
       })
       .catch((requestError) => {
         if (controller.signal.aborted) return;
-        setGuilds(getCachedDirectoryGuilds());
-        setError(requestError?.message || "Galerie momentanement inaccessible.");
+        const cachedGuilds = getCachedDirectoryGuilds();
+        setGuilds(cachedGuilds);
+        setError(cachedGuilds.length ? "" : requestError?.message || "Galerie momentanement inaccessible.");
         setStatus("ready");
       });
 
