@@ -23,7 +23,8 @@ import {
 import {
   buildTimelineEvents,
   getDefaultEventDateInput,
-  formatEventWhen
+  formatEventWhen,
+  normalizeReminderOffsets
 } from "../../lib/guildOpsTransforms.js";
 import {
   Avatar,
@@ -31,6 +32,12 @@ import {
   PanelHeader,
   RolePill
 } from "../shared/Shared.jsx";
+
+const EVENT_REMINDER_OPTIONS = Object.freeze([
+  { label: "24h avant", value: 1440 },
+  { label: "1h avant", value: 60 },
+  { label: "15 min avant", value: 15 },
+]);
 
 export function WarsView(props) {
   const weeklyObjectives = props.warSummary?.weeklyObjectives?.objectives?.length
@@ -61,7 +68,7 @@ export function WarsView(props) {
       <section className="panel">
         <PanelHeader
           icon={Target}
-          title="Roles et objectifs war"
+          title="Rôles et objectifs d'évènement"
           meta={`${props.warSummary?.expectedMembers?.length ?? 0} membres attendus`}
         />
         <div className="objective-list">
@@ -77,7 +84,7 @@ export function WarsView(props) {
               </div>
             ))
           ) : (
-            <EmptyState icon={Target} title="Aucun objectif war" text="Cree un event ou ajoute des objectifs pour piloter les roles." />
+            <EmptyState icon={Target} title="Aucun objectif d'évènement" text="Crée un évènement ou ajoute des objectifs pour piloter les rôles." />
           )}
         </div>
       </section>
@@ -95,17 +102,29 @@ export function EventComposer({ creating = false, currentUser, error = "", onCre
   const eventGuard = getGuardProps(currentUser, "manage_events");
   const disabled = Boolean(eventGuard.disabled || creating);
   const [draft, setDraft] = useState(() => ({
-    title: "War prep",
+    title: "Prépa évènement",
     eventType: "alliance_war",
     startsAt: getDefaultEventDateInput(),
     locationLabel: "",
     locationX: "",
     locationY: "",
     description: "",
+    reminderOffsetsMinutes: [1440, 60],
   }));
 
   function updateDraft(key, value) {
     setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function toggleReminderOffset(value) {
+    setDraft((current) => {
+      const offsets = normalizeReminderOffsets(current.reminderOffsetsMinutes);
+      const next = offsets.includes(value)
+        ? offsets.filter((offset) => offset !== value)
+        : normalizeReminderOffsets([...offsets, value]);
+
+      return { ...current, reminderOffsetsMinutes: next };
+    });
   }
 
   async function submitEvent(event) {
@@ -120,12 +139,13 @@ export function EventComposer({ creating = false, currentUser, error = "", onCre
       locationX: "",
       locationY: "",
       description: "",
+      reminderOffsetsMinutes: current.reminderOffsetsMinutes,
     }));
   }
 
   return (
     <section className="panel event-composer-panel">
-      <PanelHeader icon={Plus} title="Creer event" meta={creating ? "Enregistrement" : "Wars, rallyes, objectifs"} />
+      <PanelHeader icon={Plus} title="Créer évènement" meta={creating ? "Enregistrement" : "Évènements, rallyes, objectifs"} />
       <form className="event-form-grid" onSubmit={submitEvent}>
         <label className="form-row">
           <span>Titre</span>
@@ -168,10 +188,27 @@ export function EventComposer({ creating = false, currentUser, error = "", onCre
           <span>Details</span>
           <textarea value={draft.description} onChange={(event) => updateDraft("description", event.target.value)} disabled={disabled} />
         </label>
+        <fieldset className="form-row wide reminder-options">
+          <legend>Rappels push</legend>
+          <div>
+            {EVENT_REMINDER_OPTIONS.map((option) => (
+              <label key={option.value}>
+                <input
+                  type="checkbox"
+                  checked={draft.reminderOffsetsMinutes.includes(option.value)}
+                  onChange={() => toggleReminderOffset(option.value)}
+                  disabled={disabled}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+          <small>Les membres avec notifications push actives recevront ces rappels.</small>
+        </fieldset>
         {error ? <p className="sync-warning event-warning">{error}</p> : null}
         <button className="primary-action" type="submit" disabled={disabled || !draft.title.trim() || !draft.startsAt}>
           <CalendarDays size={17} />
-          {creating ? "Creation..." : "Creer event"}
+          {creating ? "Création..." : "Créer évènement"}
         </button>
       </form>
     </section>
@@ -189,8 +226,8 @@ export function PresencePanel({ checkinError, currentUser, events: scheduleEvent
     <section className="panel presence-panel">
       <PanelHeader
         icon={CalendarDays}
-        title="Presence - Wars & Events"
-        meta={`${confirmedCount}/${totalCount} confirmes`}
+        title="Présence - Évènements"
+        meta={`${confirmedCount}/${totalCount} confirmés`}
         action={
           <div className="segmented">
             <button type="button">Agenda</button>
@@ -203,7 +240,7 @@ export function PresencePanel({ checkinError, currentUser, events: scheduleEvent
       <div className="self-checkin">
         <span>
           <strong>Votre statut</strong>
-          <small>Prochaine guerre : {formatEventWhen(warSummary?.nextEvent) || "a planifier"}</small>
+          <small>Prochain évènement : {formatEventWhen(warSummary?.nextEvent) || "à planifier"}</small>
           {checkinError ? <small className="sync-warning">{checkinError}</small> : null}
         </span>
         <div className="status-actions">
@@ -222,9 +259,9 @@ export function PresencePanel({ checkinError, currentUser, events: scheduleEvent
       </div>
       {timelineEvents.length ? (
         <>
-          <div className="timeline-table" role="table" aria-label="Planning wars et events">
+          <div className="timeline-table" role="table" aria-label="Planning des évènements">
             <div className="timeline-head" role="row">
-              <span>Evenement</span>
+              <span>Évènement</span>
               {["Dim 18", "Lun 19", "Mar 20", "Mer 21", "Jeu 22", "Ven 23", "Sam 24", "Dim 25"].map((day) => (
                 <span key={day}>{day}</span>
               ))}
@@ -237,21 +274,21 @@ export function PresencePanel({ checkinError, currentUser, events: scheduleEvent
                   <small>{event.time}</small>
                 </span>
                 <span className={`event-bar span-${index + 2} ${event.color}`}>
-                  {index % 2 === 0 ? "ATTENDU" : "PLANIFIE"}
+                  {index % 2 === 0 ? "ATTENDU" : "PLANIFIÉ"}
                 </span>
               </div>
             ))}
             <div className="now-line" aria-hidden="true" />
           </div>
           <div className="legend">
-            <span className="ok">Confirme</span>
-            <span className="maybe">Peut-etre</span>
+            <span className="ok">Confirmé</span>
+            <span className="maybe">Peut-être</span>
             <span className="danger">Absent</span>
-            <span className="muted">Non repondu</span>
+            <span className="muted">Non répondu</span>
           </div>
         </>
       ) : (
-        <EmptyState icon={CalendarDays} title="Aucun event planifie" text="Cree un event pour activer la timeline et les check-ins." />
+        <EmptyState icon={CalendarDays} title="Aucun évènement planifié" text="Crée un évènement pour activer la timeline et les check-ins." />
       )}
     </section>
   );

@@ -194,6 +194,7 @@ export function useEventsController({ apiEnabled, currentUser, selectedGuild, gu
         locationLabel: localEvent.locationLabel || undefined,
         locationX: parseCoordinate(localEvent.locationX),
         locationY: parseCoordinate(localEvent.locationY),
+        reminderOffsetsMinutes: localEvent.reminderOffsetsMinutes,
       });
       const savedEvent = normalizeEvent(payload?.event || payload);
       setEventsState((current) => [savedEvent, ...current.filter((event) => event.id !== localEvent.id && event.id !== savedEvent.id)]);

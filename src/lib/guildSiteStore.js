@@ -169,7 +169,7 @@ export const DESIGN_OPTIONS = [
 const STORAGE_KEY = "guildops:guild-sites:v1";
 const PURCHASED_DESIGNS_STORAGE_KEY = "guildops:purchased-designs:v1";
 export const FREE_DESIGN_IDS = Object.freeze(DESIGN_OPTIONS.filter((option) => option.tier !== "premium").map((option) => option.id));
-const DEFAULT_OBJECTIVE = "Coordonner les membres actifs, les wars et les consignes sans chaos.";
+const DEFAULT_OBJECTIVE = "Coordonner les membres actifs, les évènements et les consignes sans chaos.";
 const DEFAULT_OBJECTIVE_TAG = "Operations";
 const OPERATIONAL_SECTION_KEYS = Object.freeze(["wars", "bank", "diplomacy", "forum"]);
 

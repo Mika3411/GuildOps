@@ -370,11 +370,13 @@ CREATE TABLE events (
   location_label text,
   location_x int,
   location_y int,
+  reminder_offsets_minutes int[] NOT NULL DEFAULT ARRAY[1440, 60]::int[],
   created_by uuid NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   cancelled_at timestamptz,
-  CHECK (ends_at IS NULL OR ends_at > starts_at)
+  CHECK (ends_at IS NULL OR ends_at > starts_at),
+  CHECK (reminder_offsets_minutes <@ ARRAY[15, 60, 1440]::int[])
 );
 
 CREATE TABLE event_attendance (

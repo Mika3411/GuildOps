@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import webpush, { type PushSubscription } from "web-push";
 import { env } from "./env.js";
 import { cacheJson, rememberNotification } from "./kv.js";
 import { withClient } from "./db.js";
@@ -20,6 +21,40 @@ type EventReminderRow = {
   severity: "low" | "medium" | "high" | "critical";
 };
 
+type NotificationRow = {
+  id: string;
+  guild_id: string;
+  user_id: string;
+  actor_user_id: string | null;
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown> | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+type GuildNotification = {
+  id: string;
+  guildId: string;
+  userId: string;
+  actorUserId: string | null;
+  type: string;
+  title: string;
+  body: string;
+  data: Record<string, unknown>;
+  readAt: string | null;
+  createdAt: string;
+};
+
+type PushSubscriptionRow = {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
 type PresenceReminderRow = EventReminderRow & {
   organization_id: string;
   guild_member_id: string;
@@ -33,18 +68,13 @@ export async function runEventReminderSweep(): Promise<{ remindersCreated: numbe
 
 export async function runEventReminderSweepWithClient(client: QueryClient): Promise<{ remindersCreated: number }> {
   await client.query("BEGIN");
+  const notifications: GuildNotification[] = [];
 
   try {
     const result = await client.query<EventReminderRow>(
       `
-          WITH reminder_windows(window_key, lead_time, severity) AS (
-            VALUES
-              ('24h', interval '24 hours', 'medium'),
-              ('1h', interval '1 hour', 'high'),
-              ('15m', interval '15 minutes', 'critical')
-          ),
-          due AS (
-            SELECT DISTINCT ON (e.id)
+          WITH due AS (
+            SELECT
               e.id::text AS event_id,
               e.guild_id::text AS guild_id,
               e.server_id::text AS server_id,
@@ -57,10 +87,29 @@ export async function runEventReminderSweepWithClient(client: QueryClient): Prom
               rw.window_key,
               rw.severity::text AS severity
             FROM events e
-            JOIN reminder_windows rw ON e.starts_at <= now() + rw.lead_time
+            CROSS JOIN LATERAL (
+              SELECT
+                offset_minutes,
+                CASE offset_minutes
+                  WHEN 1440 THEN '24h'
+                  WHEN 60 THEN '1h'
+                  WHEN 15 THEN '15m'
+                  ELSE offset_minutes::text || 'm'
+                END AS window_key,
+                (offset_minutes::text || ' minutes')::interval AS lead_time,
+                CASE offset_minutes
+                  WHEN 1440 THEN 'medium'
+                  WHEN 60 THEN 'high'
+                  ELSE 'critical'
+                END AS severity
+              FROM unnest(e.reminder_offsets_minutes) AS reminder_offsets(offset_minutes)
+              WHERE offset_minutes IN (1440, 60, 15)
+            ) rw
             WHERE e.cancelled_at IS NULL
               AND e.starts_at >= now()
               AND e.starts_at <= now() + ($1::int * interval '1 minute')
+              AND e.starts_at - rw.lead_time <= now()
+              AND e.starts_at - rw.lead_time >= e.created_at
               AND NOT EXISTS (
                 SELECT 1
                 FROM audit_logs al
@@ -69,21 +118,22 @@ export async function runEventReminderSweepWithClient(client: QueryClient): Prom
                   AND al.target_id = e.id
                   AND al.metadata ->> 'window' = rw.window_key
               )
-            ORDER BY e.id, rw.lead_time ASC
           )
           SELECT *
           FROM due
-          ORDER BY starts_at ASC
+          ORDER BY starts_at ASC, window_key ASC
           LIMIT 100
         `,
       [env.EVENT_REMINDER_LOOKAHEAD_MINUTES]
     );
 
     for (const reminder of result.rows) {
-      await createEventReminder(client, reminder);
+      notifications.push(...(await createEventReminder(client, reminder)));
     }
 
     await client.query("COMMIT");
+    await deliverPushNotifications(client, notifications);
+
     const remindersCreated = resultCount(result);
     await cacheJson("guildops:worker:last-event-reminders", {
       remindersCreated,
@@ -179,15 +229,16 @@ export async function runPresenceFollowupSweepWithClient(client: QueryClient): P
   }
 }
 
-async function createEventReminder(client: QueryClient, reminder: EventReminderRow) {
-  const title = `Rappel event ${reminder.window_key}: ${reminder.title}`;
-  const message = `Event ${reminder.event_type} "${reminder.title}" a ${formatEventTime(reminder.starts_at)}. Confirme ta presence et verifie les consignes.`;
+async function createEventReminder(client: QueryClient, reminder: EventReminderRow): Promise<GuildNotification[]> {
+  const title = `Rappel évènement ${reminder.window_key}: ${reminder.title}`;
+  const message = `L'évènement ${reminder.event_type} "${reminder.title}" commence ${formatEventTime(reminder.starts_at)}. Confirme ta présence et vérifie les consignes.`;
   const metadata = {
     kind: "event_reminder",
     eventId: reminder.event_id,
     eventType: reminder.event_type,
     startsAt: reminder.starts_at,
-    window: reminder.window_key
+    window: reminder.window_key,
+    url: "/app/wars"
   };
 
   const alert = await client.query<{ id: string }>(
@@ -222,15 +273,59 @@ async function createEventReminder(client: QueryClient, reminder: EventReminderR
     ]
   );
 
+  const alertId = alert.rows[0]?.id ?? null;
   await client.query(
     `
       INSERT INTO audit_logs (guild_id, action, target_table, target_id, metadata)
       VALUES ($1, 'worker.event.reminder', 'events', $2, $3)
     `,
-    [reminder.guild_id, reminder.event_id, { ...metadata, alertId: alert.rows[0]?.id ?? null }]
+    [reminder.guild_id, reminder.event_id, { ...metadata, alertId }]
   );
 
-  await rememberNotification("event.reminder", { ...metadata, guildId: reminder.guild_id, alertId: alert.rows[0]?.id ?? null });
+  const notifications = await createEventReminderNotifications(client, reminder.guild_id, title, message, {
+    ...metadata,
+    alertId
+  });
+
+  await rememberNotification("event.reminder", { ...metadata, guildId: reminder.guild_id, alertId });
+  return notifications;
+}
+
+async function createEventReminderNotifications(
+  client: QueryClient,
+  guildId: string,
+  title: string,
+  body: string,
+  data: Record<string, unknown>
+): Promise<GuildNotification[]> {
+  const result = await client.query<NotificationRow>(
+    `
+      WITH recipients AS (
+        SELECT DISTINCT gm.user_id
+        FROM guild_members gm
+        WHERE gm.guild_id = $1
+          AND gm.status = 'active'
+          AND gm.user_id IS NOT NULL
+      )
+      INSERT INTO notifications (guild_id, user_id, actor_user_id, type, title, body, data)
+      SELECT $1, recipients.user_id, NULL, 'event_reminder', $2, $3, $4::jsonb
+      FROM recipients
+      RETURNING
+        id::text,
+        guild_id::text,
+        user_id::text,
+        actor_user_id::text,
+        type,
+        title,
+        body,
+        data,
+        read_at::text,
+        created_at::text
+    `,
+    [guildId, title, body, JSON.stringify(data)]
+  );
+
+  return result.rows.map(formatNotificationRow);
 }
 
 async function createPresenceFollowup(client: QueryClient, followup: PresenceReminderRow) {
@@ -295,4 +390,108 @@ function formatEventTime(value: string): string {
     timeStyle: "short",
     timeZone: "UTC"
   }).format(date);
+}
+
+let webPushConfigured = false;
+
+function configureWebPush(): boolean {
+  if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) return false;
+  if (webPushConfigured) return true;
+
+  webpush.setVapidDetails(env.VAPID_SUBJECT || env.APP_PUBLIC_URL || "mailto:admin@guildops.app", env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY);
+  webPushConfigured = true;
+  return true;
+}
+
+async function deliverPushNotifications(client: QueryClient, notifications: GuildNotification[]): Promise<void> {
+  if (!notifications.length || !configureWebPush()) return;
+
+  const userIds = [...new Set(notifications.map((notification) => notification.userId))];
+  const subscriptions = await client.query<PushSubscriptionRow>(
+    `
+      SELECT
+        id::text,
+        user_id::text,
+        endpoint,
+        p256dh,
+        auth
+      FROM push_subscriptions
+      WHERE revoked_at IS NULL
+        AND user_id::text = ANY($1::text[])
+    `,
+    [userIds]
+  );
+  const notificationsByUser = new Map<string, GuildNotification[]>();
+
+  for (const notification of notifications) {
+    const current = notificationsByUser.get(notification.userId) || [];
+    current.push(notification);
+    notificationsByUser.set(notification.userId, current);
+  }
+
+  await Promise.allSettled(
+    subscriptions.rows.flatMap((subscription) =>
+      (notificationsByUser.get(subscription.user_id) || []).map(async (notification) => {
+        try {
+          await webpush.sendNotification(toPushSubscription(subscription), JSON.stringify(toPushPayload(notification)));
+        } catch (error) {
+          const statusCode = getPushErrorStatus(error);
+          if (statusCode === 404 || statusCode === 410) {
+            await client.query("UPDATE push_subscriptions SET revoked_at = now(), updated_at = now() WHERE id = $1", [subscription.id]);
+            return;
+          }
+
+          console.warn("Worker push notification delivery failed", {
+            subscriptionId: subscription.id,
+            statusCode,
+            message: error instanceof Error ? error.message : String(error)
+          });
+        }
+      })
+    )
+  );
+}
+
+function formatNotificationRow(row: NotificationRow): GuildNotification {
+  return {
+    id: row.id,
+    guildId: row.guild_id,
+    userId: row.user_id,
+    actorUserId: row.actor_user_id,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    data: row.data || {},
+    readAt: row.read_at,
+    createdAt: row.created_at
+  };
+}
+
+function toPushSubscription(row: PushSubscriptionRow): PushSubscription {
+  return {
+    endpoint: row.endpoint,
+    keys: {
+      p256dh: row.p256dh,
+      auth: row.auth
+    }
+  };
+}
+
+function toPushPayload(notification: GuildNotification): Record<string, unknown> {
+  return {
+    notificationId: notification.id,
+    title: notification.title,
+    body: notification.body,
+    type: notification.type,
+    url: typeof notification.data.url === "string" ? notification.data.url : "/app",
+    createdAt: notification.createdAt
+  };
+}
+
+function getPushErrorStatus(error: unknown): number {
+  if (typeof error === "object" && error && "statusCode" in error) {
+    return Number((error as { statusCode?: unknown }).statusCode) || 0;
+  }
+
+  return 0;
 }

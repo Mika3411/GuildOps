@@ -174,6 +174,7 @@ async function getEvents(guildId: string) {
         location_label AS "locationLabel",
         location_x AS "locationX",
         location_y AS "locationY",
+        reminder_offsets_minutes AS "reminderOffsetsMinutes",
         to_char(starts_at AT TIME ZONE 'UTC', 'DD/MM HH24:MI') AS time,
         CASE
           WHEN cancelled_at IS NOT NULL THEN 'Annule'

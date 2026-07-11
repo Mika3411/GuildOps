@@ -134,6 +134,55 @@
   padding: 0;
 }
 
+.reminder-options {
+  margin: 0;
+  border: 1px solid rgba(120, 169, 255, 0.16);
+  border-radius: 6px;
+  background: rgba(120, 169, 255, 0.06);
+  padding: 10px 12px;
+}
+
+.reminder-options legend {
+  padding: 0 4px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reminder-options div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.reminder-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.reminder-options input {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.reminder-options small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
 .event-warning {
   margin: 0;
   padding: 10px 12px;

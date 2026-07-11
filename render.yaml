@@ -11,6 +11,16 @@ databases:
     postgresMajorVersion: "16"
     storageAutoscalingEnabled: true
 
+envVarGroups:
+  - name: guildops-push
+    envVars:
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        value: https://guildops-frontend.onrender.com
+
 services:
   - type: web
     name: guildops-frontend
@@ -74,6 +84,7 @@ services:
         value: "true"
       - key: UPLOAD_ROOT
         value: /var/data/guildops/uploads
+      - fromGroup: guildops-push
 
   - type: cron
     name: guildops-event-reminders
@@ -92,6 +103,9 @@ services:
         fromDatabase:
           name: guildops-postgres
           property: connectionString
+      - key: APP_PUBLIC_URL
+        value: https://guildops-frontend.onrender.com
+      - fromGroup: guildops-push
 
   - type: cron
     name: guildops-diplomacy-maintenance

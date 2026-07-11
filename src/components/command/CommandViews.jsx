@@ -129,7 +129,7 @@ const SITE_BUILDER_HELP = Object.freeze({
   game: "Jeu de la guilde.",
   realm: "Serveur, royaume ou monde de la guilde.",
   tagline: "Phrase courte sous le nom de guilde, lisible des l'arrivee.",
-  objective: "Message principal de la page de guilde : coordination, wars, consignes ou organisation.",
+  objective: "Message principal de la page de guilde : coordination, évènements, consignes ou organisation.",
   memberInviteUrl: "Lien GuildOps genere automatiquement pour inviter un membre a s'inscrire.",
   objectiveTags: "Badges rapides qui resument le style de guilde.",
   style: "Regle l'apparence de la page de guilde.",
@@ -208,7 +208,7 @@ const COMMAND_ROLE_FALLBACK = Object.freeze({
   },
   officier: {
     title: "Operations",
-    text: "Wars, events, presences et consignes de terrain.",
+    text: "Évènements, présences et consignes de terrain.",
   },
   diplomate: {
     title: "Diplomatie",
@@ -1461,8 +1461,8 @@ function PublicWarsModule({
         {managerPanel}
         <article className="public-empty public-route-empty public-wars-empty">
           <CalendarDays size={42} />
-          <h1>Aucun war annoncé</h1>
-          <p>Cette guilde n'a pas encore publié d'event ou d'objectif hebdo.</p>
+          <h1>Aucun évènement annoncé</h1>
+          <p>Cette guilde n'a pas encore publié d'évènement ou d'objectif hebdo.</p>
           {siteDraft.sections.publicChat ? (
             <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
               Espace membre
@@ -1479,7 +1479,7 @@ function PublicWarsModule({
       <article className="public-wars-feature">
         <header>
           <div>
-            <strong>Wars & events</strong>
+            <strong>Évènements</strong>
             <h1>Prochain événement important</h1>
           </div>
           <em>{nextEvent ? formatPublicEventStatus(nextEvent) : "À planifier"}</em>
@@ -1488,7 +1488,7 @@ function PublicWarsModule({
           <div className="next-war public-wars-next">
             <Swords size={34} />
             <span>
-              {formatEventTitle(nextEvent) || "Event"}
+              {formatEventTitle(nextEvent) || "Évènement"}
               <small>{formatEventWhen(nextEvent) || nextEvent.time || "Horaire à confirmer"}</small>
             </span>
             <dl>
@@ -1518,7 +1518,7 @@ function PublicWarsModule({
       <div className="public-wars-layout">
         <article className="public-wars-panel">
           <header>
-            <strong>Prochains events</strong>
+            <strong>Prochains évènements</strong>
             <em>{upcomingEvents.length ? `${upcomingEvents.length} à venir` : "Aucun"}</em>
           </header>
           {upcomingEvents.length ? (
@@ -1527,7 +1527,7 @@ function PublicWarsModule({
                 <div className="public-event-row" key={event.id || `${formatEventTitle(event)}-${event.startsAt || event.time}`}>
                   <CalendarDays size={20} />
                   <span>
-                    <strong>{formatEventTitle(event) || "Event"}</strong>
+                    <strong>{formatEventTitle(event) || "Évènement"}</strong>
                     <small>{formatEventWhen(event) || event.time || "Horaire à confirmer"}</small>
                   </span>
                   <em>{formatPublicEventStatus(event)}</em>
@@ -1536,7 +1536,7 @@ function PublicWarsModule({
               ))}
             </div>
           ) : (
-            <p className="preview-card-text">Aucun event n'est planifié pour le moment.</p>
+            <p className="preview-card-text">Aucun évènement n'est planifié pour le moment.</p>
           )}
         </article>
 
@@ -2949,7 +2949,7 @@ export function GuildSitePreview({ members = [], siteDraft, onNavigate, unreadMe
             </a>
             {hasWarsSection ? (
               <button type="button" onClick={() => onNavigate?.("wars")}>
-                Voir les wars
+                Voir les évènements
                 <WarsIcon size={17} />
               </button>
             ) : null}
@@ -2997,7 +2997,7 @@ export function PreviewSectionCard({
             <header>
               <span className="preview-section-title">
                 <SectionIcon size={20} aria-hidden="true" />
-                <strong>Prochain war</strong>
+                <strong>Prochain évènement</strong>
               </span>
               <em>{nextEvent ? formatPublicEventStatus(nextEvent) : "Aucune date"}</em>
             </header>
@@ -3010,7 +3010,7 @@ export function PreviewSectionCard({
                 </span>
               </div>
             ) : (
-              <p className="preview-card-text">Aucun event annoncé pour le moment.</p>
+              <p className="preview-card-text">Aucun évènement annoncé pour le moment.</p>
             )}
           </article>
         );

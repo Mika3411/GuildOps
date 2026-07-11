@@ -18,6 +18,9 @@ test("event reminder sweep creates due event alerts", async () => {
 
   try {
     await db.exec(`
+      INSERT INTO guild_members (id, guild_id, user_id, nickname, status)
+      VALUES ('member-1', 'guild-1', 'user-1', 'Astra', 'active');
+
       INSERT INTO events (
         id,
         guild_id,
@@ -28,6 +31,7 @@ test("event reminder sweep creates due event alerts", async () => {
         location_label,
         location_x,
         location_y,
+        created_at,
         cancelled_at
       )
       VALUES (
@@ -40,6 +44,7 @@ test("event reminder sweep creates due event alerts", async () => {
         'Fort nord',
         120,
         340,
+        now() - interval '2 hours',
         NULL
       );
     `);
@@ -48,6 +53,9 @@ test("event reminder sweep creates due event alerts", async () => {
     const alerts = await db.query<{ alert_type: string; severity: string; title: string; window: string }>(
       "SELECT alert_type, severity, title, metadata ->> 'window' AS window FROM alerts"
     );
+    const notifications = await db.query<{ user_id: string; type: string; title: string; window: string }>(
+      "SELECT user_id, type, title, data ->> 'window' AS window FROM notifications"
+    );
     const audits = await db.query<{ action: string; target_table: string; target_id: string }>(
       "SELECT action, target_table, target_id FROM audit_logs"
     );
@@ -55,8 +63,14 @@ test("event reminder sweep creates due event alerts", async () => {
     assert.deepEqual(result, { remindersCreated: 1 });
     assert.equal(alerts.rows[0]?.alert_type, "event");
     assert.equal(alerts.rows[0]?.severity, "high");
-    assert.equal(alerts.rows[0]?.title, "Rappel event 1h: Dragon rally");
+    assert.equal(alerts.rows[0]?.title, "Rappel évènement 1h: Dragon rally");
     assert.equal(alerts.rows[0]?.window, "1h");
+    assert.deepEqual(notifications.rows[0], {
+      user_id: "user-1",
+      type: "event_reminder",
+      title: "Rappel évènement 1h: Dragon rally",
+      window: "1h"
+    });
     assert.deepEqual(audits.rows[0], {
       action: "worker.event.reminder",
       target_table: "events",
@@ -235,6 +249,8 @@ async function createWorkerDb(): Promise<PGlite> {
       location_label text,
       location_x int,
       location_y int,
+      reminder_offsets_minutes int[] NOT NULL DEFAULT ARRAY[1440, 60],
+      created_at timestamptz NOT NULL DEFAULT now(),
       cancelled_at timestamptz
     );
 
@@ -273,6 +289,19 @@ async function createWorkerDb(): Promise<PGlite> {
       body text NOT NULL,
       source_language varchar(12) NOT NULL DEFAULT 'auto',
       metadata jsonb NOT NULL DEFAULT '{}',
+      created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE notifications (
+      id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      guild_id text NOT NULL,
+      user_id text NOT NULL,
+      actor_user_id text,
+      type text NOT NULL,
+      title text NOT NULL,
+      body text NOT NULL,
+      data jsonb NOT NULL DEFAULT '{}',
+      read_at timestamptz,
       created_at timestamptz NOT NULL DEFAULT now()
     );
 

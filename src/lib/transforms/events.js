@@ -76,9 +76,16 @@ export function normalizeEvent(event = {}) {
     locationLabel: event.locationLabel || event.location_label || "",
     locationX: event.locationX ?? event.location_x ?? "",
     locationY: event.locationY ?? event.location_y ?? "",
+    reminderOffsetsMinutes: normalizeReminderOffsets(event.reminderOffsetsMinutes || event.reminder_offsets_minutes),
     color: event.color,
     status: event.status || formatRelativeEventTime({ startsAt }),
   };
+}
+
+export function normalizeReminderOffsets(value = [1440, 60]) {
+  const allowed = new Set([1440, 60, 15]);
+  const source = Array.isArray(value) ? value : [1440, 60];
+  return [...new Set(source.map(Number).filter((offset) => allowed.has(offset)))].sort((left, right) => right - left);
 }
 
 export function getDefaultEventDateInput(offsetMs = 3600000) {

@@ -26,6 +26,7 @@ type EventRow = {
   locationLabel: string | null;
   locationX: number | null;
   locationY: number | null;
+  reminderOffsetsMinutes?: number[] | null;
   createdBy: string;
   createdAt: string;
   updatedAt?: string;
@@ -46,6 +47,25 @@ const attendanceLabels = Object.freeze({
   maybe: "Peut-etre",
   absent: "Absent"
 } satisfies Record<AttendanceStatus, string>);
+
+const EVENT_REMINDER_OFFSET_OPTIONS = Object.freeze([1440, 60, 15]);
+const DEFAULT_EVENT_REMINDER_OFFSETS = Object.freeze([1440, 60]);
+
+const eventReminderOffsetsSchema = z
+  .array(z.number().int())
+  .max(EVENT_REMINDER_OFFSET_OPTIONS.length)
+  .superRefine((values, ctx) => {
+    values.forEach((value, index) => {
+      if (!EVENT_REMINDER_OFFSET_OPTIONS.includes(value)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [index],
+          message: "reminder offset must be one of 1440, 60, 15"
+        });
+      }
+    });
+  })
+  .transform((values) => normalizeReminderOffsets(values));
 
 const guildParamsSchema = z.object({
   guildId: uuidSchema
@@ -104,7 +124,8 @@ const createEventBodySchema = z
     serverId: uuidSchema.optional(),
     locationLabel: z.string().trim().min(1).max(120).optional(),
     locationX: z.number().int().optional(),
-    locationY: z.number().int().optional()
+    locationY: z.number().int().optional(),
+    reminderOffsetsMinutes: eventReminderOffsetsSchema.optional().default([...DEFAULT_EVENT_REMINDER_OFFSETS])
   })
   .strict()
   .superRefine((value, ctx) => {
@@ -127,7 +148,8 @@ const updateEventBodySchema = z
     serverId: uuidSchema.nullable().optional(),
     locationLabel: z.string().trim().min(1).max(120).nullable().optional(),
     locationX: z.number().int().nullable().optional(),
-    locationY: z.number().int().nullable().optional()
+    locationY: z.number().int().nullable().optional(),
+    reminderOffsetsMinutes: eventReminderOffsetsSchema.optional()
   })
   .strict();
 
@@ -346,6 +368,7 @@ eventsRouter.get(
           e.location_label AS "locationLabel",
           e.location_x AS "locationX",
           e.location_y AS "locationY",
+          e.reminder_offsets_minutes AS "reminderOffsetsMinutes",
           e.created_by::text AS "createdBy",
           e.created_at AS "createdAt",
           e.updated_at AS "updatedAt",
@@ -399,9 +422,10 @@ eventsRouter.post(
           location_label,
           location_x,
           location_y,
+          reminder_offsets_minutes,
           created_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING
           id::text,
           guild_id::text AS "guildId",
@@ -414,6 +438,7 @@ eventsRouter.post(
           location_label AS "locationLabel",
           location_x AS "locationX",
           location_y AS "locationY",
+          reminder_offsets_minutes AS "reminderOffsetsMinutes",
           created_by::text AS "createdBy",
           created_at AS "createdAt",
           updated_at AS "updatedAt",
@@ -430,6 +455,7 @@ eventsRouter.post(
         body.locationLabel ?? null,
         body.locationX ?? null,
         body.locationY ?? null,
+        body.reminderOffsetsMinutes,
         auth.user.id
       ]
     );
@@ -481,6 +507,7 @@ eventsRouter.patch(
     addPatchValue(body, "locationLabel", "location_label", values, sets);
     addPatchValue(body, "locationX", "location_x", values, sets);
     addPatchValue(body, "locationY", "location_y", values, sets);
+    addPatchValue(body, "reminderOffsetsMinutes", "reminder_offsets_minutes", values, sets);
 
     if (!sets.length) {
       throw new BadRequestError("No event fields to update");
@@ -505,6 +532,7 @@ eventsRouter.patch(
           location_label AS "locationLabel",
           location_x AS "locationX",
           location_y AS "locationY",
+          reminder_offsets_minutes AS "reminderOffsetsMinutes",
           created_by::text AS "createdBy",
           created_at AS "createdAt",
           updated_at AS "updatedAt",
@@ -1032,6 +1060,7 @@ function toEventResource(row: EventRowWithStats | undefined): EventRow & {
 
   return {
     ...event,
+    reminderOffsetsMinutes: normalizeReminderOffsets(event.reminderOffsetsMinutes ?? DEFAULT_EVENT_REMINDER_OFFSETS),
     attendanceSummary: {
       confirmed: Number(confirmedCount),
       maybe: Number(maybeCount),
@@ -1057,6 +1086,7 @@ async function assertEventExists(guildId: string, eventId: string): Promise<Even
         location_label AS "locationLabel",
         location_x AS "locationX",
         location_y AS "locationY",
+        reminder_offsets_minutes AS "reminderOffsetsMinutes",
         created_by::text AS "createdBy",
         created_at AS "createdAt",
         updated_at AS "updatedAt",
@@ -1406,6 +1436,7 @@ async function getNextEventSummary(guildId: string) {
         e.location_label AS "locationLabel",
         e.location_x AS "locationX",
         e.location_y AS "locationY",
+        e.reminder_offsets_minutes AS "reminderOffsetsMinutes",
         e.created_by::text AS "createdBy",
         e.created_at AS "createdAt",
         e.updated_at AS "updatedAt",
@@ -1613,6 +1644,11 @@ function addPatchValue<T extends Record<string, unknown>>(
 function addRawPatchValue(column: string, value: unknown, values: unknown[], sets: string[]) {
   values.push(value);
   sets.push(`${column} = $${values.length}`);
+}
+
+function normalizeReminderOffsets(value: readonly number[] | null | undefined): number[] {
+  const allowed = new Set(EVENT_REMINDER_OFFSET_OPTIONS);
+  return [...new Set((value || []).filter((offset) => allowed.has(offset)))].sort((left, right) => right - left);
 }
 
 function hasOwn<T extends object, K extends PropertyKey>(value: T, key: K): value is T & Record<K, unknown> {
