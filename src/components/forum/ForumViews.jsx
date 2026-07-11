@@ -29,8 +29,8 @@ export function ForumView(props) {
   const [threadComposerOpen, setThreadComposerOpen] = useState(false);
 
   useEffect(() => {
-    setCategoryComposerOpen(!hasCategories && props.forumCanManage);
-  }, [hasCategories, props.forumCanManage]);
+    if (!props.forumCanManage) setCategoryComposerOpen(false);
+  }, [props.forumCanManage]);
 
   useEffect(() => {
     if (!hasCategories) setThreadComposerOpen(false);
