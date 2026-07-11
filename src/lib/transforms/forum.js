@@ -61,6 +61,9 @@ export function buildLocalForumCounters(threads = []) {
     threads: localThreads.length,
     posts: localThreads.reduce((total, thread) => total + Number(thread.postCount || 0), 0),
     locked: localThreads.filter((thread) => thread.locked).length,
+    unreadMessages: localThreads.reduce((total, thread) => total + Number(thread.unreadCount || 0), 0),
+    unreadThreads: localThreads.filter((thread) => Number(thread.unreadCount || 0) > 0).length,
+    newThreads: localThreads.filter((thread) => thread.newTopic).length,
   };
 }
 
@@ -82,6 +85,9 @@ export function buildLocalForumThreads(threads = []) {
       lastPostAt: thread.lastPostAt || thread.createdAt || null,
       postCount: Number(thread.postCount ?? replies + 1),
       replyCount: replies,
+      unreadCount: Number(thread.unreadCount ?? thread.unread_count ?? 0),
+      newTopic: Boolean(thread.newTopic ?? thread.new_topic ?? false),
+      lastReadAt: thread.lastReadAt || thread.last_read_at || null,
       preview: thread.preview || "Discussion de guilde en attente de synchronisation.",
     });
   });
@@ -176,6 +182,9 @@ export function normalizeForumThread(thread = {}) {
     updatedAt: thread.updatedAt || thread.updated_at || createdAt,
     postCount: Number(thread.postCount ?? thread.post_count ?? 1),
     replyCount: Math.max(0, Number(thread.replyCount ?? thread.reply_count ?? thread.replies ?? 0)),
+    unreadCount: Math.max(0, Number(thread.unreadCount ?? thread.unread_count ?? 0)),
+    newTopic: Boolean(thread.newTopic ?? thread.new_topic ?? false),
+    lastReadAt: thread.lastReadAt || thread.last_read_at || null,
     preview: thread.preview || "",
     permissions: {
       canReply: thread.permissions?.canReply ?? thread.permissions?.can_reply ?? !locked,

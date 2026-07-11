@@ -166,7 +166,7 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     guildOpsApi
       .getForumThread(guildId, activeForumThread.id, { page: 1, limit: 30 }, { signal: controller.signal })
       .then((payload) => {
-        if (payload?.thread) setActiveForumThread(normalizeForumThread(payload.thread));
+        if (payload?.thread) setActiveForumThread(markForumThreadReadLocally(payload.thread));
         setForumPosts((payload?.posts || []).map(normalizeForumPost));
         setForumPostPagination(payload?.pagination || createLocalPagination(payload?.posts?.length || 0));
       })
@@ -191,6 +191,43 @@ export function useForumController({ apiEnabled, currentUser, selectedGuild, mod
     setForumEditingPostId("");
     setForumReplyDraft("");
     setForumError("");
+  }
+
+  function markForumThreadReadLocally(thread) {
+    const normalized = normalizeForumThread({
+      ...thread,
+      unreadCount: 0,
+      newTopic: false,
+      lastReadAt: thread.lastReadAt || thread.last_read_at || new Date().toISOString(),
+    });
+    const previous = forumThreadsState.find((item) => item.id === normalized.id);
+    const unreadDelta = Number(previous?.unreadCount || 0);
+    const unreadThreadDelta = unreadDelta > 0 ? 1 : 0;
+    const newThreadDelta = previous?.newTopic ? 1 : 0;
+
+    setForumThreadsState((current) =>
+      current.map((item) =>
+        item.id === normalized.id
+          ? {
+              ...item,
+              unreadCount: 0,
+              newTopic: false,
+              lastReadAt: normalized.lastReadAt,
+            }
+          : item,
+      ),
+    );
+
+    if (unreadDelta || newThreadDelta) {
+      setForumCounters((current) => ({
+        ...current,
+        unreadMessages: Math.max(0, Number(current.unreadMessages ?? current.unread ?? 0) - unreadDelta),
+        unreadThreads: Math.max(0, Number(current.unreadThreads ?? 0) - unreadThreadDelta),
+        newThreads: Math.max(0, Number(current.newThreads ?? 0) - newThreadDelta),
+      }));
+    }
+
+    return normalized;
   }
 
   async function refreshForumSnapshot() {

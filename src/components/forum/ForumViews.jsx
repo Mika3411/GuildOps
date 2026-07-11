@@ -155,14 +155,22 @@ export function ForumSidebar({
 }) {
   const categoryOptions = categories.filter((category) => category.permissions?.canPost ?? true);
   const canCreateThread = canPost && categoryOptions.length > 0;
+  const unreadMessages = Number(counters.unreadMessages ?? counters.unread ?? 0);
+  const newThreads = Number(counters.newThreads ?? 0);
+  const forumMeta = loading
+    ? "Chargement"
+    : [
+        `${counters.threads || 0} sujets`,
+        `${counters.posts || 0} posts`,
+        unreadMessages ? `${unreadMessages} non lu${unreadMessages > 1 ? "s" : ""}` : null,
+        newThreads ? `${newThreads} nouveau${newThreads > 1 ? "x sujets" : " sujet"}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
   return (
     <section className="panel forum-sidebar-panel">
-      <PanelHeader
-        icon={MessageSquare}
-        title="Forum"
-        meta={loading ? "Chargement" : `${counters.threads || 0} sujets · ${counters.posts || 0} posts`}
-      />
+      <PanelHeader icon={MessageSquare} title="Forum" meta={forumMeta} />
       <div className="forum-header-tools">
         {canManage ? (
           <button className="forum-header-action" type="button" onClick={onToggleCategoryComposer}>
@@ -426,22 +434,44 @@ export function ForumThreadList({
         <small>{pagination.total || threads.length} au total</small>
       </header>
       <div className="forum-list">
-        {threads.map((thread) => (
-          <article className={`forum-row ${activeThread?.id === thread.id ? "is-active" : ""}`} key={thread.id}>
-            {thread.locked ? <Lock size={18} /> : thread.pinned ? <Flag size={18} /> : <MessageSquare size={18} />}
-            <span>
-              <strong>{thread.title}</strong>
-              <small>
-                {thread.authorName} · {thread.replyCount} reponses · {thread.categoryName}
-              </small>
-              <small className="forum-visibility-chip">{thread.visibility === "public" ? "Public" : "Membres"}</small>
-              <small>{thread.preview}</small>
-            </span>
-            <button type="button" onClick={() => onSelect(thread)}>
-              Ouvrir
-            </button>
-          </article>
-        ))}
+        {threads.map((thread) => {
+          const unreadCount = Number(thread.unreadCount || 0);
+          const rowClassName = [
+            "forum-row",
+            activeThread?.id === thread.id ? "is-active" : "",
+            unreadCount ? "is-unread" : "",
+            thread.newTopic ? "is-new" : "",
+          ]
+            .filter(Boolean)
+            .join(" ");
+
+          return (
+            <article className={rowClassName} key={thread.id}>
+              {thread.locked ? <Lock size={18} /> : thread.pinned ? <Flag size={18} /> : <MessageSquare size={18} />}
+              <span>
+                <span className="forum-thread-title-line">
+                  <strong>{thread.title}</strong>
+                  <span className="forum-thread-badges">
+                    {thread.newTopic ? <em className="forum-unread-chip is-new">Nouveau</em> : null}
+                    {unreadCount ? (
+                      <em className="forum-unread-chip">
+                        {unreadCount} non lu{unreadCount > 1 ? "s" : ""}
+                      </em>
+                    ) : null}
+                  </span>
+                </span>
+                <small>
+                  {thread.authorName} · {thread.replyCount} reponses · {thread.categoryName}
+                </small>
+                <small className="forum-visibility-chip">{thread.visibility === "public" ? "Public" : "Membres"}</small>
+                <small>{thread.preview}</small>
+              </span>
+              <button type="button" onClick={() => onSelect(thread)}>
+                Ouvrir
+              </button>
+            </article>
+          );
+        })}
         {threads.length ? null : (
           <EmptyState
             icon={FileText}

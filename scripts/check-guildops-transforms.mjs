@@ -165,10 +165,15 @@ test("forum: category, thread and post normalization preserve API/local fallback
     locked_at: "2026-07-01T12:00:00.000Z",
     pinned_at: "2026-07-01T11:00:00.000Z",
     reply_count: "3",
+    unread_count: "2",
+    new_topic: true,
+    last_read_at: null,
   });
   assert.equal(thread.locked, true);
   assert.equal(thread.pinned, true);
   assert.equal(thread.replyCount, 3);
+  assert.equal(thread.unreadCount, 2);
+  assert.equal(thread.newTopic, true);
   assert.equal(thread.permissions.canReply, false);
 
   const deletedPost = normalizeForumPost({
@@ -183,11 +188,13 @@ test("forum: category, thread and post normalization preserve API/local fallback
   assert.equal(deletedPost.edited, true);
   assert.equal(deletedPost.threadId, "thread-1");
 
-  const localThreads = buildLocalForumThreads([{ id: "local-1", title: "Plan Nord", replies: 2 }]);
+  const localThreads = buildLocalForumThreads([{ id: "local-1", title: "Plan Nord", replies: 2, unreadCount: 1, newTopic: true }]);
   assert.equal(localThreads[0].categoryId, "strategy");
   assert.equal(buildLocalForumPosts(localThreads[0], "Premier message", "NordicLeader")[0].authorName, "NordicLeader");
   assert.equal(buildLocalForumCategories(localThreads).length, 3);
   assert.equal(buildLocalForumCounters(localThreads).posts, 3);
+  assert.equal(buildLocalForumCounters(localThreads).unreadMessages, 1);
+  assert.equal(buildLocalForumCounters(localThreads).newThreads, 1);
 });
 
 test("diplomacy: relation, NAP and coordinate normalization keep labels and aliases", () => {

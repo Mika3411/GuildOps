@@ -197,6 +197,7 @@ forumRouter.get(
       listForumRoles(guildId),
       access.canManage ? listForumMutes(guildId) : Promise.resolve([])
     ]);
+    const unreadCounters = await countForumUnread(guildId, access, categories.map((category) => category.id));
 
     res.json({
       categories,
@@ -207,7 +208,10 @@ forumRouter.get(
       counters: {
         categories: categories.length,
         threads: categories.reduce((total, category) => total + category.threadCount, 0),
-        posts: categories.reduce((total, category) => total + category.postCount, 0)
+        posts: categories.reduce((total, category) => total + category.postCount, 0),
+        unreadMessages: unreadCounters.unreadMessages,
+        unreadThreads: unreadCounters.unreadThreads,
+        newThreads: unreadCounters.newThreads
       }
     });
   })
@@ -1153,6 +1157,16 @@ async function listThreads(
           ft.updated_at::text,
           count(fp.id) FILTER (WHERE fp.deleted_at IS NULL)::int AS post_count,
           count(fp.id) FILTER (WHERE fp.deleted_at IS NULL)::int - 1 AS reply_count,
+          count(fp.id) FILTER (
+            WHERE fp.deleted_at IS NULL
+              AND fp.author_member_id IS DISTINCT FROM $5::uuid
+              AND (ftr.last_read_at IS NULL OR fp.created_at > ftr.last_read_at)
+          )::int AS unread_count,
+          (
+            ftr.last_read_at IS NULL
+            AND ft.author_member_id IS DISTINCT FROM $5::uuid
+          ) AS new_topic,
+          ftr.last_read_at::text,
           (
             SELECT body
             FROM forum_posts first_post
@@ -1165,13 +1179,14 @@ async function listThreads(
         JOIN forum_categories fc ON fc.id = ft.category_id
         LEFT JOIN guild_members author ON author.id = ft.author_member_id
         LEFT JOIN forum_posts fp ON fp.thread_id = ft.id
+        LEFT JOIN forum_thread_reads ftr ON ftr.thread_id = ft.id AND ftr.member_id = $5
         WHERE fc.guild_id = $1
           AND ft.category_id = ANY($2::uuid[])
-        GROUP BY ft.id, fc.name, author.nickname
+        GROUP BY ft.id, fc.name, author.nickname, ftr.last_read_at
         ORDER BY ft.pinned_at DESC NULLS LAST, COALESCE(ft.last_post_at, ft.created_at) DESC
         LIMIT $3 OFFSET $4
       `,
-      [guildId, allowedCategoryIds, options.limit, offset]
+      [guildId, allowedCategoryIds, options.limit, offset, access.memberId]
     ),
     query<{ count: string }>(
       `
@@ -1209,6 +1224,9 @@ type ThreadListRow = {
   updated_at: string;
   post_count: number;
   reply_count: number;
+  unread_count: number;
+  new_topic: boolean;
+  last_read_at: string | null;
   preview: string | null;
 };
 
@@ -1230,6 +1248,9 @@ function formatThreadListItem(row: ThreadListRow) {
     updatedAt: row.updated_at,
     postCount: Number(row.post_count),
     replyCount: Math.max(0, Number(row.reply_count)),
+    unreadCount: Math.max(0, Number(row.unread_count ?? 0)),
+    newTopic: Boolean(row.new_topic),
+    lastReadAt: row.last_read_at,
     preview: row.preview ?? ""
   };
 }
@@ -1244,6 +1265,7 @@ async function getThreadWithPosts(
   const category = await getCategoryRow(guildId, thread.category_id);
   const categoryAccess = await getCategoryAccess(category, access);
   if (!categoryAccess.canRead) throw new NotFoundError("Forum thread not found");
+  const lastReadAt = await markForumThreadRead(guildId, threadId, access.memberId);
 
   const offset = (pagination.page - 1) * pagination.limit;
   const [postsResult, countResult] = await Promise.all([
@@ -1271,7 +1293,12 @@ async function getThreadWithPosts(
   ]);
 
   return {
-    thread: formatThreadDetail(thread, category, categoryAccess, access),
+    thread: {
+      ...formatThreadDetail(thread, category, categoryAccess, access),
+      unreadCount: 0,
+      newTopic: false,
+      lastReadAt
+    },
     posts: postsResult.rows.map((post) => formatPost(post, categoryAccess.canModerate)),
     pagination: pageMeta(Number(countResult.rows[0]?.count ?? 0), pagination.page, pagination.limit)
   };
@@ -1302,6 +1329,9 @@ async function getThreadRow(guildId: string, threadId: string): Promise<ThreadRo
         ft.updated_at::text,
         count(fp.id) FILTER (WHERE fp.deleted_at IS NULL)::int AS post_count,
         count(fp.id) FILTER (WHERE fp.deleted_at IS NULL)::int - 1 AS reply_count,
+        0::int AS unread_count,
+        false AS new_topic,
+        NULL::text AS last_read_at,
         (
           SELECT body
           FROM forum_posts first_post
@@ -1324,6 +1354,74 @@ async function getThreadRow(guildId: string, threadId: string): Promise<ThreadRo
   const thread = result.rows[0];
   if (!thread) throw new NotFoundError("Forum thread not found");
   return thread;
+}
+
+type ForumUnreadCounters = {
+  unreadMessages: number;
+  unreadThreads: number;
+  newThreads: number;
+};
+
+async function countForumUnread(guildId: string, access: ForumAccess, categoryIds: string[]): Promise<ForumUnreadCounters> {
+  if (!categoryIds.length) {
+    return { unreadMessages: 0, unreadThreads: 0, newThreads: 0 };
+  }
+
+  const result = await query<{
+    unread_messages: string;
+    unread_threads: string;
+    new_threads: string;
+  }>(
+    `
+      SELECT
+        count(fp.id) FILTER (
+          WHERE fp.id IS NOT NULL
+            AND fp.author_member_id IS DISTINCT FROM $3::uuid
+            AND (ftr.last_read_at IS NULL OR fp.created_at > ftr.last_read_at)
+        )::text AS unread_messages,
+        count(DISTINCT ft.id) FILTER (
+          WHERE fp.id IS NOT NULL
+            AND fp.author_member_id IS DISTINCT FROM $3::uuid
+            AND (ftr.last_read_at IS NULL OR fp.created_at > ftr.last_read_at)
+        )::text AS unread_threads,
+        count(DISTINCT ft.id) FILTER (
+          WHERE ftr.last_read_at IS NULL
+            AND ft.author_member_id IS DISTINCT FROM $3::uuid
+        )::text AS new_threads
+      FROM forum_threads ft
+      JOIN forum_categories fc ON fc.id = ft.category_id
+      LEFT JOIN forum_posts fp ON fp.thread_id = ft.id AND fp.deleted_at IS NULL
+      LEFT JOIN forum_thread_reads ftr ON ftr.thread_id = ft.id AND ftr.member_id = $3
+      WHERE fc.guild_id = $1
+        AND ft.category_id = ANY($2::uuid[])
+    `,
+    [guildId, categoryIds, access.memberId]
+  );
+  const row = result.rows[0];
+
+  return {
+    unreadMessages: Number(row?.unread_messages ?? 0),
+    unreadThreads: Number(row?.unread_threads ?? 0),
+    newThreads: Number(row?.new_threads ?? 0)
+  };
+}
+
+async function markForumThreadRead(guildId: string, threadId: string, memberId: string) {
+  const result = await query<{ last_read_at: string }>(
+    `
+      INSERT INTO forum_thread_reads (guild_id, thread_id, member_id, last_read_at)
+      VALUES ($1, $2, $3, now())
+      ON CONFLICT (thread_id, member_id)
+      DO UPDATE SET
+        guild_id = EXCLUDED.guild_id,
+        last_read_at = now(),
+        updated_at = now()
+      RETURNING last_read_at::text
+    `,
+    [guildId, threadId, memberId]
+  );
+
+  return result.rows[0]?.last_read_at ?? new Date().toISOString();
 }
 
 function formatThreadDetail(

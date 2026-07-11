@@ -611,6 +611,16 @@ CREATE TABLE forum_posts (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE forum_thread_reads (
+  guild_id uuid NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  thread_id uuid NOT NULL REFERENCES forum_threads(id) ON DELETE CASCADE,
+  member_id uuid NOT NULL REFERENCES guild_members(id) ON DELETE CASCADE,
+  last_read_at timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (thread_id, member_id)
+);
+
 CREATE TABLE forum_category_role_permissions (
   category_id uuid NOT NULL REFERENCES forum_categories(id) ON DELETE CASCADE,
   role_id uuid NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
@@ -860,6 +870,8 @@ CREATE UNIQUE INDEX idx_forum_member_mutes_active
 ON forum_member_mutes(guild_id, muted_member_id)
 WHERE lifted_at IS NULL;
 CREATE INDEX idx_forum_member_mutes_member ON forum_member_mutes(muted_member_id, lifted_at);
+CREATE INDEX idx_forum_thread_reads_member_last ON forum_thread_reads(member_id, last_read_at DESC);
+CREATE INDEX idx_forum_thread_reads_guild_member ON forum_thread_reads(guild_id, member_id);
 CREATE INDEX idx_forum_posts_thread_visible_created ON forum_posts(thread_id, created_at)
 WHERE deleted_at IS NULL;
 CREATE INDEX idx_private_messages_sender_created ON private_messages(sender_user_id, created_at DESC);
@@ -994,6 +1006,10 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER forum_threads_set_updated_at
 BEFORE UPDATE ON forum_threads
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TRIGGER forum_thread_reads_set_updated_at
+BEFORE UPDATE ON forum_thread_reads
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER forum_category_role_permissions_set_updated_at
