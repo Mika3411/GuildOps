@@ -239,71 +239,7 @@ publicRouter.get(
   validate({ query: directoryQuerySchema }),
   asyncHandler(async (req, res) => {
     const filters = req.query as unknown as z.infer<typeof directoryQuerySchema>;
-    const where = ["g.deleted_at IS NULL", "(g.is_public = true OR gs.status = 'published')"];
-    const values: unknown[] = [];
-
-    if (filters.game) {
-      values.push(slugify(filters.game));
-      where.push(`ga.slug = $${values.length}`);
-    }
-
-    if (filters.server) {
-      values.push(filters.server);
-      where.push(`s.code ILIKE $${values.length}`);
-    }
-
-    if (filters.language) {
-      values.push(filters.language);
-      where.push(`g.default_language = $${values.length}`);
-    }
-
-    if (filters.style) {
-      values.push(`%${filters.style}%`);
-      where.push(`g.play_style ILIKE $${values.length}`);
-    }
-
-    values.push(filters.limit);
-
-    const result = await query<PublicDirectoryGuildRow>(
-      `
-        SELECT
-          g.id::text,
-          g.name,
-          g.tag,
-          g.slug::text,
-          g.default_language AS "defaultLanguage",
-          g.play_style AS "playStyle",
-          g.description,
-          ga.name AS game,
-          s.code AS server,
-          COALESCE(gs.public_slug::text, g.slug::text) AS "publicSlug",
-          COALESCE(gs.status, CASE WHEN g.is_public THEN 'published' ELSE 'draft' END) AS "siteStatus",
-          gs.theme_json AS "themeJson",
-          count(gm.id)::text AS "memberCount"
-        FROM guilds g
-        JOIN games ga ON ga.id = g.game_id
-        LEFT JOIN servers s ON s.id = g.server_id
-        LEFT JOIN guild_sites gs ON gs.guild_id = g.id
-        LEFT JOIN guild_members gm
-          ON gm.guild_id = g.id
-         AND gm.status = 'active'
-        WHERE ${where.join(" AND ")}
-        GROUP BY
-          g.id,
-          ga.name,
-          s.code,
-          gs.public_slug,
-          gs.status,
-          gs.theme_json
-        ORDER BY
-          ga.name ASC,
-          COALESCE(s.code, '') ASC,
-          g.default_language ASC,
-          g.name ASC
-        LIMIT $${values.length}
-      `,
-      values
-    );
+    const result = await listPublicDirectoryGuildRows(filters);
 
     res.json({ guilds: result.rows.map(toPublicDirectoryGuildResource) });
   })
@@ -413,7 +349,129 @@ publicRouter.get(
   })
 );
 
-function toPublicDirectoryGuildResource(row: PublicDirectoryGuildRow) {
+type DirectoryQueryFilters = z.infer<typeof directoryQuerySchema>;
+
+function buildDirectoryWhere(filters: DirectoryQueryFilters, includeSites: boolean) {
+  const where = ["g.deleted_at IS NULL", includeSites ? "(g.is_public = true OR gs.status = 'published')" : "g.is_public = true"];
+  const values: unknown[] = [];
+
+  if (filters.game) {
+    values.push(slugify(filters.game));
+    where.push(`ga.slug = $${values.length}`);
+  }
+
+  if (filters.server) {
+    values.push(filters.server);
+    where.push(`s.code ILIKE $${values.length}`);
+  }
+
+  if (filters.language) {
+    values.push(filters.language);
+    where.push(`g.default_language = $${values.length}`);
+  }
+
+  if (filters.style) {
+    values.push(`%${filters.style}%`);
+    where.push(`g.play_style ILIKE $${values.length}`);
+  }
+
+  values.push(filters.limit);
+
+  return {
+    limitParameter: values.length,
+    values,
+    where: where.join(" AND ")
+  };
+}
+
+async function listPublicDirectoryGuildRows(filters: DirectoryQueryFilters) {
+  const primary = buildDirectoryWhere(filters, true);
+
+  try {
+    return await query<PublicDirectoryGuildRow>(
+      `
+        SELECT
+          g.id::text,
+          g.name,
+          g.tag,
+          g.slug::text,
+          g.default_language AS "defaultLanguage",
+          g.play_style AS "playStyle",
+          g.description,
+          ga.name AS game,
+          s.code AS server,
+          COALESCE(gs.public_slug::text, g.slug::text) AS "publicSlug",
+          COALESCE(gs.status, CASE WHEN g.is_public THEN 'published' ELSE 'draft' END) AS "siteStatus",
+          COALESCE(gs.theme_json, '{}'::jsonb) AS "themeJson",
+          (
+            SELECT count(*)::text
+            FROM guild_members gm
+            WHERE gm.guild_id = g.id
+              AND gm.status = 'active'
+          ) AS "memberCount"
+        FROM guilds g
+        JOIN games ga ON ga.id = g.game_id
+        LEFT JOIN servers s ON s.id = g.server_id
+        LEFT JOIN guild_sites gs ON gs.guild_id = g.id
+        WHERE ${primary.where}
+        ORDER BY
+          ga.name ASC,
+          COALESCE(s.code, '') ASC,
+          g.default_language ASC,
+          g.name ASC
+        LIMIT $${primary.limitParameter}
+      `,
+      primary.values
+    );
+  } catch (error) {
+    if (!isRecoverableDirectoryQueryError(error)) throw error;
+    console.warn("Public directory primary query failed; serving minimal public guild rows.", error);
+  }
+
+  const fallback = buildDirectoryWhere(filters, false);
+
+  return query<PublicDirectoryGuildRow>(
+    `
+      SELECT
+        g.id::text,
+        g.name,
+        g.tag,
+        g.slug::text,
+        g.default_language AS "defaultLanguage",
+        g.play_style AS "playStyle",
+        g.description,
+        ga.name AS game,
+        s.code AS server,
+        g.slug::text AS "publicSlug",
+        CASE WHEN g.is_public THEN 'published' ELSE 'draft' END AS "siteStatus",
+        '{}'::jsonb AS "themeJson",
+        (
+          SELECT count(*)::text
+          FROM guild_members gm
+          WHERE gm.guild_id = g.id
+            AND gm.status = 'active'
+        ) AS "memberCount"
+      FROM guilds g
+      JOIN games ga ON ga.id = g.game_id
+      LEFT JOIN servers s ON s.id = g.server_id
+      WHERE ${fallback.where}
+      ORDER BY
+        ga.name ASC,
+        COALESCE(s.code, '') ASC,
+        g.default_language ASC,
+        g.name ASC
+      LIMIT $${fallback.limitParameter}
+    `,
+    fallback.values
+  );
+}
+
+function isRecoverableDirectoryQueryError(error: unknown) {
+  const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code) : "";
+  return ["42703", "42P01", "42803"].includes(code);
+}
+
+export function toPublicDirectoryGuildResource(row: PublicDirectoryGuildRow) {
   const publicSlug = asString(row.publicSlug) || asString(row.slug);
   const themeJson = asRecord(row.themeJson) ?? {};
 
