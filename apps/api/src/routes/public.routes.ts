@@ -239,7 +239,10 @@ publicRouter.get(
   validate({ query: directoryQuerySchema }),
   asyncHandler(async (req, res) => {
     const filters = req.query as unknown as z.infer<typeof directoryQuerySchema>;
-    const result = await listPublicDirectoryGuildRows(filters);
+    const result = await listPublicDirectoryGuildRows(filters).catch((error) => {
+      console.warn("Public directory unavailable; returning an empty directory response.", error);
+      return { rows: [] as PublicDirectoryGuildRow[] };
+    });
 
     res.json({ guilds: result.rows.map(toPublicDirectoryGuildResource) });
   })
