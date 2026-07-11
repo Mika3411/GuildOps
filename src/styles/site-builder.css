@@ -4288,6 +4288,10 @@
   color: var(--muted);
 }
 
+.public-nap-list .nap-date-line {
+  color: var(--site-accent, #45d8f0);
+}
+
 .public-coordinate-list em {
   color: var(--site-highlight, #c8ff08);
   font-size: 0.85rem;

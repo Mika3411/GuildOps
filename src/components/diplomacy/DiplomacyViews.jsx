@@ -33,7 +33,9 @@ import {
   getAgreementStatusLabel,
   formatDiplomacyAction,
   formatDiplomacyDate,
+  formatDiplomacyDay,
   isAgreementExpired,
+  isAgreementScheduled,
   toDateInputValue,
   dateInputToIso
 } from "../../lib/guildOpsTransforms.js";
@@ -105,6 +107,16 @@ export function DiplomacyMini({ diplomacyRelations = [] }) {
       </div>
     </section>
   );
+}
+
+function getAgreementDateLine(agreement = {}) {
+  const startsAt = formatDiplomacyDay(agreement.startsAt);
+  const endsAt = formatDiplomacyDay(agreement.endsAt);
+
+  if (startsAt && endsAt) return `Actif à partir du ${startsAt} · Expire le ${endsAt}`;
+  if (startsAt) return `Actif à partir du ${startsAt}`;
+  if (endsAt) return `Expire le ${endsAt}`;
+  return "";
 }
 
 export function PublicDiplomacyModule({ onNavigatePublicRoute, publicDiplomacy = {}, publicSlug = "", siteDraft = {} }) {
@@ -217,6 +229,7 @@ export function PublicDiplomacyModule({ onNavigatePublicRoute, publicDiplomacy =
                   <span>
                     <strong>{agreement.title}</strong>
                     <small>{agreement.relationTag || agreement.relationName || "Relation liée"}</small>
+                    {getAgreementDateLine(agreement) ? <small className="nap-date-line">{getAgreementDateLine(agreement)}</small> : null}
                   </span>
                   <AgreementBadge agreement={agreement} />
                   {agreement.summary ? <p>{agreement.summary}</p> : null}
@@ -481,6 +494,7 @@ export function NapAgreementsPanel({ agreements, canManage, onSave, relations })
             <span>
               <strong>{agreement.title}</strong>
               <small>{agreement.relationTag || agreement.relationName || "Relation libre"}</small>
+              {getAgreementDateLine(agreement) ? <small className="nap-date-line">{getAgreementDateLine(agreement)}</small> : null}
             </span>
             <AgreementBadge agreement={agreement} />
           </button>
@@ -497,6 +511,10 @@ export function NapAgreementsPanel({ agreements, canManage, onSave, relations })
               </option>
             ))}
           </select>
+        </label>
+        <label className="form-row">
+          <span>Actif à partir du</span>
+          <input type="date" value={toDateInputValue(draft.startsAt)} onChange={(event) => updateDraft("startsAt", dateInputToIso(event.target.value))} {...guard} />
         </label>
         <label className="form-row">
           <span>Expiration</span>
@@ -645,5 +663,8 @@ export function DiplomacyBadge({ type }) {
 
 export function AgreementBadge({ agreement }) {
   const expired = isAgreementExpired(agreement);
-  return <em className={`diplomacy-badge ${expired ? "expired" : agreement.status}`}>{expired ? "Expire" : getAgreementStatusLabel(agreement.status)}</em>;
+  const scheduled = !expired && isAgreementScheduled(agreement);
+  const badgeClass = expired ? "expired" : scheduled ? "scheduled" : agreement.status;
+  const label = expired ? "Expire" : scheduled ? "Planifié" : getAgreementStatusLabel(agreement.status);
+  return <em className={`diplomacy-badge ${badgeClass}`}>{label}</em>;
 }

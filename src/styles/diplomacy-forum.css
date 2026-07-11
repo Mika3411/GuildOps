@@ -129,7 +129,8 @@
 }
 
 .diplomacy-badge.nap,
-.diplomacy-badge.draft {
+.diplomacy-badge.draft,
+.diplomacy-badge.scheduled {
   border-color: rgba(245, 182, 56, 0.36);
   color: var(--amber);
   background: rgba(245, 182, 56, 0.08);
@@ -230,6 +231,10 @@
 .nap-list small {
   margin-top: 3px;
   color: var(--muted);
+}
+
+.nap-list .nap-date-line {
+  color: var(--teal);
 }
 
 .diplomacy-coordinate-list {

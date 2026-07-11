@@ -280,8 +280,20 @@ export function formatDiplomacyDate(value) {
   return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
+export function formatDiplomacyDay(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+}
+
 export function isAgreementExpired(agreement = {}) {
   return agreement.status === "expired" || isPastDate(agreement.endsAt);
+}
+
+export function isAgreementScheduled(agreement = {}) {
+  if (agreement.status !== "active" || !agreement.startsAt) return false;
+  const startsAt = new Date(agreement.startsAt).getTime();
+  return Number.isFinite(startsAt) && startsAt > Date.now();
 }
 
 function isPublicNapAgreementVisible(agreement = {}, publicRelationIds = new Set(), publicRelationTags = new Set()) {
