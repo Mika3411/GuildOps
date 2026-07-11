@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bell,
   ChevronDown,
   CircleHelp,
   Globe2,
@@ -288,7 +289,15 @@ export function Sidebar({
   );
 }
 
-export function MobileHeader({ selectedGuild, activeView, navItems = getGuildOpsNavItems(), onNavigate, onOpenMessages, unreadMessages = 0 }) {
+export function MobileHeader({
+  selectedGuild,
+  activeView,
+  navItems = getGuildOpsNavItems(),
+  notificationProps,
+  onNavigate,
+  onOpenMessages,
+  unreadMessages = 0
+}) {
   const displayGuild = selectedGuild || {};
 
   return (
@@ -300,6 +309,7 @@ export function MobileHeader({ selectedGuild, activeView, navItems = getGuildOps
         <strong>GuildOps</strong>
         <div className="mobile-actions">
           <Search size={22} />
+          <NotificationBell compact notificationProps={notificationProps} />
           <button
             className="mobile-icon-action"
             type="button"
@@ -351,6 +361,7 @@ export function TopBar({
   currentUser,
   guilds: availableGuilds = [],
   selectedGuild,
+  notificationProps,
   onGuildChange,
   onCreateSite,
   onOpenMessages,
@@ -461,6 +472,7 @@ export function TopBar({
         />
       </label>
       <div className="top-actions">
+        <NotificationBell notificationProps={notificationProps} />
         <button
           className="icon-button message-icon-button"
           type="button"
@@ -510,6 +522,139 @@ export function TopBar({
       {sitePublishError ? <p className="publish-error">{sitePublishError}</p> : null}
     </header>
   );
+}
+
+function NotificationBell({ compact = false, notificationProps = {} }) {
+  const {
+    notifications = [],
+    notificationError = "",
+    pushState = {},
+    unreadNotifications = 0,
+    onDisablePush,
+    onEnablePush,
+    onMarkAllRead,
+    onOpenNotification,
+  } = notificationProps;
+  const [open, setOpen] = useState(false);
+  const popoverRef = useRef(null);
+  const notificationList = notifications.filter(Boolean);
+  const pushActionLabel = pushState.enabled ? "Désactiver" : pushState.enabling ? "..." : "Activer";
+  const pushDisabled = Boolean(
+    pushState.enabling ||
+      !pushState.supported ||
+      (!pushState.enabled && !pushState.configured)
+  );
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function handlePointerDown(event) {
+      if (!popoverRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  async function handlePushToggle() {
+    if (pushState.enabled) {
+      await onDisablePush?.();
+    } else {
+      await onEnablePush?.();
+    }
+  }
+
+  async function handleOpenNotification(notification) {
+    await onOpenNotification?.(notification);
+    setOpen(false);
+  }
+
+  return (
+    <div className={`notification-shell ${compact ? "is-compact" : ""}`} ref={popoverRef}>
+      <button
+        className={compact ? "mobile-icon-action notification-bell" : "icon-button notification-bell"}
+        type="button"
+        aria-label={`Notifications, ${unreadNotifications} non lue${unreadNotifications > 1 ? "s" : ""}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Bell size={compact ? 22 : 19} />
+        {unreadNotifications ? <span className="notice-dot notification-count">{unreadNotifications}</span> : null}
+      </button>
+      {open ? (
+        <div className="notification-popover" role="dialog" aria-label="Notifications internes">
+          <header>
+            <span>
+              <strong>Notifications</strong>
+              <small>{unreadNotifications ? `${unreadNotifications} non lue${unreadNotifications > 1 ? "s" : ""}` : "A jour"}</small>
+            </span>
+            <button type="button" onClick={onMarkAllRead} disabled={!unreadNotifications}>
+              Tout lu
+            </button>
+          </header>
+          <div className="notification-push-row">
+            <span>
+              <strong>Push navigateur</strong>
+              <small>
+                {pushState.enabled
+                  ? "Activé"
+                  : pushState.supported
+                    ? pushState.configured
+                      ? "Prêt"
+                      : "Serveur à configurer"
+                    : "Non supporté"}
+              </small>
+            </span>
+            <button type="button" onClick={handlePushToggle} disabled={pushDisabled}>
+              {pushActionLabel}
+            </button>
+          </div>
+          {pushState.message ? <p className="notification-hint">{pushState.message}</p> : null}
+          {notificationError ? <p className="notification-error">{notificationError}</p> : null}
+          <div className="notification-list">
+            {notificationList.length ? (
+              notificationList.slice(0, 10).map((notification) => (
+                <button
+                  type="button"
+                  key={notification.id}
+                  className={notification.readAt ? "" : "is-unread"}
+                  onClick={() => handleOpenNotification(notification)}
+                >
+                  <span>
+                    <strong>{notification.title}</strong>
+                    <small>{notification.body}</small>
+                  </span>
+                  <em>{formatNotificationDate(notification.createdAt)}</em>
+                </button>
+              ))
+            ) : (
+              <p className="notification-empty">Aucune notification.</p>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function formatNotificationDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(date);
 }
 
 export function MobileBottomNav({ activeView, mobileNav = getGuildOpsMobileNavItems(), onNavigate, unreadMessages = 0 }) {

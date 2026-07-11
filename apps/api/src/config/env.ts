@@ -18,7 +18,10 @@ const envSchema = z.object({
   APP_PUBLIC_URL: z.string().url().default("http://localhost:5173"),
   SMTP_URL: z.string().url().optional(),
   EMAIL_FROM: z.string().min(3).default("GuildOps <no-reply@guildops.app>"),
-  EMAIL_VERIFICATION_TTL_HOURS: z.coerce.number().int().min(1).max(168).default(24)
+  EMAIL_VERIFICATION_TTL_HOURS: z.coerce.number().int().min(1).max(168).default(24),
+  VAPID_PUBLIC_KEY: z.string().min(20).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(20).optional(),
+  VAPID_SUBJECT: z.string().min(3).optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

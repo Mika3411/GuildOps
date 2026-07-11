@@ -48,6 +48,14 @@ export const guildOpsEndpoints = {
     mergeDuplicate: (guildId, mergeRequestId, duplicateId) =>
       `/guilds/${encodeURIComponent(guildId)}/merge-requests/${encodeURIComponent(mergeRequestId)}/duplicates/${encodeURIComponent(duplicateId)}`,
   },
+  notifications: {
+    list: (guildId) => `/guilds/${encodeURIComponent(guildId)}/notifications`,
+    readAll: (guildId) => `/guilds/${encodeURIComponent(guildId)}/notifications/read`,
+    read: (guildId, notificationId) =>
+      `/guilds/${encodeURIComponent(guildId)}/notifications/${encodeURIComponent(notificationId)}/read`,
+    pushPublicKey: "/notifications/push-public-key",
+    pushSubscriptions: "/notifications/push-subscriptions",
+  },
   publicSite: {
     directory: "/directory/guilds",
     show: (slug) => `/public/guilds/${encodeURIComponent(slug)}`,
@@ -137,6 +145,8 @@ export const guildOpsEndpoints = {
   },
   bank: {
     snapshot: (guildId) => `/guilds/${encodeURIComponent(guildId)}/bank`,
+    resource: (guildId, resourceCode) =>
+      `/guilds/${encodeURIComponent(guildId)}/bank/resources/${encodeURIComponent(resourceCode)}`,
     movements: (guildId) => `/guilds/${encodeURIComponent(guildId)}/bank/movements`,
     requests: (guildId) => `/guilds/${encodeURIComponent(guildId)}/bank/requests`,
     requestStatus: (guildId, requestId) =>
@@ -259,6 +269,27 @@ export const guildOpsApi = {
     return apiRequest(guildOpsEndpoints.guilds.mergeDuplicate(guildId, mergeRequestId, duplicateId), {
       body: { decision },
       method: "PATCH",
+    });
+  },
+  listNotifications(guildId, query, { signal } = {}) {
+    return apiRequest(guildOpsEndpoints.notifications.list(guildId), { query, signal });
+  },
+  markNotificationRead(guildId, notificationId) {
+    return apiRequest(guildOpsEndpoints.notifications.read(guildId, notificationId), { method: "PATCH" });
+  },
+  markAllNotificationsRead(guildId) {
+    return apiRequest(guildOpsEndpoints.notifications.readAll(guildId), { method: "POST" });
+  },
+  getPushPublicKey({ signal } = {}) {
+    return apiRequest(guildOpsEndpoints.notifications.pushPublicKey, { signal });
+  },
+  savePushSubscription(subscription) {
+    return apiRequest(guildOpsEndpoints.notifications.pushSubscriptions, { body: subscription });
+  },
+  removePushSubscription(subscription) {
+    return apiRequest(guildOpsEndpoints.notifications.pushSubscriptions, {
+      body: subscription,
+      method: "DELETE",
     });
   },
   getPublicGuild(slug, { signal } = {}) {
@@ -507,6 +538,17 @@ export const guildOpsApi = {
   },
   createBankMovement(guildId, body) {
     return apiRequest(guildOpsEndpoints.bank.movements(guildId), { body });
+  },
+  saveBankResource(guildId, resource) {
+    const resourceCode = resource?.resourceCode || resource?.code || "";
+    return apiRequest(guildOpsEndpoints.bank.resource(guildId, resourceCode), {
+      body: {
+        resourceName: resource?.resourceName || resource?.name || resourceCode,
+        amount: resource?.amount,
+        unit: resource?.unit || null,
+      },
+      method: "PUT",
+    });
   },
   updateBankRequestStatus(guildId, requestId, status) {
     return apiRequest(guildOpsEndpoints.bank.requestStatus(guildId, requestId), {

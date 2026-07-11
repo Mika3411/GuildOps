@@ -323,6 +323,14 @@
     right: -9px;
   }
 
+  .mobile-actions .notification-popover {
+    position: fixed;
+    top: 62px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
   .mobile-guild-card {
     width: 100%;
     display: grid;
@@ -586,6 +594,7 @@
 
   .builder-grid,
   .filter-grid,
+  .bank-resource-toolbar,
   .bank-stock-cards,
   .bank-form-grid,
   .event-form-grid,

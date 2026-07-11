@@ -758,6 +758,31 @@ CREATE TABLE audit_logs (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  guild_id uuid NOT NULL REFERENCES guilds(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  actor_user_id uuid REFERENCES users(id) ON DELETE SET NULL,
+  type text NOT NULL,
+  title text NOT NULL,
+  body text NOT NULL,
+  data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  read_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  endpoint text NOT NULL UNIQUE,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  user_agent text,
+  revoked_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 ALTER TABLE user_sessions
   ADD COLUMN active_organization_id uuid REFERENCES organizations(id) ON DELETE SET NULL,
   ADD COLUMN active_guild_id uuid REFERENCES guilds(id) ON DELETE SET NULL;
@@ -811,6 +836,14 @@ CREATE INDEX idx_alert_ack_member ON alert_acknowledgements(guild_member_id, ack
 CREATE INDEX idx_alert_ack_alert_response ON alert_acknowledgements(alert_id, response);
 CREATE INDEX idx_alert_reminder_jobs_due ON alert_reminder_jobs(status, scheduled_at);
 CREATE INDEX idx_alert_reminder_jobs_alert ON alert_reminder_jobs(alert_id, guild_member_id);
+CREATE INDEX idx_notifications_user_guild_created
+ON notifications(user_id, guild_id, created_at DESC);
+CREATE INDEX idx_notifications_user_unread
+ON notifications(user_id, guild_id, created_at DESC)
+WHERE read_at IS NULL;
+CREATE INDEX idx_push_subscriptions_user_active
+ON push_subscriptions(user_id)
+WHERE revoked_at IS NULL;
 CREATE INDEX idx_diplomacy_guild_relation ON diplomacy_entries(guild_id, relation_type);
 CREATE INDEX idx_coordinates_guild_category ON coordinates(guild_id, category);
 CREATE INDEX idx_bank_requests_status ON bank_requests(bank_id, status, created_at DESC);

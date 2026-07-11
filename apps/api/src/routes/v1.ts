@@ -13,6 +13,7 @@ import { guildsRouter } from "./guilds.routes.js";
 import { messagesRouter } from "./messages.routes.js";
 import { meRouter } from "./me.routes.js";
 import { mvpRouter } from "./mvp.routes.js";
+import { notificationsRouter } from "./notifications.routes.js";
 import { publicRouter } from "./public.routes.js";
 
 export const v1Router = Router();
@@ -28,6 +29,7 @@ v1Router.get("/", (_req, res) => {
       guilds: "/api/v1/guilds",
       guildMerges: "/api/v1/guilds/:guildId/merge-requests",
       messages: "/api/v1/guilds/:guildId/messages",
+      notifications: "/api/v1/guilds/:guildId/notifications",
       forum: "/api/v1/guilds/:guildId/forum",
       diplomacy: "/api/v1/guilds/:guildId/diplomacy",
       mvpBootstrap: "/api/v1/mvp/bootstrap",
@@ -67,6 +69,7 @@ v1Router.use("/auth", authRouter);
 v1Router.use(meRouter);
 v1Router.use(mvpRouter);
 v1Router.use(publicRouter);
+v1Router.use(notificationsRouter);
 v1Router.use(messagesRouter);
 v1Router.use(guildMergesRouter);
 v1Router.use(guildsRouter);

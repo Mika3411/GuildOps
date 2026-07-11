@@ -34,6 +34,7 @@ export function buildGuildOpsControllerProps({
   memberModerationError,
   membershipRequests,
   messagesController,
+  notificationsController,
   mobileNavItems,
   moduleUpdateError,
   moderatingMemberId,
@@ -70,6 +71,25 @@ export function buildGuildOpsControllerProps({
   unblockGuildMember,
   useTemplateDesign
 }) {
+  const notificationProps = {
+    notifications: notificationsController.notifications,
+    notificationError: notificationsController.notificationError,
+    pushState: notificationsController.pushState,
+    unreadNotifications: notificationsController.unreadNotificationCount,
+    onDisablePush: notificationsController.disablePushNotifications,
+    onEnablePush: notificationsController.enablePushNotifications,
+    onMarkAllRead: notificationsController.markAllNotificationsRead,
+    onOpenNotification: async (notification) => {
+      if (!notification?.id) return;
+
+      await notificationsController.markNotificationRead(notification.id);
+      const url = typeof notification.data?.url === "string" ? notification.data.url : "";
+      if (url) {
+        navigateToPath(url);
+      }
+    },
+  };
+
   return {
     activeGuilds,
     activeView,
@@ -105,6 +125,7 @@ export function buildGuildOpsControllerProps({
           bankRequests: bankController.bankRequests,
           bankStock: bankController.bankStock,
           createBankRequest: bankController.createBankRequest,
+          saveBankResource: bankController.saveBankResource,
           setBankCommand: bankController.setBankCommand,
           updateBankRequestStatus: bankController.updateBankRequestStatus,
         },
@@ -213,6 +234,7 @@ export function buildGuildOpsControllerProps({
     mobileHeaderProps: {
       activeView,
       navItems,
+      notificationProps,
       onNavigate: navigateToView,
       onOpenMessages: () => navigateToView("messages"),
       selectedGuild,
@@ -232,6 +254,7 @@ export function buildGuildOpsControllerProps({
       onOpenMemberSpace: () => navigateToView("member"),
       onOpenPublicSite: openPublicSite,
       onLogout: authSession.isApiEnabled ? authSession.logout : null,
+      notificationProps,
       unreadMessages: messagesController.unreadMessageCount,
     },
     viewRouterProps: {
@@ -365,6 +388,7 @@ export function buildGuildOpsControllerProps({
       bankStock: bankController.bankStock,
       bankMovements: bankController.bankMovementsLog,
       addBankMovement: bankController.addBankMovement,
+      saveBankResource: bankController.saveBankResource,
       bankCommand: bankController.bankCommand,
       setBankCommand: bankController.setBankCommand,
       siteDraft,

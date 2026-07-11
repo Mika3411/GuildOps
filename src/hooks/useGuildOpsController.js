@@ -26,6 +26,9 @@ import {
   useMessagesController
 } from "./useMessagesController.js";
 import {
+  useNotificationsController
+} from "./useNotificationsController.js";
+import {
   useSosController
 } from "./useSosController.js";
 import {
@@ -314,6 +317,11 @@ export function useGuildOpsController() {
     onBankCommand: bankController.recordBankCommand,
     moduleEnabled: moduleAvailability.messages,
     translationEnabled: moduleAvailability.translation,
+  });
+  const notificationsController = useNotificationsController({
+    apiEnabled,
+    authSession,
+    selectedGuild,
   });
   const forumController = useForumController({
     apiEnabled,
@@ -871,6 +879,7 @@ export function useGuildOpsController() {
     memberModerationError,
     membershipRequests,
     messagesController,
+    notificationsController,
     mobileNavItems,
     moduleUpdateError,
     moderatingMemberId,

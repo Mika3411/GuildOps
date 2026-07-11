@@ -4,6 +4,11 @@ import { database, query, withClient, type Queryable } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
 import { BadRequestError, ForbiddenError, NotFoundError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
+import {
+  createGuildNotificationsForMembers,
+  deliverPushNotifications,
+  type GuildNotification
+} from "../notifications/notifications.js";
 import { getAuth, requireAuth, type AuthContext } from "../security/auth.js";
 import { assertGuildAccess } from "./access.js";
 import { uuidSchema } from "./helpers.js";
@@ -428,6 +433,7 @@ async function saveNapAgreement(
   auth: AuthContext
 ): Promise<void> {
   await assertRelationBelongsToGuild(guildId, body.relationId ?? null);
+  let notifications: GuildNotification[] = [];
 
   await withClient(async (client) => {
     await client.query("BEGIN");
@@ -490,12 +496,29 @@ async function saveNapAgreement(
         metadata: body
       });
 
+      notifications = await createGuildNotificationsForMembers(client, {
+        guildId,
+        actorUserId: auth.user.id,
+        type: agreementId ? "diplomacy.nap.updated" : "diplomacy.nap.created",
+        title: agreementId ? "Accord NAP modifié" : "Nouvel accord NAP",
+        body: `${body.title} · ${formatNapStatusForNotification(body.status)}`,
+        data: {
+          url: "/app/diplomacy",
+          agreementId: savedId,
+          status: body.status,
+          startsAt: body.startsAt ?? null,
+          endsAt: body.endsAt ?? null
+        }
+      });
+
       await client.query("COMMIT");
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
     }
   });
+
+  void deliverPushNotifications(notifications);
 }
 
 async function saveCoordinate(
@@ -672,4 +695,15 @@ async function insertAudit(
 function emptyToNull(value: string | null | undefined): string | null {
   const normalized = String(value ?? "").trim();
   return normalized ? normalized : null;
+}
+
+function formatNapStatusForNotification(status: NapBody["status"]): string {
+  return (
+    {
+      active: "actif",
+      draft: "brouillon",
+      expired: "expiré",
+      cancelled: "annulé"
+    }[status] || "mis à jour"
+  );
 }
