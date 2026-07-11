@@ -8,6 +8,7 @@
 @import "./styles/public-admin.css"; /* Public admin, bank, command history */
 @import "./styles/diplomacy-forum.css"; /* Diplomacy, forum, settings rows */
 @import "./styles/member-space.css"; /* Member profile, password, orders */
+@import "./styles/absences.css"; /* Member absence declarations */
 @import "./styles/site-builder.css"; /* Site builder and public site preview */
 @import "./styles/game-design.css"; /* Game HUD visual pass for the private app */
 @import "./styles/responsive.css"; /* Responsive rules and motion preferences */

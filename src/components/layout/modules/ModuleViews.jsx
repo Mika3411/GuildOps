@@ -18,6 +18,9 @@ import {
   BankView
 } from "../../bank/BankViews.jsx";
 import {
+  AbsencesView
+} from "../../absence/AbsenceViews.jsx";
+import {
   CommandCenter
 } from "../../command/CommandViews.jsx";
 import {
@@ -53,6 +56,7 @@ const MODULE_CATALOG_IDS = Object.freeze([
   "wars_events",
   "sos_attack",
   "membership_requests",
+  "absences",
   "bank",
   "diplomacy",
   "forum",
@@ -89,12 +93,19 @@ function getViewHeroConfig(props, moduleOverride) {
   const pendingBankRequests = props.bankRequests?.filter((request) => ["pending", "en attente"].includes(String(request.status || "").toLowerCase())).length || 0;
   const confirmedMembers = props.warSummary?.attendanceRate?.confirmed || props.members?.filter((member) => member.allianceWar === "Confirme").length || 0;
   const expectedMembers = props.warSummary?.attendanceRate?.activeMembers || props.members?.length || 0;
+  const absenceTotal = props.absenceSummary?.total || props.absences?.length || 0;
 
   const overrides = {
     administration: {
       badge: administrationMemberCount,
       metric: `${administrationMemberCount}/${props.members?.length || 0} accès`,
       modeDetail: "Permissions et restrictions",
+    },
+    absences: {
+      badge: props.absenceSummary?.active || 0,
+      metric: `${absenceTotal} absence${absenceTotal > 1 ? "s" : ""}`,
+      modeDetail: "Dates et motifs",
+      modeValue: "Disponibilités",
     },
     bank: {
       badge: pendingBankRequests,
@@ -198,6 +209,9 @@ export function ViewRouter(props) {
       break;
     case "member":
       view = <MemberSpaceView {...props} />;
+      break;
+    case "absences":
+      view = <AbsencesView {...props} />;
       break;
     case "wars":
       view = <WarsView {...props} />;

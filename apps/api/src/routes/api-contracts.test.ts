@@ -24,7 +24,7 @@ const { findPublicChatGuildBySlug, toMessageRecipientResource } = await import("
 const { toPublicBankSnapshotResource, toPublicGuildSiteResource } = await import("./public.routes.js");
 const { assertRequestCsrf, needsCsrfCheck } = await import("../security/csrf.js");
 const { hashCsrfToken } = await import("../security/sessions.js");
-const { getRuntimeConfigurationStatus } = await import("../config/env.js");
+const { getRuntimeConfigurationStatus, isCorsOriginAllowed } = await import("../config/env.js");
 const { formatAuthRateLimitMessage } = await import("./auth.routes.js");
 
 test("bank request status keeps refused as the stored API status", () => {
@@ -331,6 +331,32 @@ test("auth rate limit message uses human readable time", () => {
       windowSeconds: 15 * 60
     }),
     "Trop de tentatives d'inscription. Reessaie dans 5 heures 30 min."
+  );
+});
+
+test("CORS allows configured origins and optional loopback dev origins", () => {
+  assert.equal(
+    isCorsOriginAllowed("https://guildops-frontend.onrender.com", {
+      configuredOrigins: ["https://guildops-frontend.onrender.com"],
+      isProduction: true
+    }),
+    true
+  );
+  assert.equal(
+    isCorsOriginAllowed("http://127.0.0.1:5176", {
+      allowLoopback: true,
+      configuredOrigins: ["https://guildops-frontend.onrender.com"],
+      isProduction: true
+    }),
+    true
+  );
+  assert.equal(
+    isCorsOriginAllowed("https://evil.example", {
+      allowLoopback: true,
+      configuredOrigins: ["https://guildops-frontend.onrender.com"],
+      isProduction: true
+    }),
+    false
   );
 });
 

@@ -1,0 +1,237 @@
+.absences-page {
+  grid-template-columns: minmax(360px, 0.8fr) minmax(420px, 1fr);
+  align-items: start;
+}
+
+.absence-summary-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.absence-summary-card {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(84, 223, 204, 0.08), rgba(245, 182, 56, 0.05)),
+    rgba(7, 16, 21, 0.78);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.absence-summary-card svg {
+  flex: 0 0 auto;
+  color: var(--amber);
+}
+
+.absence-summary-card.is-active svg {
+  color: var(--red);
+}
+
+.absence-summary-card.is-upcoming svg {
+  color: var(--teal);
+}
+
+.absence-summary-card span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.absence-summary-card small {
+  color: var(--muted);
+}
+
+.absence-summary-card strong {
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.absence-form-panel,
+.absence-list-panel {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.absence-form {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.absence-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.absence-form .form-row {
+  margin: 0;
+}
+
+.absence-form input,
+.absence-form textarea {
+  width: 100%;
+}
+
+.absence-reason-row textarea {
+  min-height: 128px;
+}
+
+.absence-form .primary-action {
+  width: fit-content;
+}
+
+.absence-list {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.absence-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  border-radius: 8px;
+  background: rgba(7, 16, 21, 0.74);
+}
+
+.absence-card.is-active {
+  border-left-color: var(--red);
+  background:
+    linear-gradient(135deg, rgba(255, 93, 82, 0.1), transparent 58%),
+    rgba(7, 16, 21, 0.78);
+}
+
+.absence-card.is-upcoming {
+  border-left-color: var(--teal);
+}
+
+.absence-card.is-past {
+  border-left-color: var(--faint);
+  opacity: 0.82;
+}
+
+.absence-card header,
+.absence-card footer,
+.absence-card-dates,
+.absence-member {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.absence-card header,
+.absence-card footer {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.absence-member,
+.absence-card-dates {
+  gap: 8px;
+}
+
+.absence-member svg,
+.absence-card-dates svg {
+  flex: 0 0 auto;
+  color: var(--teal);
+}
+
+.absence-member strong,
+.absence-card-dates span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.absence-card em {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--amber-dim);
+  color: var(--amber);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.absence-card.is-active em {
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.absence-card.is-upcoming em {
+  background: var(--teal-dim);
+  color: var(--teal);
+}
+
+.absence-card.is-past em {
+  background: rgba(104, 122, 132, 0.14);
+  color: var(--muted);
+}
+
+.absence-card p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.absence-card small {
+  color: var(--muted);
+}
+
+.absence-card footer button {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 93, 82, 0.28);
+  border-radius: 6px;
+  background: var(--red-dim);
+  color: var(--red);
+}
+
+.absence-card footer button:hover {
+  border-color: rgba(255, 93, 82, 0.54);
+  background: rgba(255, 93, 82, 0.2);
+}
+
+.absence-empty {
+  padding: 14px;
+}
+
+@media (max-width: 980px) {
+  .absences-page,
+  .absence-summary-grid,
+  .absence-date-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .absence-form .primary-action {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .absence-card header,
+  .absence-card footer,
+  .absence-card-dates {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .absence-card em {
+    width: fit-content;
+  }
+}

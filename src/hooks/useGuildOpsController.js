@@ -5,6 +5,9 @@ import {
   useState
 } from "react";
 import {
+  useAbsenceController
+} from "./useAbsenceController.js";
+import {
   useAuthSession
 } from "./useAuthSession.js";
 import {
@@ -294,6 +297,10 @@ export function useGuildOpsController() {
     guildOpsData,
     authSession,
     moduleEnabled: moduleAvailability.events,
+  });
+  const absenceController = useAbsenceController({
+    currentUser,
+    selectedGuild,
   });
   const bankController = useBankController({
     apiEnabled,
@@ -855,6 +862,7 @@ export function useGuildOpsController() {
     activeGuilds,
     activeView,
     administrationAccess,
+    absenceController,
     approveMembershipRequest,
     authSession,
     bankController,

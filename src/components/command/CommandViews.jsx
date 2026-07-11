@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   Banknote,
   CalendarDays,
+  CalendarX2,
   Check,
   Copy,
   Eye,
@@ -2565,7 +2566,7 @@ export function CommandCenter(props) {
   const enabledModuleIds = props.enabledModuleIds;
   const [linkCopied, setLinkCopied] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const showOperationsDock = ["wars_events", "bank", "diplomacy", "forum"].some((moduleId) =>
+  const showOperationsDock = ["wars_events", "absences", "bank", "diplomacy", "forum"].some((moduleId) =>
     isGuildOpsModuleEnabled(moduleId, enabledModuleIds),
   );
 
@@ -3169,6 +3170,10 @@ export function QuickOpsDock({ enabledModuleIds, onCheckIn, onNavigate, warSumma
       <button type="button" onClick={() => onNavigate?.("bank")} {...disabledModuleProps("bank")}>
         <Banknote size={20} />
         Banque
+      </button>
+      <button type="button" onClick={() => onNavigate?.("absences")} {...disabledModuleProps("absences")}>
+        <CalendarX2 size={20} />
+        Absences
       </button>
       <button type="button" onClick={() => onNavigate?.("diplomacy")} {...disabledModuleProps("diplomacy")}>
         <Handshake size={20} />

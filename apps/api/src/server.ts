@@ -4,7 +4,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import { env, getCorsOrigins } from "./config/env.js";
+import { isCorsOriginAllowed } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./http/errors.js";
 import { requestContext } from "./http/request-context.js";
 import { v1Router } from "./routes/v1.js";
@@ -12,8 +12,6 @@ import { csrfProtection } from "./security/csrf.js";
 
 export function createApp(): express.Express {
   const app = express();
-  const corsOrigins = getCorsOrigins();
-
   app.disable("x-powered-by");
   app.set("trust proxy", 1);
   app.use(requestContext);
@@ -24,7 +22,9 @@ export function createApp(): express.Express {
   );
   app.use(
     cors({
-      origin: corsOrigins.length > 0 ? corsOrigins : env.isProduction ? false : true,
+      origin: (origin, callback) => {
+        callback(null, isCorsOriginAllowed(origin));
+      },
       credentials: true
     })
   );

@@ -7,6 +7,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(10000),
   DATABASE_URL: z.string().url().optional(),
   CORS_ORIGIN: z.string().optional(),
+  CORS_ALLOW_LOOPBACK: z
+    .string()
+    .optional()
+    .transform((value) => ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase())),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(50).default(10),
   SESSION_SECRET: z.string().optional(),
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(365).default(30),
@@ -70,4 +74,38 @@ export function getCorsOrigins(): string[] {
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+}
+
+export function isCorsOriginAllowed(
+  origin: string | undefined,
+  {
+    allowLoopback = env.CORS_ALLOW_LOOPBACK,
+    configuredOrigins = getCorsOrigins(),
+    isProduction = env.isProduction
+  }: {
+    allowLoopback?: boolean;
+    configuredOrigins?: string[];
+    isProduction?: boolean;
+  } = {}
+): boolean {
+  if (!origin) return true;
+  if (configuredOrigins.includes(origin)) return true;
+  if (allowLoopback && isLoopbackOrigin(origin)) return true;
+  return configuredOrigins.length === 0 && !isProduction;
+}
+
+function isLoopbackOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname.toLowerCase();
+
+    return ["http:", "https:"].includes(url.protocol) && (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname === "[::1]"
+    );
+  } catch {
+    return false;
+  }
 }

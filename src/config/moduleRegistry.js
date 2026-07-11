@@ -1,5 +1,6 @@
 import {
   Building2,
+  CalendarX2,
   Globe2,
   Handshake,
   Languages,
@@ -96,6 +97,21 @@ export const guildOpsModules = Object.freeze([
     complexity: MODULE_COMPLEXITY.core,
     dependencies: [],
     icon: UserRound,
+  },
+  {
+    id: "absences",
+    label: "Absences",
+    navLabel: "Absences",
+    mobileLabel: "Abs.",
+    description: "Dates d'absence, durée et motif déclarés par les membres.",
+    benefit: "Savoir qui sera indisponible plusieurs jours et anticiper les wars, events ou relais internes.",
+    route: "/app/absences",
+    view: "absences",
+    permissionKeys: [],
+    defaultEnabled: true,
+    complexity: MODULE_COMPLEXITY.simple,
+    dependencies: ["member_space"],
+    icon: CalendarX2,
   },
   {
     id: "wars_events",
@@ -258,6 +274,7 @@ export const guildOpsModuleById = Object.freeze(
 export const administrationModuleIds = Object.freeze([
   "site",
   "membership_requests",
+  "absences",
   "wars_events",
   "bank",
   "diplomacy",
@@ -268,7 +285,7 @@ export const defaultEnabledModuleIds = Object.freeze(
   guildOpsModules.filter((module) => module.defaultEnabled).map((module) => module.id),
 );
 
-const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "messages", "administration"]);
+const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "absences", "messages", "administration"]);
 
 export function getDefaultEnabledModuleIds() {
   return [...defaultEnabledModuleIds];

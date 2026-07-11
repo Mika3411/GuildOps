@@ -18,6 +18,10 @@ import {
   getRealmPlaceholderForGame,
   normalizeRealmCodeForGame
 } from "../../../config/guildOpsConfig.js";
+import {
+  formatAuthError,
+  getAuthErrorDetails
+} from "../../../lib/authErrors.js";
 import { PasswordInput } from "../../shared/PasswordInput.jsx";
 
 const emailVerificationRequests = new Map();
@@ -47,7 +51,7 @@ export function AuthGate({ authSession, initialMode = "login" }) {
     organizationName: "",
     password: "",
   });
-  const [error, setError] = useState(authSession.error || "");
+  const [error, setError] = useState(() => (authSession.status === "error" ? "" : formatAuthError(authSession.error || "")));
   const [notice, setNotice] = useState("");
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -106,7 +110,10 @@ export function AuthGate({ authSession, initialMode = "login" }) {
         setVerificationUrl(details.verificationUrl || "");
         setMode("login");
       } else {
-        setError(submitError?.message || "Authentification impossible.");
+        if (getAuthErrorDetails(submitError).reason === "EMAIL_ALREADY_EXISTS") {
+          setPendingVerificationEmail(form.email);
+        }
+        setError(formatAuthError(submitError, { action: isRegister ? "register" : "login" }));
       }
     } finally {
       setSubmitting(false);

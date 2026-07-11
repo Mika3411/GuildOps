@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getRuntimeConfigurationStatus } from "../config/env.js";
 import { database, query, withClient } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
-import { BadRequestError, ConfigurationError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "../http/errors.js";
+import { BadRequestError, ConfigurationError, ConflictError, ForbiddenError, TooManyRequestsError, UnauthorizedError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
 import {
   isTransactionalEmailConfigured,
@@ -96,6 +96,48 @@ authRouter.post(
     const body = req.body as z.infer<typeof registerBodySchema>;
     assertAuthRuntimeReady();
     throwIfRateLimited(res, (await consumeAuthRateLimit("register", req, body.email)).hit);
+
+    const existingUserResult = await query<UserRow>(
+      `
+        SELECT id::text, email::text, display_name, preferred_language, global_role, email_verified_at
+        FROM users
+        WHERE email = $1
+          AND disabled_at IS NULL
+        LIMIT 1
+      `,
+      [body.email]
+    );
+    const existingUser = existingUserResult.rows[0];
+
+    if (existingUser) {
+      if (!existingUser.email_verified_at) {
+        const verificationToken = await withClient(async (client) => createEmailVerificationToken(client, existingUser.id));
+        const { verificationUrl } = await sendEmailVerification({
+          displayName: existingUser.display_name,
+          email: existingUser.email,
+          token: verificationToken.token
+        });
+        const manualVerification = !isTransactionalEmailConfigured();
+
+        res.status(202).json({
+          status: "verification_required",
+          message: manualVerification
+            ? "Ce compte existe déjà. Utilisez le lien de validation affiché."
+            : "Ce compte existe déjà. Un nouveau lien de validation vient d'être envoyé.",
+          email: existingUser.email,
+          user: toPublicUser(existingUser),
+          verificationExpiresAt: verificationToken.expiresAt.toISOString(),
+          ...(manualVerification || process.env.NODE_ENV !== "production" ? { verificationUrl } : {})
+        });
+        return;
+      }
+
+      throw new ConflictError("Un compte existe déjà avec cet email. Connecte-toi pour continuer.", {
+        email: existingUser.email,
+        emailVerified: true,
+        reason: "EMAIL_ALREADY_EXISTS"
+      });
+    }
 
     const passwordHash = await hashPassword(body.password);
     const organizationName = body.organizationName ?? `${body.displayName} GuildOps`;

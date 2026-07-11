@@ -106,8 +106,17 @@ function normalizeError(error: unknown): AppError {
 
   if (isRecord(error) && typeof error.code === "string") {
     if (error.code === "23505") {
+      const constraint = typeof error.constraint === "string" ? error.constraint : "";
+
+      if (constraint === "users_email_key") {
+        return new ConflictError("Un compte existe déjà avec cet email. Connecte-toi pour continuer.", {
+          constraint,
+          reason: "EMAIL_ALREADY_EXISTS"
+        });
+      }
+
       return new ConflictError("A resource with these unique values already exists", {
-        constraint: error.constraint
+        constraint
       });
     }
 

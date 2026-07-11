@@ -7,6 +7,7 @@ import {
 } from "./routeUtils.js";
 
 export function buildGuildOpsControllerProps({
+  absenceController,
   activeGuilds,
   activeView,
   administrationAccess,
@@ -260,11 +261,16 @@ export function buildGuildOpsControllerProps({
     viewRouterProps: {
       activeView,
       administrationAccess,
+      absenceDraft: absenceController.absenceDraft,
+      absenceError: absenceController.absenceError,
+      absenceSummary: absenceController.absenceSummary,
+      absences: absenceController.absences,
       authSession,
       currentUser,
       enabledModuleIds,
       moduleUpdateError,
       purchasedDesignIds,
+      onDeleteAbsence: absenceController.deleteAbsence,
       onDisableModule: disableGuildOpsModule,
       onEnableModule: enableGuildOpsModule,
       onPurchaseTemplate: purchaseTemplateDesign,
@@ -283,6 +289,7 @@ export function buildGuildOpsControllerProps({
       onBlockMembershipRequest: blockMembershipRequest,
       onRefuseMembershipRequest: refuseMembershipRequest,
       onRotateInviteLink: rotateInviteLink,
+      onSubmitAbsence: absenceController.submitAbsence,
       onUnblockGuildMember: unblockGuildMember,
       rotatingInviteLink,
       selfStatus: eventsController.selfStatus,
@@ -393,6 +400,7 @@ export function buildGuildOpsControllerProps({
       setBankCommand: bankController.setBankCommand,
       siteDraft,
       setSiteDraft,
+      setAbsenceDraft: absenceController.setAbsenceDraft,
       publishGuildSite,
       publishingSite,
       sitePublishError,

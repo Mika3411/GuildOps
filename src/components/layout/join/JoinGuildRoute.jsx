@@ -16,6 +16,10 @@ import {
   guildOpsApi
 } from "../../../lib/guildOpsApi.js";
 import {
+  formatAuthError,
+  getAuthErrorDetails
+} from "../../../lib/authErrors.js";
+import {
   createGuildSiteDraft,
   getMemberInviteToken,
   loadPublishedSite,
@@ -42,7 +46,7 @@ export function JoinGuildRoute({
     email: "",
     password: "",
   });
-  const [error, setError] = useState(authSession.error || "");
+  const [error, setError] = useState(() => formatAuthError(authSession.error || ""));
   const [joined, setJoined] = useState(false);
   const [nickname, setNickname] = useState(authSession.user?.displayName || "");
   const [notice, setNotice] = useState("");
@@ -159,7 +163,11 @@ export function JoinGuildRoute({
         setVerificationUrl(details.verificationUrl || "");
         setAuthMode("login");
       } else {
-        setError(submitError?.message || "Authentification impossible.");
+        if (getAuthErrorDetails(submitError).reason === "EMAIL_ALREADY_EXISTS") {
+          setPendingVerificationEmail(authForm.email);
+          setAuthMode("login");
+        }
+        setError(formatAuthError(submitError, { action: isRegister ? "register" : "login" }));
       }
     } finally {
       setSubmitting(false);
