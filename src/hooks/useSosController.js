@@ -6,6 +6,9 @@ import {
   guildOpsApi
 } from "../lib/guildOpsApi.js";
 import {
+  can
+} from "../lib/rbac.js";
+import {
   getApiGuildId,
   getSosAckLabel,
   isUuid,
@@ -17,22 +20,36 @@ import {
   upsertSosAlert
 } from "../lib/guildOpsTransforms.js";
 
-export function useSosController({ apiEnabled, currentUser, selectedGuild, guildOpsData, currentMemberId, moduleEnabled = true }) {
-  const [sosAlerts, setSosAlerts] = useState(() => (moduleEnabled ? guildOpsData.sosAlerts : []));
+export function useSosController({
+  apiEnabled,
+  currentUser,
+  selectedGuild,
+  guildOpsData,
+  currentMemberId,
+  moduleAuthorized = true,
+  moduleEnabled = true
+}) {
+  const sosActive = moduleEnabled && moduleAuthorized;
+  const [sosAlerts, setSosAlerts] = useState(() => (sosActive ? guildOpsData.sosAlerts : []));
   const [sosForm, setSosForm] = useState(() => guildOpsData.sosForm);
-  const [sosRealtimeStatus, setSosRealtimeStatus] = useState(apiEnabled ? "Connexion..." : "API requise");
+  const [sosRealtimeStatus, setSosRealtimeStatus] = useState(() => getSosInactiveStatus({ apiEnabled, moduleAuthorized, moduleEnabled }));
   const [sosError, setSosError] = useState("");
 
   useEffect(() => {
-    setSosAlerts(moduleEnabled ? guildOpsData.sosAlerts : []);
+    setSosAlerts(sosActive ? guildOpsData.sosAlerts : []);
     setSosForm(guildOpsData.sosForm);
-  }, [guildOpsData, moduleEnabled]);
+  }, [guildOpsData, sosActive]);
 
   useEffect(() => {
     const guildId = getApiGuildId(selectedGuild);
 
-    if (!moduleEnabled || !apiEnabled || !guildId) {
-      setSosRealtimeStatus(moduleEnabled ? "API requise" : "Désactivé");
+    if (!sosActive) {
+      setSosRealtimeStatus(getSosInactiveStatus({ apiEnabled, moduleAuthorized, moduleEnabled }));
+      return undefined;
+    }
+
+    if (!apiEnabled || !guildId) {
+      setSosRealtimeStatus("API requise");
       return undefined;
     }
 
@@ -88,10 +105,14 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
       controller.abort();
       stream?.close();
     };
-  }, [apiEnabled, moduleEnabled, selectedGuild]);
+  }, [apiEnabled, moduleAuthorized, moduleEnabled, selectedGuild, sosActive]);
 
   async function sendSos() {
     if (!moduleEnabled) return;
+    if (!moduleAuthorized || !can(currentUser, "send_sos")) {
+      setSosError("Module SOS réservé aux membres autorisés.");
+      return;
+    }
 
     const attackType = String(sosForm.type || "Rallye").trim() || "Rallye";
     const callKind = normalizeSosCallKind(sosForm.callKind);
@@ -132,6 +153,11 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
 
   async function acknowledgeSos(alertId, response) {
     if (!moduleEnabled) return;
+    if (!moduleAuthorized || !can(currentUser, "send_sos")) {
+      setSosError("Module SOS réservé aux membres autorisés.");
+      return;
+    }
+
     const guildId = getApiGuildId(selectedGuild);
     const acknowledgement = {
       memberId: currentMemberId,
@@ -175,4 +201,10 @@ export function useSosController({ apiEnabled, currentUser, selectedGuild, guild
     sosForm,
     sosRealtimeStatus,
   };
+}
+
+function getSosInactiveStatus({ apiEnabled, moduleAuthorized, moduleEnabled }) {
+  if (!moduleEnabled) return "Désactivé";
+  if (!moduleAuthorized) return "Non autorisé";
+  return apiEnabled ? "Connexion..." : "API requise";
 }

@@ -298,15 +298,25 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
     onPurchaseTemplate?.(selectedProduct.designId);
   }
 
+  function configureFirstOffer() {
+    const firstTemplate = SHOP_PRODUCTS.find((product) => product.designId && product.status === "Actif") || SHOP_PRODUCTS[0];
+
+    setActiveCategory(firstTemplate.type);
+    setSelectedProductId(firstTemplate.id);
+    window.requestAnimationFrame(() => {
+      document.querySelector(".shop-editor-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   return (
     <>
     <div className="page-grid shop-page">
       <section className="panel wide-panel shop-hero-panel">
-        <PanelHeader icon={ShoppingBag} title="Boutique" meta={`${activeCount}/${SHOP_PRODUCTS.length} offres disponibles`} />
+        <PanelHeader icon={ShoppingBag} title="Offres premium" meta={`${activeCount}/${SHOP_PRODUCTS.length} offres disponibles`} />
         <div className="shop-hero-grid">
           <div className="shop-hero-copy">
             <span>Templates premium, images, emojis</span>
-            <h1>Donne à ta guilde un look qui donne envie de la rejoindre.</h1>
+            <h2>Donne à ta guilde un look qui donne envie de la rejoindre.</h2>
             <p>Tes templates, images et emojis se déverrouillent dans le builder et restent disponibles dans tes propositions de design.</p>
             <div className="shop-actions">
               <button className="primary-action" type="button" onClick={() => setActiveCategory("template")}>
@@ -319,13 +329,29 @@ export function ShopView({ currentUser, onPurchaseTemplate, onUseTemplate, purch
               </button>
             </div>
           </div>
-          <div className="shop-payment-state">
+          <div className={`shop-payment-state ${purchasedDesignIds.length ? "" : "is-empty"}`.trim()}>
             <CreditCard size={22} />
-            <span>
-              Déverrouillage builder
-              <strong>{purchasedDesignIds.length} template{purchasedDesignIds.length > 1 ? "s" : ""} disponible{purchasedDesignIds.length > 1 ? "s" : ""}</strong>
-            </span>
-            <small>Choisis un template premium, déverrouille-le, puis applique-le directement dans ton builder.</small>
+            {purchasedDesignIds.length ? (
+              <>
+                <span>
+                  Déverrouillage builder
+                  <strong>{purchasedDesignIds.length} template{purchasedDesignIds.length > 1 ? "s" : ""} disponible{purchasedDesignIds.length > 1 ? "s" : ""}</strong>
+                </span>
+                <small>Choisis un template premium, déverrouille-le, puis applique-le directement dans ton builder.</small>
+              </>
+            ) : (
+              <>
+                <span>
+                  Aucune offre configurée
+                  <strong>La boutique est prête à démarrer</strong>
+                </span>
+                <small>C'est normal pour une nouvelle guilde: aucun template ou pack n'a encore été choisi. Configure une première offre pour l'ajouter au builder.</small>
+                <button className="primary-action empty-card-action" type="button" onClick={configureFirstOffer}>
+                  <ShoppingBag size={16} />
+                  Configurer une offre
+                </button>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -517,7 +543,7 @@ function ShopTemplatePreview({ expanded = false, onExpand, product }) {
       className={`shop-offer-preview shop-template-window ${expanded ? "is-expanded" : ""} ${onExpand ? "is-clickable" : ""}`.trim()}
     >
       <div aria-hidden="true" className="shop-template-scaler" inert={true}>
-        <GuildSitePreview members={[]} siteDraft={previewDraft} />
+        <GuildSitePreview heroTitleTag="h2" members={[]} siteDraft={previewDraft} />
       </div>
       {onExpand ? <ShopPreviewOpenButton product={product} onExpand={onExpand} /> : null}
     </div>

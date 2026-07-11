@@ -61,7 +61,7 @@ export async function assertGuildAccess(
       LEFT JOIN guild_members gm
         ON gm.guild_id = g.id
        AND gm.user_id = om.user_id
-       AND gm.status <> 'banned'
+       AND gm.status NOT IN ('banned', 'left')
       WHERE g.id = $1
         AND om.user_id = $2
         AND g.deleted_at IS NULL

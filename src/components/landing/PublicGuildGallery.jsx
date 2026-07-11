@@ -9,10 +9,12 @@ import {
   Globe2,
   Languages,
   Mail,
+  Menu,
   Search,
   Server,
   Shield,
-  Users
+  Users,
+  X
 } from "lucide-react";
 import {
   isApiConfigured
@@ -142,6 +144,7 @@ const WORLD_LANGUAGE_OPTIONS = Object.freeze(
   }),
 );
 const WORLD_LANGUAGE_LABELS = new Map(WORLD_LANGUAGE_OPTIONS.map((option) => [option.code, option.label]));
+const GALLERY_SEARCH_LABEL = "Rechercher une guilde, un serveur ou une langue";
 
 function normalizeLanguageCode(value) {
   return String(value || "").trim().toUpperCase();
@@ -227,6 +230,8 @@ export function PublicGuildGallery({ onNavigate }) {
   });
   const [languageSearch, setLanguageSearch] = useState("");
   const [languagePickerOpen, setLanguagePickerOpen] = useState(false);
+  const [showUnavailableLanguages, setShowUnavailableLanguages] = useState(false);
+  const [galleryMenuOpen, setGalleryMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!isApiConfigured()) return undefined;
@@ -273,19 +278,23 @@ export function PublicGuildGallery({ onNavigate }) {
       ),
     [guildsForLanguageOptions],
   );
-  const languageOptions = useMemo(() => {
-    const query = languageSearch.trim().toLowerCase();
+  const languageSearchQuery = languageSearch.trim().toLowerCase();
+  const availableLanguageOptions = useMemo(
+    () =>
+      WORLD_LANGUAGE_OPTIONS.filter(
+        (option) => availableLanguageCodes.has(option.code) && (!languageSearchQuery || option.search.includes(languageSearchQuery)),
+      ).sort((first, second) => first.label.localeCompare(second.label, "fr")),
+    [availableLanguageCodes, languageSearchQuery],
+  );
+  const unavailableLanguageOptions = useMemo(() => {
+    if (!languageSearchQuery && !showUnavailableLanguages) return [];
 
-    return WORLD_LANGUAGE_OPTIONS.filter((option) => !query || option.search.includes(query)).sort((first, second) => {
-      if (!query) {
-        const firstAvailable = availableLanguageCodes.has(first.code);
-        const secondAvailable = availableLanguageCodes.has(second.code);
-        if (firstAvailable !== secondAvailable) return firstAvailable ? -1 : 1;
-      }
-
-      return first.label.localeCompare(second.label, "fr");
-    });
-  }, [availableLanguageCodes, languageSearch]);
+    return WORLD_LANGUAGE_OPTIONS.filter(
+      (option) => !availableLanguageCodes.has(option.code) && (!languageSearchQuery || option.search.includes(languageSearchQuery)),
+    ).sort((first, second) => first.label.localeCompare(second.label, "fr"));
+  }, [availableLanguageCodes, languageSearchQuery, showUnavailableLanguages]);
+  const hiddenLanguageCount = Math.max(WORLD_LANGUAGE_OPTIONS.length - availableLanguageCodes.size, 0);
+  const showUnavailableLanguageDisclosure = !languageSearchQuery && !showUnavailableLanguages && hiddenLanguageCount > 0;
   const selectedLanguageLabel = filters.language ? getLanguageLabel(filters.language) : "Toutes les langues";
   const filteredGuilds = useMemo(() => {
     const query = filters.query.trim().toLowerCase();
@@ -308,6 +317,7 @@ export function PublicGuildGallery({ onNavigate }) {
   function updateFilter(key, value) {
     if (key === "game") {
       setLanguageSearch("");
+      setShowUnavailableLanguages(false);
       setLanguagePickerOpen(false);
       setFilters((current) => ({
         ...current,
@@ -320,6 +330,7 @@ export function PublicGuildGallery({ onNavigate }) {
 
     if (key === "server") {
       setLanguageSearch("");
+      setShowUnavailableLanguages(false);
       setLanguagePickerOpen(false);
       setFilters((current) => ({
         ...current,
@@ -338,11 +349,13 @@ export function PublicGuildGallery({ onNavigate }) {
   function selectLanguage(value) {
     updateFilter("language", value);
     setLanguageSearch("");
+    setShowUnavailableLanguages(false);
     setLanguagePickerOpen(false);
   }
 
   function resetFilters() {
     setLanguageSearch("");
+    setShowUnavailableLanguages(false);
     setLanguagePickerOpen(false);
     setFilters({
       game: "",
@@ -350,6 +363,11 @@ export function PublicGuildGallery({ onNavigate }) {
       query: "",
       server: "",
     });
+  }
+
+  function useGalleryMobileNav(callback) {
+    setGalleryMenuOpen(false);
+    callback();
   }
 
   return (
@@ -372,6 +390,30 @@ export function PublicGuildGallery({ onNavigate }) {
         <button className="landing-button primary nav-cta" type="button" onClick={() => onNavigate?.("/app")}>
           Publier
         </button>
+        <button
+          className="landing-mobile-menu-toggle"
+          type="button"
+          aria-controls="gallery-mobile-menu"
+          aria-expanded={galleryMenuOpen}
+          aria-label={galleryMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          title={galleryMenuOpen ? "Fermer le menu" : "Menu"}
+          onClick={() => setGalleryMenuOpen((isOpen) => !isOpen)}
+        >
+          {galleryMenuOpen ? <X size={21} /> : <Menu size={21} />}
+        </button>
+        {galleryMenuOpen ? (
+          <div className="landing-mobile-menu" id="gallery-mobile-menu">
+            <button type="button" onClick={() => useGalleryMobileNav(() => onNavigate?.("/"))}>
+              Accueil
+            </button>
+            <button type="button" onClick={() => useGalleryMobileNav(resetFilters)}>
+              Toutes les guildes
+            </button>
+            <button className="is-primary" type="button" onClick={() => useGalleryMobileNav(() => onNavigate?.("/app"))}>
+              Publier
+            </button>
+          </div>
+        ) : null}
       </header>
 
       <section className="guild-gallery-hero">
@@ -390,7 +432,7 @@ export function PublicGuildGallery({ onNavigate }) {
           </div>
           <div>
             <dt>Langues</dt>
-            <dd>{WORLD_LANGUAGE_OPTIONS.length}</dd>
+            <dd>{availableLanguageCodes.size}</dd>
           </div>
         </dl>
       </section>
@@ -399,14 +441,15 @@ export function PublicGuildGallery({ onNavigate }) {
         <label className="gallery-search">
           <Search size={17} />
           <input
+            aria-label={GALLERY_SEARCH_LABEL}
             value={filters.query}
-            placeholder="Rechercher une guilde, un serveur, une langue..."
+            placeholder="Guilde, serveur, langue"
             onChange={(event) => updateFilter("query", event.target.value)}
           />
         </label>
         <label>
           <Gamepad2 size={17} />
-          <select value={filters.game} onChange={(event) => updateFilter("game", event.target.value)}>
+          <select aria-label="Filtrer par jeu" value={filters.game} onChange={(event) => updateFilter("game", event.target.value)}>
             <option value="">Tous les jeux</option>
             {games.map((game) => (
               <option key={game} value={game}>
@@ -417,7 +460,7 @@ export function PublicGuildGallery({ onNavigate }) {
         </label>
         <label>
           <Server size={17} />
-          <select value={filters.server} onChange={(event) => updateFilter("server", event.target.value)}>
+          <select aria-label="Filtrer par serveur" value={filters.server} onChange={(event) => updateFilter("server", event.target.value)}>
             <option value="">Tous les serveurs</option>
             {servers.map((server) => (
               <option key={server} value={server}>
@@ -440,6 +483,7 @@ export function PublicGuildGallery({ onNavigate }) {
             aria-haspopup="listbox"
             onClick={() => {
               setLanguageSearch("");
+              setShowUnavailableLanguages(false);
               setLanguagePickerOpen((isOpen) => !isOpen);
             }}
           >
@@ -450,9 +494,9 @@ export function PublicGuildGallery({ onNavigate }) {
               <div className="gallery-language-search">
                 <Search size={15} />
                 <input
+                  aria-label="Rechercher une langue"
                   value={languageSearch}
-                  placeholder="Rechercher une langue"
-                  autoFocus
+                  placeholder="Nom ou code"
                   onChange={(event) => setLanguageSearch(event.target.value)}
                 />
               </div>
@@ -466,7 +510,12 @@ export function PublicGuildGallery({ onNavigate }) {
                 >
                   Toutes les langues
                 </button>
-                {languageOptions.map((option) => (
+                {availableLanguageOptions.length ? (
+                  <p className="gallery-language-heading" role="presentation">
+                    Langues disponibles
+                  </p>
+                ) : null}
+                {availableLanguageOptions.map((option) => (
                   <button
                     type="button"
                     className={`gallery-language-option${filters.language === option.code ? " is-selected" : ""}`}
@@ -478,10 +527,32 @@ export function PublicGuildGallery({ onNavigate }) {
                     {option.label}
                   </button>
                 ))}
-                {languageOptions.length ? null : (
+                {unavailableLanguageOptions.length ? (
+                  <p className="gallery-language-heading is-muted" role="presentation">
+                    {languageSearchQuery ? "Autres langues" : "Langues sans guilde visible"}
+                  </p>
+                ) : null}
+                {unavailableLanguageOptions.map((option) => (
+                  <button
+                    type="button"
+                    className={`gallery-language-option is-unavailable${filters.language === option.code ? " is-selected" : ""}`}
+                    key={option.code}
+                    role="option"
+                    aria-selected={filters.language === option.code}
+                    onClick={() => selectLanguage(option.code)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+                {availableLanguageOptions.length || unavailableLanguageOptions.length ? null : (
                   <p className="gallery-language-empty">Aucune langue trouvée</p>
                 )}
               </div>
+              {showUnavailableLanguageDisclosure ? (
+                <button className="gallery-language-disclosure" type="button" onClick={() => setShowUnavailableLanguages(true)}>
+                  Afficher {hiddenLanguageCount} autres langues
+                </button>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -518,6 +589,7 @@ export function PublicGuildGallery({ onNavigate }) {
                         <div className="gallery-card-grid">
                           {languageGroup.guilds.map((guild) => (
                             <a
+                              aria-label={`Ouvrir la guilde ${guild.name}, ${guild.game}, serveur ${guild.server}, langue ${getLanguageLabel(guild.language)}`}
                               className="gallery-guild-card"
                               href={guild.url}
                               key={guild.id}
@@ -529,8 +601,8 @@ export function PublicGuildGallery({ onNavigate }) {
                                 aria-hidden="true"
                               />
                               <span className="gallery-guild-copy">
-                                <strong>{guild.name}</strong>
-                                <small>{guild.playStyle}</small>
+                                <strong title={guild.name}>{guild.name}</strong>
+                                <small title={guild.playStyle}>{guild.playStyle}</small>
                               </span>
                               <em className="gallery-guild-meta">
                                 <Users size={14} />
@@ -540,7 +612,11 @@ export function PublicGuildGallery({ onNavigate }) {
                                 <Mail size={14} />
                                 {guild.unreadCount}
                               </span>
-                              <ArrowRight className="gallery-card-arrow" size={17} />
+                              <span className="gallery-guild-action" aria-hidden="true">
+                                Voir la guilde
+                                <ArrowRight size={15} />
+                              </span>
+                              <ArrowRight className="gallery-card-arrow" size={17} aria-hidden="true" />
                             </a>
                           ))}
                         </div>

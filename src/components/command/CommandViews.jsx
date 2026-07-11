@@ -20,6 +20,7 @@ import {
   Info,
   LayoutDashboard,
   Lock,
+  LogOut,
   Mail,
   MessageSquare,
   Palette,
@@ -172,7 +173,6 @@ const SOS_CALL_OPTIONS = Object.freeze([
     id: "defense",
     label: "Défense",
     actionLabel: "Envoyer appel défense",
-    readyLabel: "Défense prête",
     title: "Appel défense",
     icon: ShieldAlert,
   },
@@ -180,7 +180,6 @@ const SOS_CALL_OPTIONS = Object.freeze([
     id: "attack",
     label: "Attaque",
     actionLabel: "Envoyer appel attaque",
-    readyLabel: "Attaque prête",
     title: "Appel attaque",
     icon: Swords,
   },
@@ -189,14 +188,6 @@ const SOS_CALL_OPTIONS = Object.freeze([
 function getSosCallConfig(value) {
   const callKind = normalizeSosCallKind(value);
   return SOS_CALL_OPTIONS.find((option) => option.id === callKind) || SOS_CALL_OPTIONS[0];
-}
-
-function getSosFallbackMessage(callKind, attackType, targetLabel) {
-  if (normalizeSosCallKind(callKind) === "attack") {
-    return `${attackType} lancé sur ${targetLabel}. Rejoignez l'attaque maintenant.`;
-  }
-
-  return `${attackType} en cours sur ${targetLabel}. Besoin de renforts immédiats.`;
 }
 
 const HIDDEN_PUBLIC_MEMBER_STATUSES = new Set(["banned", "left"]);
@@ -237,6 +228,17 @@ const MODULE_FORCED_SITE_SECTION_IDS = Object.freeze({
   diplomacy: "diplomacy",
   forum: "forum",
 });
+const MEMBER_ONLY_PUBLIC_SECTION_KEYS = new Set(["membership", "wars", "bank"]);
+
+function isMemberOnlyPublicSection(sectionKey) {
+  return MEMBER_ONLY_PUBLIC_SECTION_KEYS.has(sectionKey);
+}
+
+function getViewerVisiblePublicSections(sections = [], isCurrentMember = false) {
+  if (isCurrentMember) return sections;
+
+  return sections.filter((section) => !isMemberOnlyPublicSection(section.key));
+}
 
 function getPublicVisibleSiteSections(siteDraft = {}, enabledModuleIds = []) {
   const enabledSet = new Set([...(enabledModuleIds || []), ...(siteDraft.enabledModules || [])]);
@@ -537,6 +539,16 @@ function savePublicMemberProfile(slug, profile) {
   return normalized;
 }
 
+function clearPublicMemberProfile(slug) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.removeItem(getPublicMemberProfileStorageKey(slug));
+  } catch {
+    // Best effort: leaving the guild must not fail because storage is unavailable.
+  }
+}
+
 function getPublicMemberProfileInitials(name) {
   const words = String(name || "Membre").trim().split(/\s+/).filter(Boolean);
   return (words[0]?.[0] || "M") + (words[1]?.[0] || "");
@@ -664,11 +676,29 @@ function isActivePublicMemberStatus(value) {
   return !["banned", "blocked", "refused", "rejected", "inactive"].includes(status);
 }
 
+function hasPublicGuildMembership(guild = {}) {
+  const status = normalizePublicIdentity(guild.status || guild.membershipStatus || guild.memberStatus || guild.member_status);
+  if (["banned", "blocked", "refused", "rejected", "inactive"].includes(status)) return false;
+
+  const memberId =
+    guild.memberId ||
+    guild.member_id ||
+    guild.guildMemberId ||
+    guild.guild_member_id ||
+    guild.membershipId ||
+    guild.membership_id ||
+    guild.membership?.id ||
+    guild.membership?.memberId ||
+    guild.membership?.member_id;
+
+  return Boolean(memberId || ["active", "joined", "member", "membre"].includes(status));
+}
+
 function isCurrentUserListedAsPublicMember(currentUser = {}, members = []) {
   const userId = String(currentUser.id || currentUser.userId || "").trim();
   const localUserId = userId ? `local-${userId}` : "";
   const userEmail = normalizePublicIdentity(currentUser.email);
-  const userDisplayName = normalizePublicIdentity(currentUser.displayName || currentUser.nickname);
+  const userDisplayName = isApiConfigured() ? "" : normalizePublicIdentity(currentUser.displayName || currentUser.nickname);
 
   if (!userId && !userEmail && !userDisplayName) return false;
 
@@ -686,15 +716,59 @@ function isCurrentUserListedAsPublicMember(currentUser = {}, members = []) {
   });
 }
 
+function isPublicMemberLinkedToCurrentUser(member = {}, currentUser = {}) {
+  const userId = String(currentUser.id || currentUser.userId || "").trim();
+  const localUserId = userId ? `local-${userId}` : "";
+  const memberIds = getPublicMemberIdentityValues(member);
+
+  if (userId && memberIds.some((id) => id === userId || id === localUserId)) return true;
+
+  const userEmail = normalizePublicIdentity(currentUser.email);
+  const memberEmail = normalizePublicIdentity(member.email || member.user?.email);
+
+  if (userEmail && memberEmail === userEmail) return true;
+
+  const userDisplayName = normalizePublicIdentity(currentUser.displayName || currentUser.nickname);
+  const memberName = normalizePublicIdentity(getPublicMemberName(member));
+  return Boolean(userDisplayName && memberName && memberName === userDisplayName);
+}
+
+function markLocalPublicGuildMembershipLeft(site = {}, currentUser = {}) {
+  const members = Array.isArray(site.members) ? site.members : [];
+  let matched = false;
+  const nextMembers = members.map((member) => {
+    if (!isPublicMemberLinkedToCurrentUser(member, currentUser)) return member;
+
+    matched = true;
+    return {
+      ...member,
+      status: "left",
+      leftAt: new Date().toISOString(),
+    };
+  });
+
+  if (!matched) {
+    throw new Error("Membre introuvable pour cette guilde.");
+  }
+
+  return savePublishedSite({
+    ...site,
+    members: nextMembers,
+  });
+}
+
 function isCurrentUserInPublicGuild(currentUser = {}, guilds = [], publicSlug = "", siteDraft = {}) {
-  if (!currentUser.id && !currentUser.email && !currentUser.displayName) return false;
+  return Boolean(getCurrentUserPublicGuild({ currentUser, guilds, publicSlug, siteDraft }));
+}
+
+function getCurrentUserPublicGuild({ currentUser = {}, guilds = [], publicSlug = "", siteDraft = {} } = {}) {
+  if (!currentUser.id && !currentUser.email && !currentUser.displayName) return null;
 
   const normalizedPublicSlug = slugify(publicSlug || siteDraft.slug || siteDraft.publicSlug || siteDraft.guildName);
-  if (!normalizedPublicSlug) return false;
+  if (!normalizedPublicSlug) return null;
 
-  return guilds.some((guild) => {
-    const status = normalizePublicIdentity(guild.status || guild.membershipStatus);
-    if (["banned", "blocked", "refused", "rejected"].includes(status)) return false;
+  return guilds.find((guild) => {
+    if (!hasPublicGuildMembership(guild)) return false;
 
     const guildSlugs = [
       guild.slug,
@@ -710,7 +784,7 @@ function isCurrentUserInPublicGuild(currentUser = {}, guilds = [], publicSlug = 
       .map((value) => slugify(value));
 
     return guildSlugs.includes(normalizedPublicSlug);
-  });
+  }) || null;
 }
 
 function isCurrentPublicGuildMember({ currentUser = {}, guilds = [], members = [], publicSlug = "", siteDraft = {} } = {}) {
@@ -814,10 +888,12 @@ export function PublicGuildRoute({
   publicDiplomacy,
   publicForum,
   routeSegment = "",
+  onLeavePublicGuild,
   sendSos,
   setSosForm,
   slug,
   sosAlerts,
+  sosAuthorized = false,
   sosError,
   sosForm,
   sosRealtimeStatus,
@@ -871,6 +947,34 @@ export function PublicGuildRoute({
     return () => controller.abort();
   }, [slug]);
 
+  async function leavePublicGuild() {
+    if (!isApiConfigured()) {
+      const nextSite = markLocalPublicGuildMembershipLeft(state.site, currentUser);
+      clearPublicMemberProfile(slug);
+      setState({ error: "", site: nextSite, status: "ready" });
+      return { site: nextSite, status: "left" };
+    }
+
+    if (!onLeavePublicGuild) {
+      throw new Error("Sortie de guilde indisponible.");
+    }
+
+    const payload = await onLeavePublicGuild(slug);
+    clearPublicMemberProfile(slug);
+
+    try {
+      const refreshedPayload = await guildOpsApi.getPublicGuild(slug);
+      const sitePayload = refreshedPayload?.site || refreshedPayload?.guild || refreshedPayload;
+      const publicMembers = refreshedPayload?.members || sitePayload?.members || [];
+      const publishedSite = savePublishedSite({ ...sitePayload, members: publicMembers });
+      setState({ error: "", site: publishedSite, status: "ready" });
+    } catch {
+      setState((current) => ({ ...current, status: "ready" }));
+    }
+
+    return payload;
+  }
+
   if (state.status === "loading") {
     return (
       <main className="public-site-shell public-empty">
@@ -920,12 +1024,14 @@ export function PublicGuildRoute({
       moduleManagementProps={moduleManagementProps}
       onNavigatePublicRoute={onNavigatePublicRoute}
       onBackToBuilder={onBackToBuilder}
+      onLeavePublicGuild={leavePublicGuild}
       routeSegment={routeSegment}
       sendSos={sendSos}
       setSosForm={setSosForm}
       site={state.site}
       slug={slug}
       sosAlerts={sosAlerts}
+      sosAuthorized={sosAuthorized}
       sosError={sosError}
       sosForm={sosForm}
       sosRealtimeStatus={sosRealtimeStatus}
@@ -949,6 +1055,7 @@ export function PublicGuildSite({
   memberGuilds = [],
   moduleManagementProps = {},
   onBackToBuilder,
+  onLeavePublicGuild,
   onNavigatePublicRoute,
   routeSegment = "",
   sendSos,
@@ -956,6 +1063,7 @@ export function PublicGuildSite({
   site,
   slug,
   sosAlerts = [],
+  sosAuthorized = false,
   sosError = "",
   sosForm = {},
   sosRealtimeStatus = "API requise",
@@ -970,12 +1078,10 @@ export function PublicGuildSite({
   const publicSlug = slugify(slug || siteDraft.slug || siteDraft.guildName);
   const publicEnabledModuleIds = [...new Set([...(enabledModuleIds || []), ...(siteDraft.enabledModules || [])])];
   const visibleSections = getPublicVisibleSiteSections(siteDraft, publicEnabledModuleIds);
-  const visibleContentSections = visibleSections.filter((section) => section.key !== "publicChat");
   const showPublicSosPanel = isGuildOpsModuleEnabled("sos_attack", publicEnabledModuleIds);
   const sosPath = getPublicSiteRoutePath(publicSlug, "sos");
   const isSosRoute = routeSegment === "sos";
   const isMemberSpaceRoute = routeSegment === PUBLIC_MEMBER_SPACE_ROUTE;
-  const activeSection = isMemberSpaceRoute || isSosRoute ? null : getPublicSiteSectionFromRoute(routeSegment, visibleSections);
   const homePath = getPublicSiteRoutePath(publicSlug);
   const galleryPath = "/guildes";
   const chatPath = getPublicSiteRoutePath(publicSlug, "publicChat");
@@ -991,7 +1097,22 @@ export function PublicGuildSite({
     publicSlug,
     siteDraft,
   });
-  const canUsePublicSos = showPublicSosPanel && isCurrentMember;
+  const currentPublicGuild = getCurrentUserPublicGuild({
+    currentUser,
+    guilds: memberGuilds,
+    publicSlug,
+    siteDraft,
+  });
+  const viewerVisibleSections = getViewerVisiblePublicSections(visibleSections, isCurrentMember);
+  const visibleContentSections = viewerVisibleSections.filter((section) => section.key !== "publicChat");
+  const activeSection = isMemberSpaceRoute || isSosRoute ? null : getPublicSiteSectionFromRoute(routeSegment, visibleSections);
+  const activeSectionRequiresMembership = Boolean(
+    activeSection && !isCurrentMember && isMemberOnlyPublicSection(activeSection.key),
+  );
+  const canCurrentUserSendSos = currentPublicGuild
+    ? can(currentPublicGuild, "send_sos")
+    : sosAuthorized || (!isApiConfigured() && can(currentUser, "send_sos"));
+  const canUsePublicSos = showPublicSosPanel && isCurrentMember && canCurrentUserSendSos;
   const unreadMessageCount = Math.max(0, Number(unreadMessages) || 0);
   const publicDiplomacy = site?.publicDiplomacy || site?.public_diplomacy || fallbackPublicDiplomacy;
   const publicForum = site?.publicForum || site?.public_forum || siteDraft.publicForum || fallbackPublicForum;
@@ -1085,9 +1206,11 @@ export function PublicGuildSite({
               Devenir membre
             </a>
           ) : null}
-          <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
-            Espace membre
-          </a>
+          {isCurrentMember ? (
+            <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
+              Espace membre
+            </a>
+          ) : null}
         </div>
       </header>
       {!routeSegment ? (
@@ -1113,12 +1236,22 @@ export function PublicGuildSite({
           visibleSections={visibleContentSections}
         />
       ) : isMemberSpaceRoute ? (
-        <PublicMemberSpaceModule
-          homePath={homePath}
-          onNavigatePublicRoute={onNavigatePublicRoute}
-          publicSlug={publicSlug}
-          siteDraft={siteDraft}
-        />
+        isCurrentMember ? (
+          <PublicMemberSpaceModule
+            homePath={homePath}
+            onLeavePublicGuild={onLeavePublicGuild}
+            onNavigatePublicRoute={onNavigatePublicRoute}
+            publicSlug={publicSlug}
+            siteDraft={siteDraft}
+          />
+        ) : (
+          <PublicMemberAccessRequired
+            homePath={homePath}
+            memberRequestUrl={memberRequestUrl}
+            onNavigatePublicRoute={onNavigatePublicRoute}
+            siteDraft={siteDraft}
+          />
+        )
       ) : isSosRoute && canUsePublicSos ? (
         <PublicSosModule
           acknowledgeSos={acknowledgeSos}
@@ -1133,9 +1266,30 @@ export function PublicGuildSite({
           sosForm={sosForm}
           sosRealtimeStatus={sosRealtimeStatus}
         />
+      ) : isSosRoute && showPublicSosPanel ? (
+        <PublicMemberAccessRequired
+          homePath={homePath}
+          memberRequestUrl={isCurrentMember ? "" : memberRequestUrl}
+          message={
+            isCurrentMember
+              ? `Les alertes SOS de ${siteDraft.guildName} sont réservées aux membres autorisés.`
+              : `Les alertes SOS de ${siteDraft.guildName} sont réservées aux membres actifs.`
+          }
+          onNavigatePublicRoute={onNavigatePublicRoute}
+          title={isCurrentMember ? "SOS réservé aux membres autorisés" : "SOS réservé aux membres"}
+        />
+      ) : activeSectionRequiresMembership ? (
+        <PublicMemberAccessRequired
+          homePath={homePath}
+          memberRequestUrl={memberRequestUrl}
+          message={`Cette section de ${siteDraft.guildName} est réservée aux membres actifs.`}
+          onNavigatePublicRoute={onNavigatePublicRoute}
+          title="Section réservée aux membres"
+        />
       ) : activeSection ? (
         <PublicSiteModuleRoute
           activeSection={activeSection}
+          canAlertMembers={isCurrentMember && canCurrentUserSendSos}
           createEvent={createEvent}
           creatingEvent={creatingEvent}
           currentUser={currentUser}
@@ -1218,7 +1372,7 @@ function PublicSiteHome({
                 <TeamIcon size={17} />
               </a>
             ) : null}
-            {siteDraft.sections.publicChat ? (
+            {isCurrentMember && siteDraft.sections.publicChat ? (
               <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
                 Espace membre
                 <MessageSquare size={17} />
@@ -1295,6 +1449,7 @@ function PublicSosModule({
 
 function PublicSiteModuleRoute({
   activeSection,
+  canAlertMembers = false,
   createEvent,
   creatingEvent = false,
   currentUser,
@@ -1318,7 +1473,10 @@ function PublicSiteModuleRoute({
     return (
       <PublicTeamPage
         chatPath={chatPath}
+        canAlertMembers={canAlertMembers}
+        currentUser={currentUser}
         homePath={homePath}
+        isCurrentMember={isCurrentMember}
         memberSpacePath={memberSpacePath}
         members={members}
         onNavigatePublicRoute={onNavigatePublicRoute}
@@ -1463,7 +1621,7 @@ function PublicWarsModule({
           <CalendarDays size={42} />
           <h1>Aucun évènement annoncé</h1>
           <p>Cette guilde n'a pas encore publié d'évènement ou d'objectif hebdo.</p>
-          {siteDraft.sections.publicChat ? (
+          {isCurrentMember && siteDraft.sections.publicChat ? (
             <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
               Espace membre
             </a>
@@ -1505,7 +1663,7 @@ function PublicWarsModule({
         ) : (
           <p className="preview-card-text">Horaires à confirmer.</p>
         )}
-        {siteDraft.sections.publicChat ? (
+        {isCurrentMember && siteDraft.sections.publicChat ? (
           <div className="preview-actions">
             <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
               Espace membre
@@ -1675,6 +1833,7 @@ function PublicBankRoute({ bankProps = {}, currentUser, isCurrentMember = false,
     bankRequests: [],
     bankStock: [],
     createBankRequest: () => {},
+    saveBankResource: () => {},
     setBankCommand: () => {},
     updateBankRequestStatus: () => {},
     ...bankProps,
@@ -1791,6 +1950,7 @@ function PublicForumRoute({
       ) : null}
       <PublicForumModule
         homePath={homePath}
+        isCurrentMember={isCurrentMember}
         memberSpacePath={memberSpacePath}
         onNavigatePublicRoute={onNavigatePublicRoute}
         publicForum={publicForum}
@@ -1823,7 +1983,16 @@ function PublicChatModule({ homePath, onNavigatePublicRoute, siteDraft }) {
   );
 }
 
-function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePublicRoute, siteDraft }) {
+function PublicTeamPage({
+  canAlertMembers = null,
+  currentUser,
+  homePath,
+  isCurrentMember = false,
+  memberSpacePath,
+  members = [],
+  onNavigatePublicRoute,
+  siteDraft
+}) {
   const publicSlug = slugify(siteDraft.slug || siteDraft.publicSlug || siteDraft.guildName);
   const [memberQuery, setMemberQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -1855,7 +2024,9 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
   );
   const hasMembers = members.length > 0;
   const hasFilters = hasMembers && (members.length > 1 || roleOptions.length > 1 || statusOptions.length > 1);
-  const latestDispatch = selectedMember ? dispatches.find((dispatch) => dispatch.memberId === selectedMember.id) : null;
+  const canSendMemberAlert = canAlertMembers ?? (isCurrentMember && can(currentUser, "send_sos"));
+  const visibleDispatches = canSendMemberAlert ? dispatches : dispatches.filter((dispatch) => dispatch.kind !== "alert");
+  const latestDispatch = selectedMember ? visibleDispatches.find((dispatch) => dispatch.memberId === selectedMember.id) : null;
 
   useEffect(() => {
     setDispatches(loadMemberRelayDispatches(publicSlug));
@@ -1879,6 +2050,7 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
 
   function sendMemberDispatch(kind) {
     if (!selectedMember) return;
+    if (kind === "alert" && !canSendMemberAlert) return;
 
     const message = memberMessage.trim() || (kind === "alert" ? `Alerte tactique pour ${selectedMember.name}.` : `Message direct pour ${selectedMember.name}.`);
     const relay = getMemberRelay(selectedMember, publicSlug);
@@ -1923,7 +2095,7 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
           <a href={homePath} onClick={(event) => navigatePublicSite(event, homePath, onNavigatePublicRoute)}>
             Retour accueil
           </a>
-          {siteDraft.sections.publicChat ? (
+          {isCurrentMember && siteDraft.sections.publicChat ? (
             <a href={memberSpacePath} onClick={(event) => navigatePublicSite(event, memberSpacePath, onNavigatePublicRoute)}>
               Espace membre
             </a>
@@ -1989,10 +2161,12 @@ function PublicTeamPage({ homePath, memberSpacePath, members = [], onNavigatePub
               <Send size={16} />
               Message
             </button>
-            <button type="button" className="is-alert" onClick={() => sendMemberDispatch("alert")}>
-              <AlertTriangle size={16} />
-              Alerte
-            </button>
+            {canSendMemberAlert ? (
+              <button type="button" className="is-alert" onClick={() => sendMemberDispatch("alert")}>
+                <AlertTriangle size={16} />
+                Alerte
+              </button>
+            ) : null}
           </div>
           {latestDispatch ? (
             <p className={`public-member-dispatch-status is-${latestDispatch.kind}`}>
@@ -2091,15 +2265,15 @@ function PublicTeamFallback({ siteDraft }) {
   );
 }
 
-function PublicForumModule({ homePath, memberSpacePath, onNavigatePublicRoute, publicForum, publicSlug, siteDraft }) {
+function PublicForumModule({ homePath, isCurrentMember = false, memberSpacePath, onNavigatePublicRoute, publicForum, publicSlug, siteDraft }) {
   const forum = getPublicForumData(publicForum);
   const latestThreads = forum.latestThreads.slice(0, 6);
   const publicThreadCount = latestThreads.length;
   const publicCategoryCount = forum.categories.length;
   const hasPublicContent = publicCategoryCount > 0 || publicThreadCount > 0;
   const privateCount = forum.locked.privateCategoryCount + forum.locked.privateThreadCount;
-  const ctaPath = memberSpacePath || getPublicMemberSpacePath(publicSlug);
-  const ctaLabel = "Espace membre";
+  const ctaPath = isCurrentMember ? memberSpacePath || getPublicMemberSpacePath(publicSlug) : getMemberRequestHref(publicSlug);
+  const ctaLabel = isCurrentMember ? "Espace membre" : "Devenir membre";
 
   return (
     <section className="public-forum-page" id={getPublicSiteSectionId("forum")} tabIndex={-1}>
@@ -2233,9 +2407,40 @@ function PublicSiteMissingModule({ homePath, onNavigatePublicRoute }) {
   );
 }
 
-function PublicMemberSpaceModule({ homePath, onNavigatePublicRoute, publicSlug, siteDraft }) {
+function PublicMemberAccessRequired({
+  homePath,
+  memberRequestUrl,
+  message,
+  onNavigatePublicRoute,
+  siteDraft,
+  title = "Accès réservé aux membres",
+}) {
+  return (
+    <section className="public-empty public-route-empty">
+      <Lock size={42} />
+      <h1>{title}</h1>
+      <p>{message || `Rejoins ${siteDraft.guildName} avant d'ouvrir cet espace privé.`}</p>
+      <div className="public-missing-actions" aria-label="Accès disponibles">
+        {memberRequestUrl ? (
+          <a className="is-primary" href={memberRequestUrl} onClick={(event) => navigatePublicSite(event, memberRequestUrl, onNavigatePublicRoute)}>
+            <UserPlus size={17} aria-hidden="true" />
+            Devenir membre
+          </a>
+        ) : null}
+        <a className="is-secondary" href={homePath} onClick={(event) => navigatePublicSite(event, homePath, onNavigatePublicRoute)}>
+          <Globe2 size={17} aria-hidden="true" />
+          Retour au site
+        </a>
+      </div>
+    </section>
+  );
+}
+
+function PublicMemberSpaceModule({ homePath, onLeavePublicGuild, onNavigatePublicRoute, publicSlug, siteDraft }) {
   const [profileForm, setProfileForm] = useState(() => loadPublicMemberProfile(publicSlug));
   const [savedProfile, setSavedProfile] = useState(() => loadPublicMemberProfile(publicSlug));
+  const [leaveError, setLeaveError] = useState("");
+  const [leavingGuild, setLeavingGuild] = useState(false);
   const [profileStatus, setProfileStatus] = useState("");
   const [profileError, setProfileError] = useState("");
   const previewName = profileForm.displayName || "Membre";
@@ -2247,6 +2452,8 @@ function PublicMemberSpaceModule({ homePath, onNavigatePublicRoute, publicSlug, 
     const storedProfile = loadPublicMemberProfile(publicSlug);
     setProfileForm(storedProfile);
     setSavedProfile(storedProfile);
+    setLeaveError("");
+    setLeavingGuild(false);
     setProfileStatus("");
     setProfileError("");
   }, [publicSlug]);
@@ -2293,6 +2500,28 @@ function PublicMemberSpaceModule({ homePath, onNavigatePublicRoute, publicSlug, 
     }
   }
 
+  async function leaveGuild() {
+    if (leavingGuild) return;
+
+    const guildName = siteDraft.guildName || "cette guilde";
+    const confirmed = window.confirm(
+      `Quitter ${guildName} ? Tu perdras l'accès aux sections réservées aux membres.`,
+    );
+
+    if (!confirmed) return;
+
+    setLeavingGuild(true);
+    setLeaveError("");
+
+    try {
+      await onLeavePublicGuild?.(publicSlug);
+      navigatePublicSitePath(homePath, onNavigatePublicRoute);
+    } catch (error) {
+      setLeaveError(error?.message || "Impossible de quitter cette guilde pour le moment.");
+      setLeavingGuild(false);
+    }
+  }
+
   return (
     <section className="public-member-space-page" tabIndex={-1}>
       <div className="public-member-space-hero">
@@ -2307,8 +2536,14 @@ function PublicMemberSpaceModule({ homePath, onNavigatePublicRoute, publicSlug, 
           <a href={homePath} onClick={(event) => navigatePublicSite(event, homePath, onNavigatePublicRoute)}>
             Retour accueil
           </a>
+          <button className="public-member-leave-button" type="button" onClick={leaveGuild} disabled={leavingGuild}>
+            <LogOut size={16} aria-hidden="true" />
+            {leavingGuild ? "Sortie..." : "Quitter la guilde"}
+          </button>
         </div>
       </div>
+
+      {leaveError ? <p className="form-note public-member-leave-error" aria-live="polite">{leaveError}</p> : null}
 
       <div className="public-member-space-layout">
         <form className="public-member-profile-panel" onSubmit={saveProfile}>
@@ -2878,7 +3113,7 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
   );
 }
 
-export function GuildSitePreview({ members = [], siteDraft, onNavigate, unreadMessages = 0, warSummary }) {
+export function GuildSitePreview({ heroTitleTag: HeroTitle = "h1", members = [], siteDraft, onNavigate, unreadMessages = 0, warSummary }) {
   const color = getColorOption(siteDraft.colors);
   const theme = getThemeOption(siteDraft.theme);
   const design = getDesignOption(siteDraft.design);
@@ -2936,7 +3171,7 @@ export function GuildSitePreview({ members = [], siteDraft, onNavigate, unreadMe
       <div className="site-hero-preview">
         <div className="hero-copy">
           <span className="theme-kicker">{theme.label}</span>
-          <h1>{siteDraft.guildName || "Guilde"}</h1>
+          <HeroTitle className="site-preview-title">{siteDraft.guildName || "Guilde"}</HeroTitle>
           <h2>{siteDraft.tagline}</h2>
           <p>{siteDraft.objective}</p>
           <em>
@@ -3322,16 +3557,18 @@ export function PanelEyebrow({ help, icon: Icon, label }) {
 export function RightRail(props) {
   return (
     <aside className="right-rail">
-      <SosPanel
-        acknowledgeSos={props.acknowledgeSos}
-        currentUser={props.currentUser}
-        sosAlerts={props.sosAlerts}
-        sosError={props.sosError}
-        sosForm={props.sosForm}
-        sosRealtimeStatus={props.sosRealtimeStatus}
-        setSosForm={props.setSosForm}
-        sendSos={props.sendSos}
-      />
+      {props.sosAuthorized ? (
+        <SosPanel
+          acknowledgeSos={props.acknowledgeSos}
+          currentUser={props.currentUser}
+          sosAlerts={props.sosAlerts}
+          sosError={props.sosError}
+          sosForm={props.sosForm}
+          sosRealtimeStatus={props.sosRealtimeStatus}
+          setSosForm={props.setSosForm}
+          sendSos={props.sendSos}
+        />
+      ) : null}
       <TranslationPanel
         translateOn={props.translateOn}
         setTranslateOn={props.setTranslateOn}
@@ -3370,10 +3607,6 @@ export function SosPanel({
   const callKind = normalizeSosCallKind(sosForm.callKind);
   const callConfig = getSosCallConfig(callKind);
   const CallIcon = callConfig.icon;
-  const attackType = String(sosForm.type || "Rallye").trim() || "Rallye";
-  const targetLabel = String(sosForm.target || "Cible non precisee").trim();
-  const coordinateLabel = [sosForm.x ? `X ${sosForm.x}` : "", sosForm.y ? `Y ${sosForm.y}` : ""].filter(Boolean).join(" · ");
-  const detailsPreview = String(sosForm.details || "").trim() || getSosFallbackMessage(callKind, attackType, targetLabel);
   const updateCallKind = (nextCallKind) => {
     setSosForm((current) => ({ ...current, callKind: nextCallKind }));
   };
@@ -3397,14 +3630,6 @@ export function SosPanel({
             </button>
           );
         })}
-      </div>
-      <div className="sos-fast-card">
-        <span>{callConfig.readyLabel}</span>
-        <strong>
-          {callConfig.label} · {attackType} · {targetLabel}
-        </strong>
-        <small>{coordinateLabel || "Coordonnees non precisees"}</small>
-        <p>{detailsPreview}</p>
       </div>
       <div className="sos-fast-actions">
         <button className="danger-action sos-send-now" type="button" onClick={sendSos}>

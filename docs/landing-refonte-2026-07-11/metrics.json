@@ -1,0 +1,36 @@
+{
+  "desktopMetrics": {
+    "h1": "GuildOps",
+    "heroText": "Crée une page de guilde crédible, accueille les nouveaux membres, puis garde messages, absences, accès et modules au même endroit.",
+    "nextSectionVisible": true,
+    "overflowX": false,
+    "scroll": {
+      "height": 4056,
+      "width": 1440
+    },
+    "viewport": {
+      "height": 1000,
+      "width": 1440
+    }
+  },
+  "mobileMetricsBefore": {
+    "h1": "GuildOps",
+    "nextSectionVisible": true,
+    "overflowX": false,
+    "scroll": {
+      "height": 5884,
+      "width": 375
+    },
+    "viewport": {
+      "height": 844,
+      "width": 390
+    }
+  },
+  "mobileMetricsAfter": {
+    "overflowX": false,
+    "scrollY": 692,
+    "visibleHeadings": [
+      "Une guilde n'a pas besoin d'un autre chat. Elle a besoin d'un QG."
+    ]
+  }
+}

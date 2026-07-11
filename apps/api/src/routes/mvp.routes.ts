@@ -2,6 +2,7 @@ import { Router } from "express";
 import { database, query } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
 import { getAuth, requireAuth } from "../security/auth.js";
+import { canSendSos } from "./alerts.routes.js";
 import { canManageDiplomacy, getDiplomacySnapshot } from "./diplomacy.routes.js";
 import {
   DEFAULT_VISIBLE_GUILD_MODULE_KEYS,
@@ -66,6 +67,15 @@ mvpRouter.get(
           me.user.globalRole
         )
       : false;
+    const canUseSosSnapshot = loadSos
+      ? await canSendSos(
+          database,
+          activeGuild.id,
+          me.user.id,
+          activeGuild.organizationRole,
+          me.user.globalRole
+        )
+      : false;
 
     const [
       site,
@@ -85,7 +95,7 @@ mvpRouter.get(
       loadDiplomacy ? getDiplomacySnapshot(activeGuild.id, canManageDiplomacySnapshot) : Promise.resolve(createEmptyDiplomacySnapshot()),
       loadMessages ? getInternalMessages(activeGuild.id, me.user.id) : Promise.resolve([]),
       loadMessages ? getPublicChat(activeGuild.id) : Promise.resolve([]),
-      loadSos ? getSosAlerts(activeGuild.id) : Promise.resolve([]),
+      loadSos && canUseSosSnapshot ? getSosAlerts(activeGuild.id) : Promise.resolve([]),
       loadForum ? getForumThreads(activeGuild.id) : Promise.resolve([])
     ]);
 
@@ -209,7 +219,7 @@ async function getMembers(guildId: string) {
       LEFT JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
       LEFT JOIN roles ON roles.id = gmr.role_id
       WHERE gm.guild_id = $1
-        AND gm.status <> 'banned'
+        AND gm.status NOT IN ('banned', 'left')
       GROUP BY gm.id
       ORDER BY gm.nickname ASC
       LIMIT 200

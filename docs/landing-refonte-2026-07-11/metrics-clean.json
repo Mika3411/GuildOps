@@ -1,0 +1,33 @@
+{
+  "mobileCleanMetrics": {
+    "h1": "GuildOps",
+    "hasHeroSignal": false,
+    "hasProfilePreview": false,
+    "overflowX": false,
+    "scroll": {
+      "height": 5326,
+      "width": 375
+    },
+    "viewport": {
+      "height": 844,
+      "width": 390
+    },
+    "visibleHeadings": [
+      "GuildOps",
+      "Une guilde n'a pas besoin d'un autre chat. Elle a besoin d'un QG."
+    ]
+  },
+  "desktopCleanMetrics": {
+    "hasHeroSignal": false,
+    "hasProfilePreview": false,
+    "overflowX": false,
+    "scroll": {
+      "height": 3867,
+      "width": 1425
+    },
+    "viewport": {
+      "height": 1000,
+      "width": 1440
+    }
+  }
+}

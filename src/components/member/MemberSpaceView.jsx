@@ -4,6 +4,7 @@ import React, {
   useState
 } from "react";
 import {
+  Bell,
   CheckCircle2,
   Clock3,
   CreditCard,
@@ -15,8 +16,12 @@ import {
   UserRound
 } from "lucide-react";
 import {
+  LiveStatus,
   PanelHeader
 } from "../shared/Shared.jsx";
+import {
+  PushNotificationPreference
+} from "../shared/PushNotificationPreference.jsx";
 import { PasswordInput } from "../shared/PasswordInput.jsx";
 
 const LANGUAGE_OPTIONS = Object.freeze([
@@ -85,7 +90,7 @@ function normalizeLanguage(value) {
   return LANGUAGE_OPTIONS.some((option) => option.value === safeValue) ? safeValue : "fr";
 }
 
-export function MemberSpaceView({ authSession, currentUser }) {
+export function MemberSpaceView({ authSession, currentUser, notificationProps }) {
   const [selectedOrderId, setSelectedOrderId] = useState(MEMBER_ORDERS[0].id);
   const [profileForm, setProfileForm] = useState(() => createProfileForm(currentUser));
   const [passwordForm, setPasswordForm] = useState({
@@ -184,7 +189,7 @@ export function MemberSpaceView({ authSession, currentUser }) {
   return (
     <div className="page-grid member-page">
       <section className="panel wide-panel member-hero-panel">
-        <PanelHeader icon={UserRound} title="Espace membre" meta={memberMeta || "Compte GuildOps"} />
+        <PanelHeader icon={UserRound} title="Profil membre" meta={memberMeta || "Compte GuildOps"} />
         <div className="member-hero-grid">
           <div className="member-profile-card">
             <span className="member-avatar">{currentUser?.initials || "GO"}</span>
@@ -192,10 +197,10 @@ export function MemberSpaceView({ authSession, currentUser }) {
               <strong>{profileForm.displayName || "Membre GuildOps"}</strong>
               <small>{profileForm.email || "Email non renseigne"}</small>
             </span>
-            <em className={emailVerified ? "is-verified" : ""}>
-              {emailVerified ? <ShieldCheck size={15} /> : <Mail size={15} />}
+            <LiveStatus as="em" className={emailVerified ? "is-verified" : ""}>
+              {emailVerified ? <ShieldCheck aria-hidden="true" focusable="false" size={15} /> : <Mail aria-hidden="true" focusable="false" size={15} />}
               {emailVerified ? "Email valide" : "Email a valider"}
-            </em>
+            </LiveStatus>
           </div>
           <div className="member-summary-grid" aria-label="Synthese membre">
             {accountSummary.map((item) => (
@@ -287,6 +292,11 @@ export function MemberSpaceView({ authSession, currentUser }) {
         </form>
       </section>
 
+      <section className="panel member-notifications-panel">
+        <PanelHeader icon={Bell} title="Notifications" meta={notificationProps?.pushState?.enabled ? "Actives" : "Inactives"} />
+        <PushNotificationPreference notificationProps={notificationProps} />
+      </section>
+
       <section className="panel member-password-panel">
         <PanelHeader icon={KeyRound} title="Mot de passe" meta="Securite" />
         <form className="member-form-grid" onSubmit={changePassword}>
@@ -334,10 +344,10 @@ function StatusMessage({ status }) {
   const isError = status.kind === "error";
 
   return (
-    <p className={isError ? "auth-error" : "auth-notice"}>
-      {isError ? <Lock size={17} /> : <CheckCircle2 size={17} />}
+    <LiveStatus as="p" className={isError ? "auth-error" : "auth-notice"} politeness={isError ? "assertive" : "polite"}>
+      {isError ? <Lock aria-hidden="true" focusable="false" size={17} /> : <CheckCircle2 aria-hidden="true" focusable="false" size={17} />}
       <span>{status.message}</span>
-    </p>
+    </LiveStatus>
   );
 }
 

@@ -5,6 +5,11 @@ import { database, query, withClient } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
 import { BadRequestError, ForbiddenError, NotFoundError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
+import {
+  createGuildNotificationsForPermission,
+  deliverPushNotifications,
+  type GuildNotification
+} from "../notifications/notifications.js";
 import { getAuth, requireAuth } from "../security/auth.js";
 import { assertGuildAccess } from "./access.js";
 import { uuidSchema } from "./helpers.js";
@@ -45,9 +50,22 @@ const bankMovementBodySchema = z
   })
   .strict();
 
+const bankResourceBodySchema = z
+  .object({
+    resourceName: z.string().trim().min(1).max(120),
+    amount: z.coerce.number().nonnegative(),
+    unit: z.string().trim().max(24).nullable().optional()
+  })
+  .strict();
+
 const bankRequestParamsSchema = z.object({
   guildId: uuidSchema,
   requestId: uuidSchema
+});
+
+const bankResourceParamsSchema = z.object({
+  guildId: uuidSchema,
+  resourceCode: z.string().trim().min(1).max(48)
 });
 
 bankRouter.get(
@@ -81,6 +99,36 @@ bankRouter.get(
 
     const movements = await getBankMovements(snapshot.bank.id);
     res.json({ movements });
+  })
+);
+
+bankRouter.put(
+  "/guilds/:guildId/bank/resources/:resourceCode",
+  requireAuth,
+  validate({ params: bankResourceParamsSchema, body: bankResourceBodySchema }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { guildId, resourceCode } = req.params as unknown as z.infer<typeof bankResourceParamsSchema>;
+    const body = req.body as z.infer<typeof bankResourceBodySchema>;
+    const access = await assertGuildAccess(database, guildId, auth.user.id);
+    await assertCanManageBank(guildId, auth.user.id, access.organization_role, auth.user.globalRole);
+
+    const snapshot = await getBankSnapshot(guildId);
+    if (!snapshot.bank) {
+      throw new BadRequestError("No bank is configured for this guild");
+    }
+
+    const actorMemberId = await getGuildMemberId(guildId, auth.user.id);
+    const resource = await saveBankResource({
+      bankId: snapshot.bank.id,
+      resourceCode,
+      resourceName: body.resourceName,
+      amount: String(body.amount),
+      unit: typeof body.unit === "string" ? body.unit.trim() || null : null,
+      actorMemberId
+    });
+
+    res.json({ resource });
   })
 );
 
@@ -195,22 +243,65 @@ bankRouter.post(
     if (!snapshot.bank) {
       throw new BadRequestError("No bank is configured for this guild");
     }
+    const bank = snapshot.bank;
 
     const memberId = await getGuildMemberId(guildId, auth.user.id);
     if (!memberId) {
       throw new BadRequestError("A guild membership is required to request resources");
     }
 
-    const result = await query<{ id: string }>(
-      `
-        INSERT INTO bank_requests (bank_id, requester_member_id, resource_code, amount, reason)
-        VALUES ($1, $2, $3, $4, $5)
-        RETURNING id::text
-      `,
-      [snapshot.bank.id, memberId, body.resourceCode, body.amount, body.reason ?? null]
-    );
+    const resource = snapshot.resources.find((item) => item.resourceCode === body.resourceCode);
+    const resourceName = resource?.resourceName || body.resourceCode;
+    const requester = await getGuildMemberDisplayName(guildId, auth.user.id);
+    let notifications: GuildNotification[] = [];
 
-    res.status(201).json({ id: result.rows[0]?.id, status: "pending" });
+    const result = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        const requestResult = await client.query<{ id: string }>(
+          `
+            INSERT INTO bank_requests (bank_id, requester_member_id, resource_code, amount, reason)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id::text
+          `,
+          [bank.id, memberId, body.resourceCode, body.amount, body.reason ?? null]
+        );
+        const requestId = requestResult.rows[0]?.id;
+
+        if (!requestId) {
+          throw new BadRequestError("Bank request could not be created");
+        }
+
+        notifications = await createGuildNotificationsForPermission(client, {
+          guildId,
+          actorUserId: auth.user.id,
+          permissionKeys: ["manage_bank", "admin_all"],
+          type: "bank.request.created",
+          title: "Nouvelle demande de ressources",
+          body: `${requester}: ${formatBankNotificationAmount(body.amount, resource?.unit)} ${resourceName}`,
+          data: {
+            url: "/app/bank",
+            requestId,
+            resourceCode: body.resourceCode,
+            resourceName,
+            amount: body.amount,
+            unit: resource?.unit || "",
+            reason: body.reason ?? null
+          }
+        });
+
+        await client.query("COMMIT");
+        return { id: requestId };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+
+    void deliverPushNotifications(notifications);
+
+    res.status(201).json({ id: result.id, status: "pending" });
   })
 );
 
@@ -293,17 +384,19 @@ async function getBankSnapshot(guildId: string): Promise<{
       name: bank.name,
       commandAlias: bank.command_alias
     },
-    resources: resourcesResult.rows.map((resource) => ({
-      resourceCode: resource.resource_code,
-      resourceName: resource.resource_name,
-      amount: resource.amount,
-      unit: resource.unit,
-      updatedAt: resource.updated_at
-    })),
+    resources: resourcesResult.rows.map(mapBankResource),
     requests,
     movements
   };
 }
+
+type BankResourceSummary = {
+  resourceCode: string;
+  resourceName: string;
+  amount: string;
+  unit: string | null;
+  updatedAt: string;
+};
 
 type BankRequestSummary = {
   id: string;
@@ -348,6 +441,25 @@ async function getGuildMemberId(guildId: string, userId: string): Promise<string
   );
 
   return result.rows[0]?.id ?? null;
+}
+
+async function getGuildMemberDisplayName(guildId: string, userId: string): Promise<string> {
+  const result = await query<{ nickname: string }>(
+    `
+      SELECT nickname
+      FROM guild_members
+      WHERE guild_id = $1
+        AND user_id = $2
+      LIMIT 1
+    `,
+    [guildId, userId]
+  );
+
+  return result.rows[0]?.nickname || "Membre";
+}
+
+function formatBankNotificationAmount(amount: number, unit?: string | null): string {
+  return `${amount.toLocaleString("fr-FR", { maximumFractionDigits: 2 })}${unit || ""}`;
 }
 
 async function getBankRequests(bankId: string): Promise<BankRequestSummary[]> {
@@ -555,6 +667,92 @@ async function createBankMovement(input: {
   });
 }
 
+async function saveBankResource(input: {
+  bankId: string;
+  resourceCode: string;
+  resourceName: string;
+  amount: string;
+  unit: string | null;
+  actorMemberId: string | null;
+}): Promise<BankResourceSummary> {
+  return withClient(async (client) => {
+    await client.query("BEGIN");
+
+    try {
+      const previousResult = await client.query<{ amount: string }>(
+        `
+          SELECT amount::text
+          FROM bank_resources
+          WHERE bank_id = $1
+            AND resource_code = $2
+          FOR UPDATE
+        `,
+        [input.bankId, input.resourceCode]
+      );
+      const previousAmount = Number(previousResult.rows[0]?.amount ?? 0);
+      const nextAmount = Number(input.amount);
+
+      const resourceResult = await client.query<{
+        resource_code: string;
+        resource_name: string;
+        amount: string;
+        unit: string | null;
+        updated_at: string;
+      }>(
+        `
+          INSERT INTO bank_resources (
+            bank_id,
+            resource_code,
+            resource_name,
+            amount,
+            unit,
+            updated_by_member_id
+          )
+          VALUES ($1, $2, $3, $4::numeric, $5, $6)
+          ON CONFLICT (bank_id, resource_code)
+          DO UPDATE SET
+            resource_name = EXCLUDED.resource_name,
+            amount = EXCLUDED.amount,
+            unit = EXCLUDED.unit,
+            updated_by_member_id = EXCLUDED.updated_by_member_id,
+            updated_at = now()
+          RETURNING
+            resource_code::text,
+            resource_name,
+            amount::text,
+            unit,
+            updated_at::text
+        `,
+        [input.bankId, input.resourceCode, input.resourceName, input.amount, input.unit, input.actorMemberId]
+      );
+
+      const resource = resourceResult.rows[0];
+      if (!resource) {
+        throw new BadRequestError("Bank resource could not be saved");
+      }
+
+      const movementAmount = previousResult.rows[0] ? Math.abs(nextAmount - previousAmount) : nextAmount;
+      const movementNote = previousResult.rows[0]
+        ? `Ajustement ressource ${resource.resource_name}`
+        : `Creation ressource ${resource.resource_name}`;
+
+      await client.query(
+        `
+          INSERT INTO bank_movements (bank_id, resource_code, movement_type, amount, unit, actor_member_id, note)
+          VALUES ($1, $2, 'adjustment', $3::numeric, $4, $5, $6)
+        `,
+        [input.bankId, input.resourceCode, String(movementAmount), resource.unit, input.actorMemberId, movementNote]
+      );
+
+      await client.query("COMMIT");
+      return mapBankResource(resource);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    }
+  });
+}
+
 async function updateBankRequestStatus(req: Request, res: Response): Promise<void> {
   const auth = getAuth(res);
   const { guildId, requestId } = bankRequestParamsSchema.parse(req.params);
@@ -737,6 +935,22 @@ export function normalizeIncomingBankStatus(status: string): BankStoredRequestSt
 
 export function normalizeStoredBankStatus(status: string): BankRequestStatus {
   return (status === "rejected" ? "refused" : status) as BankRequestStatus;
+}
+
+function mapBankResource(row: {
+  resource_code: string;
+  resource_name: string;
+  amount: string;
+  unit: string | null;
+  updated_at: string;
+}): BankResourceSummary {
+  return {
+    resourceCode: row.resource_code,
+    resourceName: row.resource_name,
+    amount: row.amount,
+    unit: row.unit,
+    updatedAt: row.updated_at
+  };
 }
 
 function mapBankMovement(row: {

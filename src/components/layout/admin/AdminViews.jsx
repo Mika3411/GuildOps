@@ -11,6 +11,7 @@ import {
   Lock,
   RefreshCw,
   Shield,
+  UserPlus,
   UserCheck,
   Users,
   X
@@ -33,6 +34,7 @@ import {
 } from "../../../lib/guildSiteStore.js";
 import {
   Avatar,
+  EmptyState,
   MergePanel,
   PanelHeader,
   PermissionsMatrix,
@@ -52,6 +54,7 @@ export function AdministrationView({
   onToggleAdministrationMember,
   onToggleAdministrationModule,
   onToggleAllAdministrationModules,
+  onNavigate,
 }) {
   const administrationModules = getAdministrationModules();
   const enabledSet = new Set(enabledModuleIds);
@@ -64,7 +67,7 @@ export function AdministrationView({
   return (
     <div className="page-grid administration-page">
       <section className="panel wide-panel administration-panel">
-        <PanelHeader icon={Shield} title="Administration" meta={`${activeMemberCount}/${members.length} membres`} />
+        <PanelHeader icon={Shield} title="Accès administrateurs" meta={`${activeMemberCount}/${members.length} membres`} />
         <div className="administration-summary">
           <article>
             <span>Membres avec accès</span>
@@ -80,71 +83,83 @@ export function AdministrationView({
           </article>
         </div>
         <div className="administration-list">
-          {members.map((member) => {
-            const moduleIds = administrationAccess[member.id] || [];
-            const hasAdministrationAccess = moduleIds.length > 0;
-            const hasAllModules = administrationModules.every((module) => moduleIds.includes(module.id));
+          {members.length ? (
+            members.map((member) => {
+              const moduleIds = administrationAccess[member.id] || [];
+              const hasAdministrationAccess = moduleIds.length > 0;
+              const hasAllModules = administrationModules.every((module) => moduleIds.includes(module.id));
 
-            return (
-              <article className={`administration-row ${hasAdministrationAccess ? "is-admin" : ""}`} key={member.id}>
-                <header className="administration-member">
-                  <Avatar name={member.name} />
-                  <span>
-                    <strong>{member.name}</strong>
-                    <small>{[member.power, member.status].filter(Boolean).join(" · ")}</small>
-                  </span>
-                  <RolePill role={getRoleLabel(member.role)} />
-                  <button
-                    className={`admin-access-toggle ${hasAdministrationAccess ? "is-on" : ""}`}
-                    type="button"
-                    aria-pressed={hasAdministrationAccess}
-                    disabled={!canEditAdministration}
-                    title={accessGuard.title}
-                    onClick={() => onToggleAdministrationMember?.(member.id)}
-                  >
-                    <span />
-                    {hasAdministrationAccess ? "Accès admin" : "Sans accès"}
-                  </button>
-                  <button
-                    className="admin-all-toggle"
-                    type="button"
-                    aria-pressed={hasAllModules}
-                    disabled={!canEditAdministration}
-                    title={accessGuard.title}
-                    onClick={() => onToggleAllAdministrationModules?.(member.id)}
-                  >
-                    {hasAllModules ? "Retirer tout" : "Tout"}
-                  </button>
-                </header>
-                <div className="administration-modules" aria-label={`Restrictions modules pour ${member.name}`}>
-                  {administrationModules.map((module) => {
-                    const Icon = module.icon;
-                    const isGranted = moduleIds.includes(module.id);
-                    const isModuleEnabled = enabledSet.has(module.id);
-                    const title = isModuleEnabled
-                      ? getAdministrationModuleSummary(module)
-                      : `${module.label} inactif pour cette guilde`;
+              return (
+                <article className={`administration-row ${hasAdministrationAccess ? "is-admin" : ""}`} key={member.id}>
+                  <header className="administration-member">
+                    <Avatar name={member.name} />
+                    <span>
+                      <strong>{member.name}</strong>
+                      <small>{[member.power, member.status].filter(Boolean).join(" · ")}</small>
+                    </span>
+                    <RolePill role={getRoleLabel(member.role)} />
+                    <button
+                      className={`admin-access-toggle ${hasAdministrationAccess ? "is-on" : ""}`}
+                      type="button"
+                      aria-pressed={hasAdministrationAccess}
+                      disabled={!canEditAdministration}
+                      title={accessGuard.title}
+                      onClick={() => onToggleAdministrationMember?.(member.id)}
+                    >
+                      <span />
+                      {hasAdministrationAccess ? "Accès admin" : "Sans accès"}
+                    </button>
+                    <button
+                      className="admin-all-toggle"
+                      type="button"
+                      aria-pressed={hasAllModules}
+                      disabled={!canEditAdministration}
+                      title={accessGuard.title}
+                      onClick={() => onToggleAllAdministrationModules?.(member.id)}
+                    >
+                      {hasAllModules ? "Retirer tout" : "Tout"}
+                    </button>
+                  </header>
+                  <div className="administration-modules" aria-label={`Restrictions modules pour ${member.name}`}>
+                    {administrationModules.map((module) => {
+                      const Icon = module.icon;
+                      const isGranted = moduleIds.includes(module.id);
+                      const isModuleEnabled = enabledSet.has(module.id);
+                      const title = isModuleEnabled
+                        ? getAdministrationModuleSummary(module)
+                        : `${module.label} inactif pour cette guilde`;
 
-                    return (
-                      <button
-                        className={`admin-module-chip ${isGranted ? "is-granted" : ""} ${isModuleEnabled ? "" : "is-inactive"}`}
-                        type="button"
-                        aria-pressed={isGranted}
-                        disabled={!canEditAdministration}
-                        key={module.id}
-                        title={accessGuard.title || title}
-                        onClick={() => onToggleAdministrationModule?.(member.id, module.id)}
-                      >
-                        <Icon size={15} />
-                        <span>{module.hubLabel || module.navLabel || module.label}</span>
-                        <small>{isModuleEnabled ? title : "Inactif"}</small>
-                      </button>
-                    );
-                  })}
-                </div>
-              </article>
-            );
-          })}
+                      return (
+                        <button
+                          className={`admin-module-chip ${isGranted ? "is-granted" : ""} ${isModuleEnabled ? "" : "is-inactive"}`}
+                          type="button"
+                          aria-pressed={isGranted}
+                          disabled={!canEditAdministration}
+                          key={module.id}
+                          title={accessGuard.title || title}
+                          onClick={() => onToggleAdministrationModule?.(member.id, module.id)}
+                        >
+                          <Icon size={15} />
+                          <span>{module.hubLabel || module.navLabel || module.label}</span>
+                          <small>{isModuleEnabled ? title : "Inactif"}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <EmptyState
+              actionIcon={UserPlus}
+              actionLabel="Inviter un membre"
+              className="administration-empty"
+              icon={Users}
+              title="Aucun membre à administrer"
+              text="C'est normal pour une nouvelle guilde: aucun joueur n'a encore rejoint l'espace privé. Invite un membre, puis tu pourras lui donner les bons accès."
+              onAction={() => onNavigate?.("membershipRequests")}
+            />
+          )}
         </div>
       </section>
     </div>

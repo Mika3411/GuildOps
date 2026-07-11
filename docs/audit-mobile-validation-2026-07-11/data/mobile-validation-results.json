@@ -1,0 +1,438 @@
+{
+  "generatedAt": "2026-07-11T18:00:49.070Z",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "baseUrl": "http://127.0.0.1:5173",
+  "screenshotCount": 17,
+  "screenshots": [
+    {
+      "label": "before/01-landing-home.png",
+      "notes": "Accueil landing avant interaction",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\01-landing-home.png",
+      "url": "/",
+      "title": "GuildOps",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 5279
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 7,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsProduitModulesParcoursGalerieConnexionCréer ma guildeSite public + espace privé pour guildesGuildOpsCrée une page de guilde crédible, accueille les nouveaux membres, puis garde messages, absences, accès et modules au même endroit.Créer ma guildeVoir les guildesSe connecterLe vrai problèmeUne guilde n'a pas besoin d'un autre chat. Elle a besoin d'un QG.GuildOps relie la vitrine publique et l'organisation privée : les visiteurs comprennent qui vous êtes, les membres savent où agir.Site pub"
+    },
+    {
+      "label": "after/01-landing-menu-open.png",
+      "notes": "Accueil landing après ouverture du menu mobile",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\01-landing-menu-open.png",
+      "url": "/",
+      "title": "GuildOps",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 5506
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 13,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsProduitModulesParcoursGalerieConnexionCréer ma guildeProduitModulesParcoursGalerieConnexionCréer ma guildeSite public + espace privé pour guildesGuildOpsCrée une page de guilde crédible, accueille les nouveaux membres, puis garde messages, absences, accès et modules au même endroit.Créer ma guildeVoir les guildesSe connecterLe vrai problèmeUne guilde n'a pas besoin d'un autre chat. Elle a besoin d'un QG.GuildOps relie la vitrine publique et l'organisation privée : les visiteurs comprenne"
+    },
+    {
+      "label": "before/02-gallery-results.png",
+      "notes": "Galerie au niveau des résultats",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\02-gallery-results.png",
+      "url": "/guildes",
+      "title": "Galerie des guildes",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 1095
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 7,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilToutes les guildesPublierGalerie des guildesExplore les guildes publiées par jeu, royaume ou serveur, puis langue de coordination.Guildes1Jeux1Langues1Tous les jeuxLords MobileTous les serveursK1200Toutes les languesLords Mobile1 guildeK12001 guildeFRAegis NordGuerre organisee20Voir la guilde"
+    },
+    {
+      "label": "after/02-gallery-language-open.png",
+      "notes": "Sélecteur de langue ouvert, recherche vide",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\02-gallery-language-open.png",
+      "url": "/guildes",
+      "title": "Galerie des guildes",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 1095
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 11,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilToutes les guildesPublierGalerie des guildesExplore les guildes publiées par jeu, royaume ou serveur, puis langue de coordination.Guildes1Jeux1Langues1Tous les jeuxLords MobileTous les serveursK1200Toutes les languesToutes les languesLangues disponiblesFrançais (FR)Afficher 183 autres languesLords Mobile1 guildeK12001 guildeFRAegis NordGuerre organisee20Voir la guilde"
+    },
+    {
+      "label": "after/03-gallery-language-search-en.png",
+      "notes": "Sélecteur de langue avec recherche en",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\03-gallery-language-search-en.png",
+      "url": "/guildes",
+      "title": "Galerie des guildes",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 1095
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 31,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilToutes les guildesPublierGalerie des guildesExplore les guildes publiées par jeu, royaume ou serveur, puis langue de coordination.Guildes1Jeux1Langues1Tous les jeuxLords MobileTous les serveursK1200Toutes les languesToutes les languesAutres languesAnglais (EN)Arménien (HY)Bengali (BN)Coréen (KO)Créole haïtien (HT)Estonien (ET)Féroïen (FO)Frison occidental (FY)Galicien (GL)Géorgien (KA)Indonésien (ID)Italien (IT)Lituanien (LT)Macédonien (MK)Maldivien (DV)Norvégien (NO)Norvégien bok"
+    },
+    {
+      "label": "before/03-public-home.png",
+      "notes": "Site public accueil",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\03-public-home.png",
+      "url": "/g/aegis-nord",
+      "title": "Aegis Nord",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 1032
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 5,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "AAegis NordLords Mobile · K1200AccueilEquipeDiplomatieForumGalerieDevenir membreCamp NordAegis NordCoordination mobile, briefings clairs, action rapide.Coordonner les membres actifs, les evenements et les consignes sans chaos.Lords Mobile · K1200 · Guerre organiseeDevenir membreVoir l'équipeDiplomatieNAPAlliés, ennemis et coordonnées du royaume.ForumOuvrirAnnonces et contenu privé verrouillé."
+    },
+    {
+      "label": "after/04-public-cta-join-route.png",
+      "notes": "Après clic Devenir membre depuis le site public",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\04-public-cta-join-route.png",
+      "url": "/join/aegis-nord",
+      "title": "Aegis Nord",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 7,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsDemande à validerAegis NordLords Mobile · K1200Coordination mobile, briefings clairs, action rapide.Coordonner les membres actifs, les evenements et les consignes sans chaos.Voir le siteConnexionInscriptionEmailMot de passeMe connecter"
+    },
+    {
+      "label": "before/04-public-team.png",
+      "notes": "Site public équipe",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\04-public-team.png",
+      "url": "/g/aegis-nord/equipe",
+      "title": "Aegis Nord",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 1426
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 9,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "AAegis NordLords Mobile · K1200AccueilEquipeDiplomatieForumGalerieDevenir membreEquipeAegis NordLords Mobile · K1200Membres2Roles2Retour accueilRechercherRoleTous les rolesR4R5Contact directNovaR5 · ActifMessageNNovaR5StatutActifLangueFRLLyraR4StatutActifLangueFR"
+    },
+    {
+      "label": "before/05-public-forum.png",
+      "notes": "Site public forum",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\05-public-forum.png",
+      "url": "/g/aegis-nord/forum",
+      "title": "Briefings et annonces",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 1695
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 4,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "AAegis NordLords Mobile · K1200AccueilEquipeDiplomatieForumGalerieDevenir membreForumBriefings et annoncesAegis Nord partage ici ses briefings et annonces. Les espaces membres, officiers et admins restent verrouillés.Retour accueilDevenir membreCatégories2Sujets2Espaces verrouillés8Catégories2 ouvertesBriefings warPlans publics avant evenement.Sujets2Posts0Accueil membresQuestions frequentes et premiers pas.Sujets1Posts0Derniers sujetsConsultationPlan forteresse samediBriefings war · Nova · Publ"
+    },
+    {
+      "label": "before/06-public-member-space.png",
+      "notes": "Site public espace membre",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\06-public-member-space.png",
+      "url": "/g/aegis-nord/espace-membre",
+      "title": "Accès réservé aux membres",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 891
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 4,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "AAegis NordLords Mobile · K1200AccueilEquipeDiplomatieForumGalerieDevenir membreAccès réservé aux membresRejoins Aegis Nord avant d'ouvrir cet espace privé.Devenir membreRetour au site"
+    },
+    {
+      "label": "before/07-join-member.png",
+      "notes": "Route Devenir membre directe",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\07-join-member.png",
+      "url": "/join/aegis-nord",
+      "title": "Aegis Nord",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 7,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsDemande à validerAegis NordLords Mobile · K1200Coordination mobile, briefings clairs, action rapide.Coordonner les membres actifs, les evenements et les consignes sans chaos.Voir le siteConnexionInscriptionEmailMot de passeMe connecter"
+    },
+    {
+      "label": "before/08-auth-login.png",
+      "notes": "Connexion initiale",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\08-auth-login.png",
+      "url": "/auth/login",
+      "title": "GuildOps - Commandement de guilde",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 8,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilGalerieConnexionInscriptionEmailMot de passeEntrer"
+    },
+    {
+      "label": "after/05-auth-login-empty-error.png",
+      "notes": "Connexion erreur champs vides",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\05-auth-login-empty-error.png",
+      "url": "/auth/login",
+      "title": "GuildOps - Commandement de guilde",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 8,
+      "errorTexts": [
+        "Indiquez votre email et votre mot de passe."
+      ],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilGalerieConnexionInscriptionEmailMot de passeIndiquez votre email et votre mot de passe.Entrer"
+    },
+    {
+      "label": "after/06-auth-login-api-error.png",
+      "notes": "Connexion erreur API",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\06-auth-login-api-error.png",
+      "url": "/auth/login",
+      "title": "GuildOps - Commandement de guilde",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 8,
+      "errorTexts": [
+        "Email ou mot de passe incorrect."
+      ],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilGalerieConnexionInscriptionEmailMot de passeEmail ou mot de passe incorrect.Entrer"
+    },
+    {
+      "label": "before/09-auth-register.png",
+      "notes": "Inscription initiale",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\09-auth-register.png",
+      "url": "/auth/register",
+      "title": "GuildOps - Commandement de guilde",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 11,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilGalerieConnexionInscriptionNom afficheOrganisationEmailMot de passe10 caracteres minimum.Activer les notificationsDisponible après validation du compte.Creer le compte"
+    },
+    {
+      "label": "after/07-auth-register-short-password.png",
+      "notes": "Inscription erreur mot de passe court",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\after\\07-auth-register-short-password.png",
+      "url": "/auth/register",
+      "title": "GuildOps - Commandement de guilde",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 11,
+      "errorTexts": [
+        "Le mot de passe doit contenir au moins 10 caracteres."
+      ],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsAccueilGalerieConnexionInscriptionNom afficheOrganisationEmailMot de passe10 caracteres minimum.Activer les notificationsDisponible après validation du compte.Le mot de passe doit contenir au moins 10 caracteres.Creer le compte"
+    },
+    {
+      "label": "before/10-app-connected-simulated-session.png",
+      "notes": "/app connecté avec session de test simulée",
+      "filePath": "C:\\Users\\admin\\OneDrive\\Documents\\GuildSpace\\docs\\audit-mobile-validation-2026-07-11\\screenshots\\before\\10-app-connected-simulated-session.png",
+      "url": "/app",
+      "title": "Site",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scroll": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "under44": [],
+      "controlCount": 48,
+      "errorTexts": [],
+      "loadingTexts": [],
+      "hasErrorAndLoading": false,
+      "keyText": "GuildOpsSiteBoutiqueEspace membreAbsencesMessagerieAdministrationModulesHeure du royaume19:56:47UTC+2Fuseau horaireUTC (UTC)Paris (Europe/Paris)Londres (Europe/London)Berlin (Europe/Berlin)Moscou (Europe/Moscow)New York (America/New_York)Chicago (America/Chicago)Los Angeles (America/Los_Angeles)Sao Paulo (America/Sao_Paulo)Casablanca (Africa/Casablanca)Le Caire (Africa/Cairo)Dubai (Asia/Dubai)Inde (Asia/Kolkata)Bangkok (Asia/Bangkok)Singapour (Asia/Singapore)Shanghai (Asia/Shanghai)Tokyo (Asia/T"
+    }
+  ],
+  "routeChecks": [
+    {
+      "name": "gallery-language-reset",
+      "ok": true,
+      "details": {
+        "options": [
+          "Toutes les langues",
+          "Français (FR)"
+        ],
+        "disclosure": "Afficher 183 autres langues"
+      }
+    },
+    {
+      "name": "public-cta-devenir-membre",
+      "ok": true,
+      "url": "http://127.0.0.1:5173/join/aegis-nord"
+    },
+    {
+      "name": "join-route-not-dead-end",
+      "ok": true,
+      "url": "http://127.0.0.1:5173/join/aegis-nord"
+    },
+    {
+      "name": "private-app-requires-auth",
+      "ok": true,
+      "title": "GuildOps - Commandement de guilde",
+      "url": "/app",
+      "keyText": "GuildOpsAccueilGalerieConnexionInscriptionEmailMot de passeEntrer"
+    },
+    {
+      "name": "public-route-accessible-without-auth",
+      "ok": true,
+      "title": "Aegis Nord",
+      "url": "/g/aegis-nord"
+    },
+    {
+      "name": "app-connected-simulated-session",
+      "ok": true,
+      "url": "http://127.0.0.1:5173/app"
+    }
+  ],
+  "failures": {
+    "horizontalOverflow": [],
+    "under44": [],
+    "errorAndLoading": [],
+    "routeChecks": []
+  }
+}

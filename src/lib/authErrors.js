@@ -43,5 +43,13 @@ export function formatAuthError(error, { action = "auth" } = {}) {
     return "Cette information existe déjà. Vérifie l'email ou connecte-toi avec ton compte existant.";
   }
 
+  if (/invalid email or password/i.test(message)) {
+    return "Email ou mot de passe incorrect.";
+  }
+
+  if (/password/i.test(message) && /10|too small|min/i.test(message)) {
+    return "Le mot de passe doit contenir au moins 10 caractères.";
+  }
+
   return message || "Authentification impossible.";
 }

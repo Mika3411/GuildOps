@@ -490,7 +490,7 @@ async function scanMergeDuplicates(
         JOIN guilds g ON g.id = gm.guild_id
         LEFT JOIN users u ON u.id = gm.user_id
         WHERE gm.guild_id = $2
-          AND gm.status <> 'banned'
+          AND gm.status NOT IN ('banned', 'left')
       ),
       target_members AS (
         SELECT
@@ -512,7 +512,7 @@ async function scanMergeDuplicates(
         JOIN guilds g ON g.id = gm.guild_id
         LEFT JOIN users u ON u.id = gm.user_id
         WHERE gm.guild_id = $3
-          AND gm.status <> 'banned'
+          AND gm.status NOT IN ('banned', 'left')
       ),
       candidates AS (
         SELECT

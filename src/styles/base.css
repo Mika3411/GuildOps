@@ -36,6 +36,19 @@
   box-sizing: border-box;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  border: 0;
+  margin: -1px;
+  white-space: nowrap;
+}
+
 html {
   min-width: 320px;
   min-height: 100%;
@@ -112,6 +125,11 @@ button:focus-visible {
   outline: none;
 }
 
+a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
 .password-input {
   position: relative;
   width: 100%;
@@ -119,16 +137,16 @@ button:focus-visible {
 
 .password-input input {
   width: 100%;
-  padding-right: 48px;
+  padding-right: 60px;
 }
 
 .password-input-toggle {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 6px;
   transform: translateY(-50%);
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

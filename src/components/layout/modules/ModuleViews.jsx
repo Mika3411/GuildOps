@@ -64,10 +64,17 @@ const MODULE_CATALOG_IDS = Object.freeze([
   "translation",
   "multi_guilds",
 ]);
+const UTILITY_COMPACT_HERO_VIEWS = new Set(["administration", "absences", "settings"]);
 
 function getRouteModeValue(props) {
   if (props.authSession?.isApiEnabled) return "Synchronisé";
   return "API requise";
+}
+
+function getDefaultHeroEyebrow(module, title) {
+  if (module?.view === "command" || module?.id === "site") return "Site";
+  if (String(title || "").toLowerCase().includes("module")) return "Centre";
+  return "Module";
 }
 
 function getDefaultHeroConfig(props, moduleOverride) {
@@ -75,7 +82,7 @@ function getDefaultHeroConfig(props, moduleOverride) {
   const title = module?.hubLabel || module?.navLabel || module?.label || "GuildOps";
 
   return {
-    eyebrow: `Espace ${String(title).toLowerCase()}`,
+    eyebrow: getDefaultHeroEyebrow(module, title),
     icon: module?.icon || Settings,
     metric: module?.complexity ? getComplexityLabel(module.complexity) : "Centre",
     modeDetail: module?.description || "Pilotage de guilde",
@@ -98,11 +105,14 @@ function getViewHeroConfig(props, moduleOverride) {
   const overrides = {
     administration: {
       badge: administrationMemberCount,
+      eyebrow: "Admin",
       metric: `${administrationMemberCount}/${props.members?.length || 0} accès`,
       modeDetail: "Permissions et restrictions",
+      title: "Administration",
     },
     absences: {
       badge: props.absenceSummary?.active || 0,
+      eyebrow: "Planning",
       metric: `${absenceTotal} absence${absenceTotal > 1 ? "s" : ""}`,
       modeDetail: "Dates et motifs",
       modeValue: "Disponibilités",
@@ -127,9 +137,11 @@ function getViewHeroConfig(props, moduleOverride) {
       modeValue: props.forumLoading ? "Chargement" : getRouteModeValue(props),
     },
     member: {
+      eyebrow: "Membre",
       metric: props.authSession?.isAuthenticated ? "Session active" : "Invité",
       modeDetail: "Profil et sécurité",
       modeValue: "Compte",
+      title: "Compte",
     },
     membershipRequests: {
       badge: pendingMembershipRequests,
@@ -142,22 +154,25 @@ function getViewHeroConfig(props, moduleOverride) {
     },
     modules: {
       badge: activeCatalogCount,
-      eyebrow: "Centre modules",
+      eyebrow: "Centre",
       metric: `${activeCatalogCount}/${MODULE_CATALOG_IDS.length} activés`,
       modeDetail: "Activation des outils",
       modeValue: props.moduleUpdateError ? "À vérifier" : "Activation",
       title: "Modules",
     },
     settings: {
+      eyebrow: "Réglages",
       metric: `${props.guilds?.length || 0} guilde${props.guilds?.length > 1 ? "s" : ""}`,
       modeDetail: "Mondes et paramètres",
       title: "Paramètres",
     },
     shop: {
       badge: props.purchasedDesignIds?.length || 0,
+      eyebrow: "Catalogue",
       metric: `${props.purchasedDesignIds?.length || 0} acquis`,
       modeDetail: "Templates et packs",
       modeValue: "Catalogue",
+      title: "Boutique",
     },
     wars: {
       metric: `${confirmedMembers}/${expectedMembers} confirmés`,
@@ -165,16 +180,26 @@ function getViewHeroConfig(props, moduleOverride) {
     },
   };
 
-  return {
+  const heroConfig = {
     ...config,
     ...(overrides[props.activeView] || {}),
+  };
+
+  if (!UTILITY_COMPACT_HERO_VIEWS.has(props.activeView)) return heroConfig;
+
+  return {
+    ...heroConfig,
+    className: `${heroConfig.className || ""} is-utility-compact`.trim(),
   };
 }
 
 function ViewRouteFrame({ children, module, props }) {
+  const heroConfig = getViewHeroConfig(props, module);
+  const isCompactFrame = heroConfig.className?.split(/\s+/).includes("is-utility-compact");
+
   return (
-    <div className={`view-with-module-hero view-${props.activeView || "module"}-hero-frame`}>
-      <ModuleHero {...getViewHeroConfig(props, module)} />
+    <div className={`view-with-module-hero view-${props.activeView || "module"}-hero-frame${isCompactFrame ? " is-utility-compact-frame" : ""}`}>
+      <ModuleHero {...heroConfig} />
       {children}
     </div>
   );
@@ -261,7 +286,7 @@ export function ModulesView({ enabledModuleIds = [], moduleUpdateError = "", onE
   return (
     <div className="page-grid module-registry-page">
       <section className="panel wide-panel">
-        <PanelHeader icon={Settings} title="Modules GuildOps" meta={`${enabledCount}/${catalogModules.length} activés`} />
+        <PanelHeader icon={Settings} title="Catalogue d'outils" meta={`${enabledCount}/${catalogModules.length} activés`} />
         <div className="module-registry-intro">
           <strong>Ajoute les outils quand ta guilde grandit.</strong>
           <p>Le site de guilde reste le point de départ. Active ensuite les modules qui répondent à un vrai besoin d'organisation.</p>
@@ -344,7 +369,7 @@ export function ModuleDisabledView({ module, onNavigate }) {
           <Icon size={26} />
         </span>
         <div>
-          <h1>{module.label}</h1>
+          <h2>{module.label}</h2>
           <p>{module.description}</p>
           <small>Ce module n'est pas encore activé pour cette guilde.</small>
         </div>

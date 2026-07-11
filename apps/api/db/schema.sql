@@ -308,7 +308,7 @@ BEGIN
   FOR role_seed IN
     SELECT *
     FROM (VALUES
-      ('membre', 'Membre', 10, ARRAY['send_sos']),
+      ('membre', 'Membre', 10, ARRAY[]::text[]),
       ('officier', 'Officier', 40, ARRAY['approve_members', 'manage_events', 'send_sos', 'moderate_forum', 'manage_members']),
       ('diplomate', 'Diplomate', 30, ARRAY['send_sos', 'manage_diplomacy']),
       ('banquier', 'Banquier', 30, ARRAY['send_sos', 'manage_bank']),

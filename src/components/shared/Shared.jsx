@@ -37,14 +37,44 @@ export function Field({ label, children }) {
   );
 }
 
-export function PanelHeader({ icon: Icon, title, meta, action }) {
+export function ScreenReaderOnly({ as: Component = "span", children, ...props }) {
+  return (
+    <Component className="sr-only" {...props}>
+      {children}
+    </Component>
+  );
+}
+
+export function LiveStatus({ as: Component = "span", children, className = "", politeness = "polite", ...props }) {
+  return (
+    <Component
+      aria-atomic="true"
+      aria-live={politeness}
+      className={className || undefined}
+      role="status"
+      {...props}
+    >
+      {children}
+    </Component>
+  );
+}
+
+export function PanelHeader({ action, headingLevel = 2, icon: Icon, meta, metaLive = false, title }) {
+  const safeHeadingLevel = Math.min(6, Math.max(2, Number(headingLevel) || 2));
+  const HeadingTag = `h${safeHeadingLevel}`;
+  const metaElement = metaLive ? (
+    <LiveStatus className="panel-meta">{meta}</LiveStatus>
+  ) : (
+    <span className="panel-meta">{meta}</span>
+  );
+
   return (
     <header className="panel-header">
       <div>
-        {Icon ? <Icon size={18} /> : null}
-        <h2>{title}</h2>
+        {Icon ? <Icon aria-hidden="true" focusable="false" size={18} /> : null}
+        <HeadingTag>{title}</HeadingTag>
       </div>
-      {action || (meta ? <span className="panel-meta">{meta}</span> : null)}
+      {action || (meta ? metaElement : null)}
     </header>
   );
 }
@@ -82,19 +112,23 @@ export function ModuleHero({
   metric,
   title,
 }) {
+  const titleId = React.useId();
   const displayBadge = Number(badge || 0) > 0 ? badge : "";
 
   return (
-    <section className={`panel wide-panel message-space-hero module-space-hero${className ? ` ${className}` : ""}`}>
-      <div className="message-space-mark module-space-mark">
+    <section
+      aria-labelledby={titleId}
+      className={`panel wide-panel message-space-hero module-space-hero${className ? ` ${className}` : ""}`}
+    >
+      <div className="message-space-mark module-space-mark" aria-hidden="true">
         {mark || <PremiumHeroGlyph icon={Icon} variant="mark" />}
         {displayBadge ? <span>{displayBadge}</span> : null}
       </div>
       <span>
-        <small>{eyebrow}</small>
-        <strong>{title}</strong>
+        {eyebrow ? <small>{eyebrow}</small> : null}
+        <h1 className="module-hero-title" id={titleId}>{title}</h1>
       </span>
-      {metric ? <em>{metric}</em> : null}
+      {metric ? <LiveStatus as="em">{metric}</LiveStatus> : null}
       <div className="message-hero-crest module-hero-crest" aria-hidden="true">
         {crest || <PremiumHeroGlyph icon={Icon} variant="crest" />}
       </div>
@@ -102,14 +136,29 @@ export function ModuleHero({
   );
 }
 
-export function EmptyState({ compact = false, icon: Icon = CircleHelp, text, title }) {
+export function EmptyState({
+  actionIcon: ActionIcon,
+  actionLabel,
+  className = "",
+  compact = false,
+  icon: Icon = CircleHelp,
+  onAction,
+  text,
+  title,
+}) {
   return (
-    <div className={`empty-card ${compact ? "compact" : ""}`}>
+    <div className={`empty-card ${compact ? "compact" : ""} ${actionLabel ? "is-actionable" : ""} ${className}`.trim()}>
       <span className="empty-card-icon">{Icon ? <Icon size={compact ? 16 : 22} /> : null}</span>
       <span>
         <strong>{title}</strong>
         {text ? <small>{text}</small> : null}
       </span>
+      {actionLabel ? (
+        <button className="primary-action empty-card-action" type="button" onClick={onAction}>
+          {ActionIcon ? <ActionIcon size={16} /> : null}
+          {actionLabel}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -141,6 +190,7 @@ export function TranslationPanel({ translateOn, setTranslateOn, targetLanguage, 
             className={`toggle ${translateOn ? "is-on" : ""}`}
             type="button"
             onClick={() => setTranslateOn(!translateOn)}
+            aria-label={translateOn ? "Désactiver la traduction automatique" : "Activer la traduction automatique"}
             aria-pressed={translateOn}
           >
             <span />

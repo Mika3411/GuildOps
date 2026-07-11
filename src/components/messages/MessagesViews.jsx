@@ -36,6 +36,7 @@ import {
 } from "../../lib/guildOpsTransforms.js";
 import {
   EmptyState,
+  LiveStatus,
   ModuleHero,
   PanelHeader,
   TranslationPanel
@@ -266,6 +267,16 @@ function getThreadParticipants(conversation = {}, recipients = []) {
   });
 }
 
+function focusThreadComposer() {
+  window.requestAnimationFrame(() => {
+    const composer = document.querySelector(".thread-input");
+    const textarea = composer?.querySelector("textarea");
+
+    composer?.scrollIntoView({ behavior: "smooth", block: "center" });
+    textarea?.focus();
+  });
+}
+
 export function InternalMessages({
   activeConversation,
   conversations = [],
@@ -369,7 +380,7 @@ export function InternalMessages({
   }
 
   return (
-    <aside className={`message-inbox-pane ${groupComposerOpen ? "is-grouping" : ""}`}>
+    <aside className={`message-inbox-pane ${groupComposerOpen ? "is-grouping" : ""} ${visibleConversations.length ? "" : "is-empty"}`.trim()}>
       <header className="message-inbox-header">
         <span>
           <Mail size={18} />
@@ -388,10 +399,10 @@ export function InternalMessages({
             <UsersRound size={14} />
             Groupe
           </button>
-          <em>{unreadCount} non lus</em>
+          <LiveStatus as="em">{unreadCount} non lus</LiveStatus>
         </div>
       </header>
-      <p className="message-inbox-status">{realtimeStatus}</p>
+      <p className="message-inbox-status" aria-live="polite">{realtimeStatus}</p>
       {groupComposerOpen ? (
         <div className="message-group-composer">
           <header>
@@ -448,7 +459,7 @@ export function InternalMessages({
               Annuler
             </button>
           </div>
-          {groupFeedback ? <small className="message-group-feedback">{groupFeedback}</small> : null}
+          {groupFeedback ? <small className="message-group-feedback" aria-live="polite">{groupFeedback}</small> : null}
         </div>
       ) : null}
       <div className="message-recipient-search">
@@ -523,7 +534,7 @@ export function InternalMessages({
           </div>
         ) : null}
         {inviteFeedback.message ? (
-          <p className={`message-invite-feedback is-${inviteFeedback.status}`}>{inviteFeedback.message}</p>
+          <p className={`message-invite-feedback is-${inviteFeedback.status}`} aria-live="polite">{inviteFeedback.message}</p>
         ) : null}
       </div>
       <div className="message-list">
@@ -556,7 +567,15 @@ export function InternalMessages({
             </article>
           ))
         ) : (
-          <EmptyState icon={Mail} title="Aucune conversation" text="Ecris au canal de guilde pour ouvrir le fil." compact />
+          <EmptyState
+            actionIcon={Send}
+            actionLabel="Envoyer un message"
+            icon={Mail}
+            title="Canal prêt, aucun échange"
+            text="C'est normal pour une nouvelle guilde: personne n'a encore lancé la discussion. Envoie le premier message au canal de guilde."
+            onAction={focusThreadComposer}
+            compact
+          />
         )}
       </div>
     </aside>
@@ -755,7 +774,16 @@ export function MessageThread({
             </article>
           ))
         ) : (
-          <p className="empty-state">Aucun message dans cette conversation.</p>
+          <EmptyState
+            actionIcon={Send}
+            actionLabel="Envoyer un message"
+            className="thread-empty-state"
+            icon={MessageSquare}
+            title="Aucun message pour l'instant"
+            text="Le fil est neuf, ce qui est attendu au démarrage d'une guilde. Un premier message suffit à ouvrir la coordination."
+            onAction={focusThreadComposer}
+            compact
+          />
         )}
       </div>
     </section>
@@ -929,7 +957,7 @@ export function ThreadComposer({
         <Send size={15} />
         Envoyer
       </button>
-      {messageError ? <small className="form-note">{messageError}</small> : null}
+      {messageError ? <small className="form-note" aria-live="polite">{messageError}</small> : null}
     </div>
   );
 }
@@ -1016,11 +1044,12 @@ export function MessagesView(props) {
     <div className="page-grid two-columns messages-page">
       <ModuleHero
         badge={props.unreadMessageCount}
+        className="is-utility-compact"
         crest={<FactionCrest label="GuildOps" />}
-        eyebrow="Espace messagerie"
+        eyebrow="Privé"
         mark={<SignalTowerMark />}
         metric={`${props.unreadMessageCount || 0} non lus`}
-        title="Messagerie"
+        title="Messages"
       />
       <section className="panel wide-panel message-inbox-workspace">
         <InternalMessages

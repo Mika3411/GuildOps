@@ -20,6 +20,11 @@ import {
   getAuthErrorDetails
 } from "../../../lib/authErrors.js";
 import {
+  clearPendingPushOptIn,
+  hasPendingPushOptIn,
+  rememberPendingPushOptIn
+} from "../../../lib/pushOptInPreference.js";
+import {
   createGuildSiteDraft,
   getMemberInviteToken,
   loadPublishedSite,
@@ -34,6 +39,7 @@ export function JoinGuildRoute({
   inviteToken = "",
   isInviteLink = false,
   memberBlocks = [],
+  notificationProps,
   onJoined,
   onOpenApp,
   onOpenPublicSite,
@@ -51,6 +57,7 @@ export function JoinGuildRoute({
   const [nickname, setNickname] = useState(authSession.user?.displayName || "");
   const [notice, setNotice] = useState("");
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
+  const [pushOptIn, setPushOptIn] = useState(false);
   const [siteState, setSiteState] = useState({ error: "", site: null, status: "loading" });
   const [submitting, setSubmitting] = useState(false);
   const [verificationUrl, setVerificationUrl] = useState("");
@@ -140,11 +147,17 @@ export function JoinGuildRoute({
         });
 
         if (payload?.status === "verification_required") {
+          if (pushOptIn) {
+            rememberPendingPushOptIn(payload.email || authForm.email);
+          }
           setPendingVerificationEmail(payload.email || authForm.email);
           setNotice(payload.message || "Compte cree. Valide ton email puis reviens sur ce lien.");
           setVerificationUrl(payload.verificationUrl || "");
           setAuthMode("login");
         } else if (payload?.user) {
+          if (pushOptIn) {
+            await notificationProps?.onEnablePush?.();
+          }
           setNotice("Compte connecte. Confirme l'entree dans la guilde.");
         }
       } else {
@@ -152,6 +165,12 @@ export function JoinGuildRoute({
           email: authForm.email,
           password: authForm.password,
         });
+        if (hasPendingPushOptIn(authForm.email)) {
+          const enabled = await notificationProps?.onEnablePush?.();
+          if (enabled) {
+            clearPendingPushOptIn(authForm.email);
+          }
+        }
         setNotice("Compte connecte. Confirme l'entree dans la guilde.");
       }
     } catch (submitError) {
@@ -362,6 +381,20 @@ export function JoinGuildRoute({
                     required
                   />
                 </label>
+                {isRegister ? (
+                  <label className="checkbox-row auth-notification-optin">
+                    <input
+                      type="checkbox"
+                      checked={pushOptIn}
+                      onChange={(event) => setPushOptIn(event.target.checked)}
+                      disabled={notificationProps?.pushState?.supported === false}
+                    />
+                    <span>
+                      Activer les notifications
+                      <small>Disponible après validation du compte.</small>
+                    </span>
+                  </label>
+                ) : null}
                 {notice ? (
                   <div className="auth-notice">
                     <MailCheck size={18} />

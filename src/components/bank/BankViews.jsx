@@ -383,6 +383,7 @@ export function BankView({
   bankStock = [],
   createBankRequest,
   currentUser,
+  saveBankResource,
   setBankCommand,
   updateBankRequestStatus,
 }) {
@@ -425,12 +426,14 @@ export function BankView({
           </div>
         ) : null}
       </section>
+      <BankResourceEditor bankStock={bankStock} currentUser={currentUser} onSave={saveBankResource} />
       <BankRequestComposer bankStock={bankStock} onCreate={createBankRequest} />
       <BankRequestsPanel
         bankRequests={bankRequests}
         currentUser={currentUser}
         updateBankRequestStatus={updateBankRequestStatus}
       />
+      <BankRequestHistoryPanel bankRequests={bankRequests} />
       <BankMovementComposer
         bankStock={bankStock}
         currentUser={currentUser}
@@ -466,6 +469,129 @@ export function BankView({
         </div>
       </section>
     </div>
+  );
+}
+
+const NEW_BANK_RESOURCE_VALUE = "__new_resource__";
+
+function createBankResourceDraft(resource = {}) {
+  return {
+    resourceCode: getBankResourceCode(resource),
+    resourceName: getBankResourceName(resource),
+    amount: resource.amount ?? "",
+    unit: resource.unit || "",
+  };
+}
+
+function createEmptyBankResourceDraft() {
+  return {
+    resourceCode: "",
+    resourceName: "",
+    amount: "",
+    unit: "",
+  };
+}
+
+export function BankResourceEditor({ bankStock = [], currentUser, onSave }) {
+  const bankGuard = getGuardProps(currentUser, "manage_bank");
+  const firstResourceCode = getBankResourceCode(bankStock[0]);
+  const [selectedCode, setSelectedCode] = useState(firstResourceCode || NEW_BANK_RESOURCE_VALUE);
+  const [draft, setDraft] = useState(() =>
+    firstResourceCode ? createBankResourceDraft(bankStock[0]) : createEmptyBankResourceDraft(),
+  );
+
+  useEffect(() => {
+    if (selectedCode === NEW_BANK_RESOURCE_VALUE) return;
+    const selectedResource = bankStock.find((resource) => getBankResourceCode(resource) === selectedCode);
+
+    if (selectedResource) {
+      setDraft(createBankResourceDraft(selectedResource));
+      return;
+    }
+
+    if (!firstResourceCode) {
+      setSelectedCode(NEW_BANK_RESOURCE_VALUE);
+      setDraft(createEmptyBankResourceDraft());
+    }
+  }, [bankStock, firstResourceCode, selectedCode]);
+
+  function updateDraft(key, value) {
+    setDraft((current) => ({ ...current, [key]: value }));
+  }
+
+  function selectResource(value) {
+    setSelectedCode(value);
+    if (value === NEW_BANK_RESOURCE_VALUE) {
+      setDraft(createEmptyBankResourceDraft());
+      return;
+    }
+
+    const resource = bankStock.find((item) => getBankResourceCode(item) === value);
+    setDraft(createBankResourceDraft(resource));
+  }
+
+  function submitResource() {
+    if (bankGuard.disabled) return;
+    onSave?.(draft);
+    if (selectedCode === NEW_BANK_RESOURCE_VALUE) {
+      setDraft(createEmptyBankResourceDraft());
+    }
+  }
+
+  const amount = Number(draft.amount);
+  const isInvalid = !draft.resourceName.trim() || draft.amount === "" || !Number.isFinite(amount) || amount < 0;
+  const isExistingResource = selectedCode !== NEW_BANK_RESOURCE_VALUE;
+
+  return (
+    <section className="panel bank-compact-panel bank-resource-editor">
+      <PanelHeader icon={Banknote} title="Ressources" meta="Membres autorisés" />
+      <div className="bank-resource-toolbar">
+        <label className="form-row">
+          <span>Stock</span>
+          <select value={selectedCode} onChange={(event) => selectResource(event.target.value)} disabled={bankGuard.disabled} title={bankGuard.title}>
+            <option value={NEW_BANK_RESOURCE_VALUE}>Nouvelle ressource</option>
+            {bankStock.map((resource) => (
+              <option key={getBankResourceCode(resource)} value={getBankResourceCode(resource)}>
+                {getBankResourceName(resource)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="button" onClick={() => selectResource(NEW_BANK_RESOURCE_VALUE)} disabled={bankGuard.disabled} title={bankGuard.title}>
+          <Plus size={16} />
+          Ajouter
+        </button>
+      </div>
+      <div className="bank-form-grid">
+        <label className="form-row">
+          <span>Nom</span>
+          <input value={draft.resourceName} onChange={(event) => updateDraft("resourceName", event.target.value)} disabled={bankGuard.disabled} title={bankGuard.title} />
+        </label>
+        <label className="form-row">
+          <span>Code</span>
+          <input
+            value={draft.resourceCode}
+            placeholder="auto"
+            onChange={(event) => updateDraft("resourceCode", event.target.value)}
+            disabled={bankGuard.disabled || isExistingResource}
+            title={isExistingResource ? "Le code d'une ressource existante reste stable." : bankGuard.title}
+          />
+        </label>
+        <label className="form-row">
+          <span>Montant</span>
+          <input value={draft.amount} inputMode="decimal" onChange={(event) => updateDraft("amount", event.target.value)} disabled={bankGuard.disabled} title={bankGuard.title} />
+        </label>
+        <label className="form-row">
+          <span>Unité</span>
+          <input value={draft.unit} placeholder="K, M, rss..." onChange={(event) => updateDraft("unit", event.target.value)} disabled={bankGuard.disabled} title={bankGuard.title} />
+        </label>
+      </div>
+      <div className="bank-resource-actions">
+        <button className="primary-action" type="button" onClick={submitResource} disabled={bankGuard.disabled || isInvalid} title={bankGuard.title}>
+          Enregistrer la ressource
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -576,6 +702,55 @@ export function BankRequestsPanel({ bankRequests = [], currentUser, updateBankRe
             </article>
           );
         }) : <EmptyState icon={ClipboardCheck} title="Aucune demande" text="Les demandes de ressources arriveront ici." compact />}
+      </div>
+    </section>
+  );
+}
+
+const BANK_REQUEST_HISTORY_STATUSES = new Set(["approved", "fulfilled", "refused"]);
+
+function getBankRequestHistoryDate(request = {}) {
+  return request.decidedAt || request.updatedAt || request.createdAt || request.time || "";
+}
+
+export function BankRequestHistoryPanel({ bankRequests = [] }) {
+  const historyRequests = bankRequests.filter((request) =>
+    BANK_REQUEST_HISTORY_STATUSES.has(normalizeBankRequestStatus(request)),
+  );
+  const acceptedCount = historyRequests.filter((request) => {
+    const status = normalizeBankRequestStatus(request);
+    return status === "approved" || status === "fulfilled";
+  }).length;
+  const refusedCount = historyRequests.filter((request) => normalizeBankRequestStatus(request) === "refused").length;
+
+  return (
+    <section className="panel bank-compact-panel">
+      <PanelHeader icon={ClipboardCheck} title="Historique demandes" meta={`${acceptedCount} acceptees · ${refusedCount} refusees`} />
+      <div className="bank-request-history-list">
+        {historyRequests.length ? historyRequests.map((request) => {
+          const status = normalizeBankRequestStatus(request);
+          const date = getBankRequestHistoryDate(request);
+
+          return (
+            <article
+              className={`bank-request-history-row ${status}`}
+              key={request.id || `${request.member}-${request.resource}-${request.amount}-${status}`}
+            >
+              <span>
+                <strong>{request.member || request.requester || "Membre"}</strong>
+                <small>
+                  {request.resource}
+                  {request.reason || request.urgency ? ` · ${request.reason || request.urgency}` : ""}
+                </small>
+              </span>
+              <em className="bank-request-quantity">{formatRequestAmount(request)}</em>
+              <i className={`status-chip ${status}`}>{bankRequestStatusLabels[status] || status}</i>
+              {date ? <time>{date}</time> : null}
+            </article>
+          );
+        }) : (
+          <EmptyState icon={ClipboardCheck} title="Aucun historique" text="Les demandes acceptees ou refusees s'afficheront ici." compact />
+        )}
       </div>
     </section>
   );

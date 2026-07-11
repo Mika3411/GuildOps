@@ -181,6 +181,14 @@ type PublicJoinMemberRow = {
   joined_at: string | null;
 };
 
+type PublicLeaveMemberRow = {
+  id: string;
+  user_id: string;
+  nickname: string;
+  status: string;
+  joined_at: string | null;
+};
+
 type PublicMembershipRequestRow = {
   id: string;
   guild_id: string;
@@ -826,6 +834,115 @@ publicRouter.post(
       status: "joined",
       guild: joined.guild,
       member: joined.member,
+      ...me
+    });
+  })
+);
+
+publicRouter.delete(
+  "/public/guilds/:slug/membership",
+  requireAuth,
+  validate({ params: z.object({ slug: slugSchema }) }),
+  asyncHandler(async (req, res) => {
+    const auth = getAuth(res);
+    const { slug } = req.params as { slug: string };
+
+    const left = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        const guildResult = await client.query<PublicJoinGuildRow>(
+          `
+            SELECT
+              g.id::text,
+              g.organization_id::text,
+              g.name,
+              g.tag,
+              COALESCE(gs.public_slug::text, g.slug::text) AS slug
+            FROM guilds g
+            LEFT JOIN guild_sites gs ON gs.guild_id = g.id
+            WHERE (g.slug = $1 OR gs.public_slug = $1)
+              AND g.deleted_at IS NULL
+              AND (g.is_public = true OR gs.status = 'published')
+            LIMIT 1
+          `,
+          [slug]
+        );
+        const guild = guildResult.rows[0];
+
+        if (!guild) {
+          throw new NotFoundError("Guild site not found");
+        }
+
+        const memberResult = await client.query<PublicLeaveMemberRow>(
+          `
+            SELECT
+              id::text,
+              user_id::text,
+              nickname,
+              status,
+              joined_at::text
+            FROM guild_members
+            WHERE guild_id = $1
+              AND user_id = $2
+            LIMIT 1
+            FOR UPDATE
+          `,
+          [guild.id, auth.user.id]
+        );
+        const member = memberResult.rows[0];
+
+        if (!member || member.status === "left") {
+          throw new NotFoundError("Vous n'êtes pas membre de cette guilde.");
+        }
+
+        if (member.status === "banned") {
+          throw new ForbiddenError("Vous ne pouvez pas modifier cette adhésion.");
+        }
+
+        await client.query("DELETE FROM guild_member_roles WHERE guild_member_id = $1", [member.id]);
+        await client.query(
+          `
+            UPDATE guild_members
+            SET status = 'left',
+                updated_at = now()
+            WHERE id = $1
+          `,
+          [member.id]
+        );
+        await client.query(
+          `
+            UPDATE user_sessions
+            SET active_guild_id = NULL,
+                refreshed_at = now()
+            WHERE id = $1
+              AND user_id = $2
+              AND active_guild_id = $3
+              AND revoked_at IS NULL
+          `,
+          [auth.sessionId, auth.user.id, guild.id]
+        );
+
+        await client.query("COMMIT");
+
+        return {
+          guild,
+          member: {
+            ...member,
+            status: "left"
+          }
+        };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
+    const me = await buildMePayload(database, auth.user.id, auth.sessionId);
+
+    res.json({
+      status: "left",
+      guild: left.guild,
+      member: left.member,
       ...me
     });
   })

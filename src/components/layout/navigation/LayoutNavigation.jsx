@@ -23,9 +23,18 @@ import {
 import {
   getGuildKey
 } from "../../../lib/guildOpsTransforms.js";
+import {
+  LiveStatus
+} from "../../shared/Shared.jsx";
 
 const REALM_CLOCK_STORAGE_KEY = "guildops.realmClock.timeZone";
 const DEFAULT_TIME_ZONE = "UTC";
+const MOBILE_BOTTOM_PRIMARY_IDS = Object.freeze(["command", "shop", "member", "absences", "messages"]);
+const MOBILE_BOTTOM_SECONDARY_IDS = Object.freeze(["administration", "modules", "settings"]);
+const MOBILE_BOTTOM_LABEL_OVERRIDES = Object.freeze({
+  administration: "Admin",
+  settings: "Paramètres",
+});
 const REALM_CLOCK_TIME_ZONES = [
   { value: "UTC", label: "UTC" },
   { value: "Europe/Paris", label: "Paris" },
@@ -52,6 +61,34 @@ function isNavItemActive(item, activeView) {
 
   const activeModule = getGuildOpsModuleByView(activeView);
   return Boolean(item.moduleId && activeModule?.id === item.moduleId);
+}
+
+function sortMobileBottomItems(items, order) {
+  const positions = new Map(order.map((id, index) => [id, index]));
+
+  return [...items].sort((left, right) => (
+    (positions.get(left.id) ?? order.length) - (positions.get(right.id) ?? order.length)
+  ));
+}
+
+function getMobileBottomLabel(item, { full = false } = {}) {
+  if (full && MOBILE_BOTTOM_LABEL_OVERRIDES[item.id]) return MOBILE_BOTTOM_LABEL_OVERRIDES[item.id];
+  return item.mobileLabel || item.label;
+}
+
+function getUnreadMessagesText(count = 0) {
+  const safeCount = Number(count) || 0;
+  return `${safeCount} message${safeCount > 1 ? "s" : ""} non lu${safeCount > 1 ? "s" : ""}`;
+}
+
+function getUnreadNotificationsText(count = 0) {
+  const safeCount = Number(count) || 0;
+  return `${safeCount} notification${safeCount > 1 ? "s" : ""} non lue${safeCount > 1 ? "s" : ""}`;
+}
+
+function getNavButtonLabel(item, { badge = 0, label } = {}) {
+  if (item.id === "messages") return `${label || item.label}, ${getUnreadMessagesText(badge)}`;
+  return label || item.label;
 }
 
 function getSupportedTimeZone(timeZone) {
@@ -254,12 +291,14 @@ export function Sidebar({
               key={item.id}
               className={`nav-item ${isActive ? "is-active" : ""} ${item.disabled ? "is-disabled" : ""}`}
               type="button"
+              aria-current={isActive ? "page" : undefined}
+              aria-label={getNavButtonLabel(item, { badge, label: item.label })}
               disabled={item.disabled}
               onClick={() => onNavigate(item.id)}
             >
-              <item.icon size={20} />
+              <item.icon aria-hidden="true" focusable="false" size={20} />
               <span>{item.label}</span>
-              {badge ? <span className="badge-dot">{badge}</span> : null}
+              {badge ? <span className="badge-dot" aria-hidden="true">{badge}</span> : null}
             </button>
           );
         })}
@@ -272,6 +311,7 @@ export function Sidebar({
             key={getGuildKey(guild)}
             type="button"
             className={`guild-row ${selectedGuildKey === getGuildKey(guild) ? "is-selected" : ""}`}
+            aria-pressed={selectedGuildKey === getGuildKey(guild)}
             onClick={() => onGuildChange(guild)}
           >
             <GuildShieldMark small />
@@ -296,63 +336,97 @@ export function MobileHeader({
   notificationProps,
   onNavigate,
   onOpenMessages,
-  unreadMessages = 0
+  unreadMessages = 0,
+  workspaceRef
 }) {
   const displayGuild = selectedGuild || {};
+  const [isScrolled, setIsScrolled] = useState(false);
+  const activeItem = navItems.find((item) => isNavItemActive(item, activeView));
+  const activeLabel = activeItem?.mobileLabel || activeItem?.label || "Espace";
+  const guildName = displayGuild.name || "Guilde";
+  const guildContext = [displayGuild.game, displayGuild.realm, displayGuild.language].filter(Boolean).join(" · ") || "Contexte en cours";
+  const isInternalRoute = activeView !== "command";
+  const isCompact = isInternalRoute || isScrolled;
+
+  useEffect(() => {
+    const scrollTarget = workspaceRef?.current;
+
+    if (!scrollTarget) {
+      setIsScrolled(false);
+      return undefined;
+    }
+
+    function handleScroll() {
+      setIsScrolled(scrollTarget.scrollTop > 24);
+    }
+
+    handleScroll();
+    scrollTarget.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => scrollTarget.removeEventListener("scroll", handleScroll);
+  }, [activeView, workspaceRef]);
 
   return (
-    <header className="mobile-header">
+    <header className={`mobile-header${isCompact ? " is-compact" : ""}`}>
       <div className="mobile-topline">
-        <button className="icon-button" type="button" aria-label="Menu">
+        <span className="icon-button mobile-menu-mark" aria-hidden="true">
           <Menu size={24} />
-        </button>
-        <strong>GuildOps</strong>
+        </span>
+        <span className="mobile-brand-context">
+          <strong>GuildOps</strong>
+          <small className="mobile-context-line">
+            {activeLabel} · {guildName}
+          </small>
+        </span>
         <div className="mobile-actions">
-          <Search size={22} />
+          <span className="mobile-search-mark" aria-hidden="true">
+            <Search size={22} />
+          </span>
           <NotificationBell compact notificationProps={notificationProps} />
           <button
             className="mobile-icon-action"
             type="button"
-            aria-label={`Messagerie, ${unreadMessages} message${unreadMessages > 1 ? "s" : ""} non lu${unreadMessages > 1 ? "s" : ""}`}
+            aria-label={`Messagerie, ${getUnreadMessagesText(unreadMessages)}`}
             onClick={onOpenMessages}
           >
-            <Mail size={22} />
-            {unreadMessages ? <span className="notice-dot message-count">{unreadMessages}</span> : null}
+            <Mail aria-hidden="true" focusable="false" size={22} />
+            {unreadMessages ? <span className="notice-dot message-count" aria-hidden="true">{unreadMessages}</span> : null}
           </button>
         </div>
       </div>
-      <button className="mobile-guild-card" type="button">
+      <div className="mobile-guild-card">
         <div className="avatar crest">
           <GuildShieldMark />
         </div>
         <span>
-          <strong>{displayGuild.name || "Guilde"}</strong>
-          <small>
-            {[displayGuild.game, displayGuild.realm, displayGuild.language].filter(Boolean).join(" · ") || "Contexte en cours"}
-          </small>
+          <strong>{guildName}</strong>
+          <small>{guildContext}</small>
         </span>
-        <ChevronDown size={22} />
-      </button>
-      <div className="mobile-tab-rail" aria-label="Modules rapides">
+        <ChevronDown aria-hidden="true" focusable="false" size={22} />
+      </div>
+      <nav className="mobile-tab-rail" aria-label="Modules rapides">
         {navItems.slice(0, 3).map((item) => {
           const badge = item.id === "messages" ? unreadMessages : item.badge;
           const isActive = isNavItemActive(item, activeView);
+          const label = item.mobileLabel || item.label;
 
           return (
             <button
               key={item.id}
               type="button"
               className={`${isActive ? "is-active" : ""} ${item.disabled ? "is-disabled" : ""}`}
+              aria-current={isActive ? "page" : undefined}
+              aria-label={getNavButtonLabel(item, { badge, label })}
               disabled={item.disabled}
               onClick={() => onNavigate(item.id)}
             >
-              <item.icon size={18} />
-              {item.mobileLabel || item.label}
-              {badge ? <span className="badge-dot">{badge}</span> : null}
+              <item.icon aria-hidden="true" focusable="false" size={18} />
+              {label}
+              {badge ? <span className="badge-dot" aria-hidden="true">{badge}</span> : null}
             </button>
           );
         })}
-      </div>
+      </nav>
     </header>
   );
 }
@@ -476,11 +550,11 @@ export function TopBar({
         <button
           className="icon-button message-icon-button"
           type="button"
-          aria-label={`Messagerie, ${unreadMessages} message${unreadMessages > 1 ? "s" : ""} non lu${unreadMessages > 1 ? "s" : ""}`}
+          aria-label={`Messagerie, ${getUnreadMessagesText(unreadMessages)}`}
           onClick={onOpenMessages}
         >
-          <Mail size={19} />
-          {unreadMessages ? <span className="notice-dot message-count">{unreadMessages}</span> : null}
+          <Mail aria-hidden="true" focusable="false" size={19} />
+          {unreadMessages ? <span className="notice-dot message-count" aria-hidden="true">{unreadMessages}</span> : null}
         </button>
         <button className="icon-button" type="button" aria-label="Aide">
           <CircleHelp size={19} />
@@ -587,20 +661,20 @@ function NotificationBell({ compact = false, notificationProps = {} }) {
       <button
         className={compact ? "mobile-icon-action notification-bell" : "icon-button notification-bell"}
         type="button"
-        aria-label={`Notifications, ${unreadNotifications} non lue${unreadNotifications > 1 ? "s" : ""}`}
+        aria-label={`Notifications, ${getUnreadNotificationsText(unreadNotifications)}`}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <Bell size={compact ? 22 : 19} />
-        {unreadNotifications ? <span className="notice-dot notification-count">{unreadNotifications}</span> : null}
+        <Bell aria-hidden="true" focusable="false" size={compact ? 22 : 19} />
+        {unreadNotifications ? <span className="notice-dot notification-count" aria-hidden="true">{unreadNotifications}</span> : null}
       </button>
       {open ? (
         <div className="notification-popover" role="dialog" aria-label="Notifications internes">
           <header>
             <span>
               <strong>Notifications</strong>
-              <small>{unreadNotifications ? `${unreadNotifications} non lue${unreadNotifications > 1 ? "s" : ""}` : "A jour"}</small>
+              <LiveStatus as="small">{unreadNotifications ? getUnreadNotificationsText(unreadNotifications) : "À jour"}</LiveStatus>
             </span>
             <button type="button" onClick={onMarkAllRead} disabled={!unreadNotifications}>
               Tout lu
@@ -623,8 +697,8 @@ function NotificationBell({ compact = false, notificationProps = {} }) {
               {pushActionLabel}
             </button>
           </div>
-          {pushState.message ? <p className="notification-hint">{pushState.message}</p> : null}
-          {notificationError ? <p className="notification-error">{notificationError}</p> : null}
+          {pushState.message ? <p className="notification-hint" aria-live="polite">{pushState.message}</p> : null}
+          {notificationError ? <p className="notification-error" aria-live="polite">{notificationError}</p> : null}
           <div className="notification-list">
             {notificationList.length ? (
               notificationList.slice(0, 10).map((notification) => (
@@ -658,26 +732,111 @@ function formatNotificationDate(value) {
 }
 
 export function MobileBottomNav({ activeView, mobileNav = getGuildOpsMobileNavItems(), onNavigate, unreadMessages = 0 }) {
-  return (
-    <nav className="mobile-bottom-nav" aria-label="Navigation mobile">
-      {mobileNav.map((item) => {
-        const badge = item.id === "messages" ? unreadMessages : 0;
-        const isActive = isNavItemActive(item, activeView);
+  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const primaryItems = sortMobileBottomItems(
+    mobileNav.filter((item) => MOBILE_BOTTOM_PRIMARY_IDS.includes(item.id)),
+    MOBILE_BOTTOM_PRIMARY_IDS
+  );
+  const secondaryItems = sortMobileBottomItems(
+    mobileNav.filter((item) => MOBILE_BOTTOM_SECONDARY_IDS.includes(item.id)),
+    MOBILE_BOTTOM_SECONDARY_IDS
+  );
+  const isMoreActive = secondaryItems.some((item) => isNavItemActive(item, activeView));
 
-        return (
+  useEffect(() => {
+    setIsMoreOpen(false);
+  }, [activeView]);
+
+  useEffect(() => {
+    if (!isMoreOpen) return undefined;
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") {
+        setIsMoreOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMoreOpen]);
+
+  function handleNavigate(item) {
+    if (item.disabled) return;
+    setIsMoreOpen(false);
+    onNavigate(item.id);
+  }
+
+  function renderNavButton(item, { full = false } = {}) {
+    const badge = item.id === "messages" ? unreadMessages : 0;
+    const isActive = isNavItemActive(item, activeView);
+    const label = getMobileBottomLabel(item, { full });
+
+    return (
+      <button
+        type="button"
+        key={item.id}
+        className={`${isActive ? "is-active" : ""} ${item.disabled ? "is-disabled" : ""}`}
+        aria-current={isActive ? "page" : undefined}
+        aria-label={getNavButtonLabel(item, { badge, label })}
+        disabled={item.disabled}
+        onClick={() => handleNavigate(item)}
+      >
+        <item.icon aria-hidden="true" focusable="false" size={full ? 20 : 21} />
+        <span>{label}</span>
+        {badge ? <span className="badge-dot" aria-hidden="true">{badge}</span> : null}
+      </button>
+    );
+  }
+
+  return (
+    <>
+      {secondaryItems.length ? (
+        <>
           <button
             type="button"
-            key={item.id}
-            className={`${isActive ? "is-active" : ""} ${item.disabled ? "is-disabled" : ""}`}
-            disabled={item.disabled}
-            onClick={() => onNavigate(item.id)}
+            className={`mobile-more-scrim${isMoreOpen ? " is-open" : ""}`}
+            aria-label="Fermer le menu Plus"
+            onClick={() => setIsMoreOpen(false)}
+          />
+          <div
+            className={`mobile-more-drawer${isMoreOpen ? " is-open" : ""}`}
+            id="mobile-more-drawer"
+            aria-label="Navigation secondaire"
+            aria-hidden={!isMoreOpen}
+            role="dialog"
+            hidden={!isMoreOpen}
           >
-            <item.icon size={22} />
-            <span>{item.mobileLabel || item.label}</span>
-            {badge ? <span className="badge-dot">{badge}</span> : null}
+            <div className="mobile-more-handle" aria-hidden="true" />
+            <div className="mobile-more-header">
+              <strong>Plus</strong>
+              <button type="button" aria-label="Fermer le menu Plus" onClick={() => setIsMoreOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mobile-more-list">
+              {secondaryItems.map((item) => renderNavButton(item, { full: true }))}
+            </div>
+          </div>
+        </>
+      ) : null}
+      <nav className="mobile-bottom-nav" aria-label="Navigation mobile">
+        {primaryItems.map((item) => renderNavButton(item))}
+        {secondaryItems.length ? (
+          <button
+            type="button"
+            className={`mobile-more-trigger${isMoreActive ? " is-active" : ""}${isMoreOpen ? " is-open" : ""}`}
+            aria-current={isMoreActive ? "page" : undefined}
+            aria-expanded={isMoreOpen}
+            aria-controls="mobile-more-drawer"
+            aria-label={`${isMoreOpen ? "Fermer" : "Ouvrir"} le menu Plus${isMoreActive ? ", section active" : ""}`}
+            onClick={() => setIsMoreOpen((current) => !current)}
+          >
+            <Plus aria-hidden="true" focusable="false" size={21} />
+            <span>Plus</span>
           </button>
-        );
-      })}
-    </nav>
+        ) : null}
+      </nav>
+    </>
   );
 }

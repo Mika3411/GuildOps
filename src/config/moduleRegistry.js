@@ -137,7 +137,7 @@ export const guildOpsModules = Object.freeze([
     benefit: "Déclencher une alerte rapide, suivre les renforts et réduire les pertes pendant les attaques.",
     route: "/app/modules/sos",
     view: "command",
-    permissionKeys: [],
+    permissionKeys: ["send_sos"],
     defaultEnabled: false,
     complexity: MODULE_COMPLEXITY.simple,
     dependencies: [],
@@ -276,6 +276,7 @@ export const administrationModuleIds = Object.freeze([
   "membership_requests",
   "absences",
   "wars_events",
+  "sos_attack",
   "bank",
   "diplomacy",
   "forum",
@@ -286,6 +287,7 @@ export const defaultEnabledModuleIds = Object.freeze(
 );
 
 const PRIMARY_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "absences", "messages", "administration"]);
+const MOBILE_NAV_MODULE_IDS = Object.freeze(["site", "shop", "member_space", "absences", "messages", "administration", "multi_guilds"]);
 
 export function getDefaultEnabledModuleIds() {
   return [...defaultEnabledModuleIds];
@@ -337,14 +339,15 @@ export function getGuildOpsNavItems(enabledModuleIds = defaultEnabledModuleIds) 
 }
 
 export function getGuildOpsMobileNavItems(enabledModuleIds = defaultEnabledModuleIds) {
-  const primaryItems = PRIMARY_NAV_MODULE_IDS.map((moduleId) => getGuildOpsModule(moduleId))
+  const primaryItems = MOBILE_NAV_MODULE_IDS.map((moduleId) => getGuildOpsModule(moduleId))
     .filter(Boolean)
     .filter((module) => isGuildOpsModuleEnabled(module, enabledModuleIds))
     .map((module) => toGuildOpsNavItem(module, enabledModuleIds));
 
   return [
-    ...primaryItems,
+    ...primaryItems.slice(0, 6),
     moduleHubNavItem,
+    ...primaryItems.slice(6),
   ].filter(Boolean);
 }
 

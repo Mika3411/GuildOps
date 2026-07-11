@@ -1,0 +1,3571 @@
+[
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/01-landing-accueil.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 194,
+            "height": 105,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 89
+          },
+          "text": "Le QG de guilde qui remplace les messages épinglés"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 704,
+            "height": 18,
+            "right": 334,
+            "width": 292,
+            "x": 42,
+            "y": 686
+          },
+          "text": "Carte de commandement"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Prochains events"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Suivi membres"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Banque"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "SOS actifs"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1005,
+            "height": 61,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 944
+          },
+          "text": "Tout ce que l’état-major doit voir"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1961,
+            "height": 61,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 1900
+          },
+          "text": "Du site de guilde aux opérations privées"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 2015,
+            "height": 24,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 1991
+          },
+          "text": "Site de guilde"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 2822,
+            "height": 24,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 2798
+          },
+          "text": "Opérations privées"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 3588,
+            "height": 30,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 3557
+          },
+          "text": "Aperçu du cockpit"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 4404,
+            "height": 61,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 4344
+          },
+          "text": "Prêt avant le prochain event"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 4594,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "landing-brand",
+          "rect": {
+            "bottom": 52,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": 8
+          },
+          "role": "",
+          "tag": "button",
+          "text": "GuildOps"
+        },
+        {
+          "aria": "Ouvrir le menu",
+          "className": "landing-mobile-menu-toggle",
+          "rect": {
+            "bottom": 52,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": 8
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Ouvrir le menu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": 384,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 332
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Créer mon QG"
+        },
+        {
+          "aria": "",
+          "className": "landing-button builder-test",
+          "rect": {
+            "bottom": 450,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 398
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Aperçu builder"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": 516,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 464
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Voir l’aperçu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": 582,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 530
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Explorer les guildes"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2656,
+            "height": 38,
+            "right": 342,
+            "width": 310,
+            "x": 33,
+            "y": 2618
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Voir les consignes"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": 4537,
+            "height": 52,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 4485
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Créer mon QG"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Le QG de guilde qui remplace les messages épinglés",
+        "Publiez un site de guilde, suivez les membres, les wars, les SOS, la banque et la diplomatie depuis un seul cockpit.",
+        "Créer mon QG",
+        "Aperçu builder",
+        "Voir l’aperçu",
+        "Explorer les guildes",
+        "Aetherium",
+        "Carte de commandement",
+        "Allies",
+        "Neutres",
+        "Ennemis",
+        "Tout ce que l’état-major doit voir",
+        "Guerres & Events",
+        "Planifiez, suivez et rappelez chaque war et event.",
+        "Membres",
+        "Suivez les rôles, présences et priorités de progression.",
+        "Banque",
+        "Suivez les stocks, les depots et les retraits en temps reel.",
+        "SOS",
+        "Alertez, coordonnez et suivez les demandes d'aide.",
+        "Diplomatie",
+        "Contacts, traites et communications inter-alliances.",
+        "Du site de guilde aux opérations privées",
+        "Site de guilde",
+        "Aetherium",
+        "Unis pour dominer.",
+        "Niveau",
+        "24",
+        "Membres",
+        "48/50",
+        "Trophees",
+        "51234",
+        "Langue",
+        "FR",
+        "A propos de nous"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/02-landing-produit.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": -1672,
+            "height": 105,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1777
+          },
+          "text": "Le QG de guilde qui remplace les messages épinglés"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": -1161,
+            "height": 18,
+            "right": 334,
+            "width": 292,
+            "x": 42,
+            "y": -1180
+          },
+          "text": "Carte de commandement"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Prochains events"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Suivi membres"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Banque"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "SOS actifs"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": -861,
+            "height": 61,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -922
+          },
+          "text": "Tout ce que l’état-major doit voir"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 95,
+            "height": 61,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 35
+          },
+          "text": "Du site de guilde aux opérations privées"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 149,
+            "height": 24,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 125
+          },
+          "text": "Site de guilde"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 957,
+            "height": 24,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 933
+          },
+          "text": "Opérations privées"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1722,
+            "height": 30,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 1692
+          },
+          "text": "Aperçu du cockpit"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 2538,
+            "height": 61,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 2478
+          },
+          "text": "Prêt avant le prochain event"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 4594,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "landing-brand",
+          "rect": {
+            "bottom": -1814,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": -1858
+          },
+          "role": "",
+          "tag": "button",
+          "text": "GuildOps"
+        },
+        {
+          "aria": "Ouvrir le menu",
+          "className": "landing-mobile-menu-toggle",
+          "rect": {
+            "bottom": -1814,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": -1858
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Ouvrir le menu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": -1481,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1533
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Créer mon QG"
+        },
+        {
+          "aria": "",
+          "className": "landing-button builder-test",
+          "rect": {
+            "bottom": -1415,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1467
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Aperçu builder"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": -1349,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1401
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Voir l’aperçu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": -1283,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1335
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Explorer les guildes"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 790,
+            "height": 38,
+            "right": 342,
+            "width": 310,
+            "x": 33,
+            "y": 752
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Voir les consignes"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": 2672,
+            "height": 52,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 2620
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Créer mon QG"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Le QG de guilde qui remplace les messages épinglés",
+        "Publiez un site de guilde, suivez les membres, les wars, les SOS, la banque et la diplomatie depuis un seul cockpit.",
+        "Créer mon QG",
+        "Aperçu builder",
+        "Voir l’aperçu",
+        "Explorer les guildes",
+        "Aetherium",
+        "Carte de commandement",
+        "Allies",
+        "Neutres",
+        "Ennemis",
+        "Tout ce que l’état-major doit voir",
+        "Guerres & Events",
+        "Planifiez, suivez et rappelez chaque war et event.",
+        "Membres",
+        "Suivez les rôles, présences et priorités de progression.",
+        "Banque",
+        "Suivez les stocks, les depots et les retraits en temps reel.",
+        "SOS",
+        "Alertez, coordonnez et suivez les demandes d'aide.",
+        "Diplomatie",
+        "Contacts, traites et communications inter-alliances.",
+        "Du site de guilde aux opérations privées",
+        "Site de guilde",
+        "Aetherium",
+        "Unis pour dominer.",
+        "Niveau",
+        "24",
+        "Membres",
+        "48/50",
+        "Trophees",
+        "51234",
+        "Langue",
+        "FR",
+        "A propos de nous"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/03-landing-apercu-final.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": -3329,
+            "height": 105,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -3434
+          },
+          "text": "Le QG de guilde qui remplace les messages épinglés"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": -2819,
+            "height": 18,
+            "right": 334,
+            "width": 292,
+            "x": 42,
+            "y": -2837
+          },
+          "text": "Carte de commandement"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Prochains events"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Suivi membres"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "Banque"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 0,
+            "height": 0,
+            "right": 0,
+            "width": 0,
+            "x": 0,
+            "y": 0
+          },
+          "text": "SOS actifs"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": -2519,
+            "height": 61,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -2579
+          },
+          "text": "Tout ce que l’état-major doit voir"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": -1562,
+            "height": 61,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1623
+          },
+          "text": "Du site de guilde aux opérations privées"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": -1508,
+            "height": 24,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -1532
+          },
+          "text": "Site de guilde"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": -701,
+            "height": 24,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -725
+          },
+          "text": "Opérations privées"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 64,
+            "height": 30,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 34
+          },
+          "text": "Aperçu du cockpit"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 881,
+            "height": 61,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 820
+          },
+          "text": "Prêt avant le prochain event"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 4594,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "landing-brand",
+          "rect": {
+            "bottom": -3471,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": -3515
+          },
+          "role": "",
+          "tag": "button",
+          "text": "GuildOps"
+        },
+        {
+          "aria": "Ouvrir le menu",
+          "className": "landing-mobile-menu-toggle",
+          "rect": {
+            "bottom": -3471,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": -3515
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Ouvrir le menu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": -3139,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -3191
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Créer mon QG"
+        },
+        {
+          "aria": "",
+          "className": "landing-button builder-test",
+          "rect": {
+            "bottom": -3073,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -3125
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Aperçu builder"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": -3007,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -3059
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Voir l’aperçu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": -2941,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -2993
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Explorer les guildes"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": -868,
+            "height": 38,
+            "right": 342,
+            "width": 310,
+            "x": 33,
+            "y": -906
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Voir les consignes"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": 1014,
+            "height": 52,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 962
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Créer mon QG"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Le QG de guilde qui remplace les messages épinglés",
+        "Publiez un site de guilde, suivez les membres, les wars, les SOS, la banque et la diplomatie depuis un seul cockpit.",
+        "Créer mon QG",
+        "Aperçu builder",
+        "Voir l’aperçu",
+        "Explorer les guildes",
+        "Aetherium",
+        "Carte de commandement",
+        "Allies",
+        "Neutres",
+        "Ennemis",
+        "Tout ce que l’état-major doit voir",
+        "Guerres & Events",
+        "Planifiez, suivez et rappelez chaque war et event.",
+        "Membres",
+        "Suivez les rôles, présences et priorités de progression.",
+        "Banque",
+        "Suivez les stocks, les depots et les retraits en temps reel.",
+        "SOS",
+        "Alertez, coordonnez et suivez les demandes d'aide.",
+        "Diplomatie",
+        "Contacts, traites et communications inter-alliances.",
+        "Du site de guilde aux opérations privées",
+        "Site de guilde",
+        "Aetherium",
+        "Unis pour dominer.",
+        "Niveau",
+        "24",
+        "Membres",
+        "48/50",
+        "Trophees",
+        "51234",
+        "Langue",
+        "FR",
+        "A propos de nous"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/04-galerie-accueil.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 121,
+            "height": 36,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 85
+          },
+          "text": "Galerie des guildes"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 630,
+            "height": 22,
+            "right": 346,
+            "width": 318,
+            "x": 29,
+            "y": 608
+          },
+          "text": "S12871 guilde"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 660,
+            "height": 18,
+            "right": 346,
+            "width": 318,
+            "x": 29,
+            "y": 642
+          },
+          "text": "FR"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 1065,
+        "width": 375
+      },
+      "smallTargets": [],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "landing-brand",
+          "rect": {
+            "bottom": 52,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": 8
+          },
+          "role": "",
+          "tag": "button",
+          "text": "GuildOps"
+        },
+        {
+          "aria": "Ouvrir le menu",
+          "className": "landing-mobile-menu-toggle",
+          "rect": {
+            "bottom": 52,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": 8
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Ouvrir le menu"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 307,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 263
+          },
+          "role": "",
+          "tag": "input",
+          "text": "Rechercher une guilde, un serveur, une langue..."
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 365,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 321
+          },
+          "role": "",
+          "tag": "select",
+          "text": "Tous les jeuxWhiteout Survival"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 423,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 379
+          },
+          "role": "",
+          "tag": "select",
+          "text": "Tous les serveursS1287"
+        },
+        {
+          "aria": "",
+          "className": "gallery-language-trigger",
+          "rect": {
+            "bottom": 481,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 437
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Toutes les langues"
+        },
+        {
+          "aria": "",
+          "className": "gallery-guild-card",
+          "rect": {
+            "bottom": 980,
+            "height": 311,
+            "right": 346,
+            "width": 318,
+            "x": 29,
+            "y": 669
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Aegis NordOperationsEquipe0"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/guildes",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Galerie des guildes",
+        "Explore les guildes publiées par jeu, royaume ou serveur, puis langue de coordination.",
+        "GUILDES",
+        "1",
+        "JEUX",
+        "1",
+        "LANGUES",
+        "184",
+        "Tous les jeux",
+        "Whiteout Survival",
+        "Tous les serveurs",
+        "S1287",
+        "Toutes les langues",
+        "Whiteout Survival",
+        "1 guilde",
+        "S1287",
+        "1 guilde",
+        "FR",
+        "Aegis Nord",
+        "Operations",
+        "Equipe",
+        "0"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/05-galerie-resultats.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": -100,
+            "height": 36,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": -136
+          },
+          "text": "Galerie des guildes"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 409,
+            "height": 22,
+            "right": 346,
+            "width": 318,
+            "x": 29,
+            "y": 387
+          },
+          "text": "S12871 guilde"
+        },
+        {
+          "level": "H3",
+          "rect": {
+            "bottom": 439,
+            "height": 18,
+            "right": 346,
+            "width": 318,
+            "x": 29,
+            "y": 421
+          },
+          "text": "FR"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 1065,
+        "width": 375
+      },
+      "smallTargets": [],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "landing-brand",
+          "rect": {
+            "bottom": -169,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": -213
+          },
+          "role": "",
+          "tag": "button",
+          "text": "GuildOps"
+        },
+        {
+          "aria": "Ouvrir le menu",
+          "className": "landing-mobile-menu-toggle",
+          "rect": {
+            "bottom": -169,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": -213
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Ouvrir le menu"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 86,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 42
+          },
+          "role": "",
+          "tag": "input",
+          "text": "Rechercher une guilde, un serveur, une langue..."
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 144,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 100
+          },
+          "role": "",
+          "tag": "select",
+          "text": "Tous les jeuxWhiteout Survival"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 202,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 158
+          },
+          "role": "",
+          "tag": "select",
+          "text": "Tous les serveursS1287"
+        },
+        {
+          "aria": "",
+          "className": "gallery-language-trigger",
+          "rect": {
+            "bottom": 260,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 216
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Toutes les langues"
+        },
+        {
+          "aria": "",
+          "className": "gallery-guild-card",
+          "rect": {
+            "bottom": 759,
+            "height": 311,
+            "right": 346,
+            "width": 318,
+            "x": 29,
+            "y": 448
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Aegis NordOperationsEquipe0"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/guildes",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Galerie des guildes",
+        "Explore les guildes publiées par jeu, royaume ou serveur, puis langue de coordination.",
+        "GUILDES",
+        "1",
+        "JEUX",
+        "1",
+        "LANGUES",
+        "184",
+        "Tous les jeux",
+        "Whiteout Survival",
+        "Tous les serveurs",
+        "S1287",
+        "Toutes les langues",
+        "Whiteout Survival",
+        "1 guilde",
+        "S1287",
+        "1 guilde",
+        "FR",
+        "Aegis Nord",
+        "Operations",
+        "Equipe",
+        "0"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/06-galerie-selecteur-langue.png",
+    "targetFound": true,
+    "metrics": {
+      "options": [
+        {
+          "ariaSelected": "true",
+          "rect": {
+            "bottom": 559,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 513
+          },
+          "text": "Toutes les langues"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 609,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 563
+          },
+          "text": "Français (FR)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 659,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 613
+          },
+          "text": "Aa (AA)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 709,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 663
+          },
+          "text": "Ab (AB)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 759,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 713
+          },
+          "text": "Ae (AE)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 809,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 763
+          },
+          "text": "Afrikaans (AF)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 859,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 813
+          },
+          "text": "Akan (AK)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 909,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 863
+          },
+          "text": "Akan (TW)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 959,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 913
+          },
+          "text": "Albanais (SQ)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 1009,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 963
+          },
+          "text": "Allemand (DE)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 1059,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1013
+          },
+          "text": "Amharique (AM)"
+        },
+        {
+          "ariaSelected": "false",
+          "rect": {
+            "bottom": 1109,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1063
+          },
+          "text": "Anglais (EN)"
+        }
+      ],
+      "overflowX": false,
+      "popover": {
+        "bottom": 828,
+        "height": 380,
+        "right": 359,
+        "width": 343,
+        "x": 16,
+        "y": 448
+      },
+      "scroll": {
+        "height": 1065,
+        "width": 375
+      },
+      "smallTargets": [],
+      "tappables": [
+        {
+          "rect": {
+            "bottom": 15,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": -29
+          },
+          "role": "",
+          "text": "GuildOps"
+        },
+        {
+          "rect": {
+            "bottom": 15,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": -29
+          },
+          "role": "",
+          "text": "Ouvrir le menu"
+        },
+        {
+          "rect": {
+            "bottom": 270,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 226
+          },
+          "role": "",
+          "text": "Rechercher une guilde, un serveur, une langue..."
+        },
+        {
+          "rect": {
+            "bottom": 328,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 284
+          },
+          "role": "",
+          "text": "Tous les jeuxWhiteout Survival"
+        },
+        {
+          "rect": {
+            "bottom": 386,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 342
+          },
+          "role": "",
+          "text": "Tous les serveursS1287"
+        },
+        {
+          "rect": {
+            "bottom": 444,
+            "height": 44,
+            "right": 346,
+            "width": 292,
+            "x": 55,
+            "y": 400
+          },
+          "role": "",
+          "text": "Toutes les langues"
+        },
+        {
+          "rect": {
+            "bottom": 504,
+            "height": 44,
+            "right": 338,
+            "width": 277,
+            "x": 61,
+            "y": 460
+          },
+          "role": "",
+          "text": "Rechercher une langue"
+        },
+        {
+          "rect": {
+            "bottom": 559,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 513
+          },
+          "role": "option",
+          "text": "Toutes les langues"
+        },
+        {
+          "rect": {
+            "bottom": 609,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 563
+          },
+          "role": "option",
+          "text": "Français (FR)"
+        },
+        {
+          "rect": {
+            "bottom": 659,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 613
+          },
+          "role": "option",
+          "text": "Aa (AA)"
+        },
+        {
+          "rect": {
+            "bottom": 709,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 663
+          },
+          "role": "option",
+          "text": "Ab (AB)"
+        },
+        {
+          "rect": {
+            "bottom": 759,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 713
+          },
+          "role": "option",
+          "text": "Ae (AE)"
+        },
+        {
+          "rect": {
+            "bottom": 809,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 763
+          },
+          "role": "option",
+          "text": "Afrikaans (AF)"
+        },
+        {
+          "rect": {
+            "bottom": 859,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 813
+          },
+          "role": "option",
+          "text": "Akan (AK)"
+        },
+        {
+          "rect": {
+            "bottom": 909,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 863
+          },
+          "role": "option",
+          "text": "Akan (TW)"
+        },
+        {
+          "rect": {
+            "bottom": 959,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 913
+          },
+          "role": "option",
+          "text": "Albanais (SQ)"
+        },
+        {
+          "rect": {
+            "bottom": 1009,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 963
+          },
+          "role": "option",
+          "text": "Allemand (DE)"
+        },
+        {
+          "rect": {
+            "bottom": 1059,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1013
+          },
+          "role": "option",
+          "text": "Amharique (AM)"
+        },
+        {
+          "rect": {
+            "bottom": 1109,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1063
+          },
+          "role": "option",
+          "text": "Anglais (EN)"
+        },
+        {
+          "rect": {
+            "bottom": 1159,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1113
+          },
+          "role": "option",
+          "text": "Arabe (AR)"
+        },
+        {
+          "rect": {
+            "bottom": 1209,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1163
+          },
+          "role": "option",
+          "text": "Aragonais (AN)"
+        },
+        {
+          "rect": {
+            "bottom": 1259,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1213
+          },
+          "role": "option",
+          "text": "Arménien (HY)"
+        },
+        {
+          "rect": {
+            "bottom": 1309,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1263
+          },
+          "role": "option",
+          "text": "Assamais (AS)"
+        },
+        {
+          "rect": {
+            "bottom": 1359,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1313
+          },
+          "role": "option",
+          "text": "Av (AV)"
+        },
+        {
+          "rect": {
+            "bottom": 1409,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1363
+          },
+          "role": "option",
+          "text": "Aymara (AY)"
+        },
+        {
+          "rect": {
+            "bottom": 1459,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1413
+          },
+          "role": "option",
+          "text": "Azerbaïdjanais (AZ)"
+        },
+        {
+          "rect": {
+            "bottom": 1509,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1463
+          },
+          "role": "option",
+          "text": "Ba (BA)"
+        },
+        {
+          "rect": {
+            "bottom": 1559,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1513
+          },
+          "role": "option",
+          "text": "Bambara (BM)"
+        },
+        {
+          "rect": {
+            "bottom": 1609,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1563
+          },
+          "role": "option",
+          "text": "Basque (EU)"
+        },
+        {
+          "rect": {
+            "bottom": 1659,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1613
+          },
+          "role": "option",
+          "text": "Bengali (BN)"
+        },
+        {
+          "rect": {
+            "bottom": 1709,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1663
+          },
+          "role": "option",
+          "text": "Bhodjpouri (BH)"
+        },
+        {
+          "rect": {
+            "bottom": 1759,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1713
+          },
+          "role": "option",
+          "text": "Bi (BI)"
+        },
+        {
+          "rect": {
+            "bottom": 1809,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1763
+          },
+          "role": "option",
+          "text": "Biélorusse (BE)"
+        },
+        {
+          "rect": {
+            "bottom": 1859,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1813
+          },
+          "role": "option",
+          "text": "Birman (MY)"
+        },
+        {
+          "rect": {
+            "bottom": 1909,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1863
+          },
+          "role": "option",
+          "text": "Bo (BO)"
+        },
+        {
+          "rect": {
+            "bottom": 1959,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1913
+          },
+          "role": "option",
+          "text": "Bosniaque (BS)"
+        },
+        {
+          "rect": {
+            "bottom": 2009,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 1963
+          },
+          "role": "option",
+          "text": "Breton (BR)"
+        },
+        {
+          "rect": {
+            "bottom": 2059,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 2013
+          },
+          "role": "option",
+          "text": "Bulgare (BG)"
+        },
+        {
+          "rect": {
+            "bottom": 2109,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 2063
+          },
+          "role": "option",
+          "text": "Catalan (CA)"
+        },
+        {
+          "rect": {
+            "bottom": 2159,
+            "height": 46,
+            "right": 331,
+            "width": 304,
+            "x": 27,
+            "y": 2113
+          },
+          "role": "option",
+          "text": "Ce (CE)"
+        }
+      ],
+      "url": "http://127.0.0.1:5173/guildes",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Galerie des guildes",
+        "Explore les guildes publiées par jeu, royaume ou serveur, puis langue de coordination.",
+        "GUILDES",
+        "1",
+        "JEUX",
+        "1",
+        "LANGUES",
+        "184",
+        "Tous les jeux",
+        "Whiteout Survival",
+        "Tous les serveurs",
+        "S1287",
+        "Toutes les langues",
+        "Toutes les langues",
+        "Français (FR)",
+        "Aa (AA)",
+        "Ab (AB)",
+        "Ae (AE)",
+        "Afrikaans (AF)",
+        "Akan (AK)",
+        "Akan (TW)",
+        "Albanais (SQ)",
+        "Allemand (DE)",
+        "Amharique (AM)",
+        "Anglais (EN)",
+        "Arabe (AR)",
+        "Aragonais (AN)",
+        "Arménien (HY)",
+        "Assamais (AS)",
+        "Av (AV)",
+        "Aymara (AY)",
+        "Azerbaïdjanais (AZ)",
+        "Ba (BA)",
+        "Bambara (BM)"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/07-site-public-accueil.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 329,
+            "height": 94,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 234
+          },
+          "text": "Aegis Nord"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 376,
+            "height": 29,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 347
+          },
+          "text": "Unis. Focus. Victoire."
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 1414,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "public-site-gallery-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Galerie"
+        },
+        {
+          "aria": "",
+          "className": "public-site-invite-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 363,
+            "width": 173,
+            "x": 191,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 146,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": 110
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 549,
+            "height": 50,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 499
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 609,
+            "height": 50,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 559
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Voir l'équipe"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1258,
+            "height": 32,
+            "right": 346,
+            "width": 58,
+            "x": 289,
+            "y": 1226
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Ouvrir"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/g/aegis-nord",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "A",
+        "Aegis Nord",
+        "Whiteout Survival · S1287",
+        "GALERIE",
+        "Devenir membre",
+        "Espace membre",
+        "CAMP NORD",
+        "AEGIS NORD",
+        "Unis. Focus. Victoire.",
+        "Coordonner les membres actifs, les wars et les consignes sans chaos.",
+        "WHITEOUT SURVIVAL · S1287 · OPERATIONS",
+        "DEVENIR MEMBRE",
+        "VOIR L'ÉQUIPE",
+        "Adhésions",
+        "Accès",
+        "Demande d'accès côté site, validation réservée aux membres autorisés.",
+        "Banque de guilde",
+        "R4",
+        "Fonctionnement banque, ressources agregees et demandes masquees si besoin.",
+        "Diplomatie",
+        "NAP",
+        "Alliés, ennemis et coordonnées du royaume.",
+        "Forum",
+        "Ouvrir",
+        "Annonces et contenu privé verrouillé."
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/08-site-public-contenu.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 58,
+            "height": 94,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": -36
+          },
+          "text": "Aegis Nord"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 105,
+            "height": 29,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 76
+          },
+          "text": "Unis. Focus. Victoire."
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 1414,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "public-site-gallery-action",
+          "rect": {
+            "bottom": -167,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": -203
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Galerie"
+        },
+        {
+          "aria": "",
+          "className": "public-site-invite-action",
+          "rect": {
+            "bottom": -167,
+            "height": 36,
+            "right": 363,
+            "width": 173,
+            "x": 191,
+            "y": -203
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": -125,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": -161
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 279,
+            "height": 50,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 229
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 339,
+            "height": 50,
+            "right": 353,
+            "width": 331,
+            "x": 22,
+            "y": 289
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Voir l'équipe"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 988,
+            "height": 32,
+            "right": 346,
+            "width": 58,
+            "x": 289,
+            "y": 956
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Ouvrir"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/g/aegis-nord",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "A",
+        "Aegis Nord",
+        "Whiteout Survival · S1287",
+        "GALERIE",
+        "Devenir membre",
+        "Espace membre",
+        "CAMP NORD",
+        "AEGIS NORD",
+        "Unis. Focus. Victoire.",
+        "Coordonner les membres actifs, les wars et les consignes sans chaos.",
+        "WHITEOUT SURVIVAL · S1287 · OPERATIONS",
+        "DEVENIR MEMBRE",
+        "VOIR L'ÉQUIPE",
+        "Adhésions",
+        "Accès",
+        "Demande d'accès côté site, validation réservée aux membres autorisés.",
+        "Banque de guilde",
+        "R4",
+        "Fonctionnement banque, ressources agregees et demandes masquees si besoin.",
+        "Diplomatie",
+        "NAP",
+        "Alliés, ennemis et coordonnées du royaume.",
+        "Forum",
+        "Ouvrir",
+        "Annonces et contenu privé verrouillé."
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/09-auth-connexion.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "is-active",
+          "rect": {
+            "bottom": 378,
+            "height": 38,
+            "right": 191,
+            "width": 144,
+            "x": 47,
+            "y": 340
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Connexion"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 378,
+            "height": 38,
+            "right": 344,
+            "width": 144,
+            "x": 199,
+            "y": 340
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Inscription"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 467,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 419
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 550,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 502
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Afficher le mot de passe",
+          "className": "password-input-toggle",
+          "rect": {
+            "bottom": 543,
+            "height": 34,
+            "right": 336,
+            "width": 34,
+            "x": 302,
+            "y": 509
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Afficher le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 600,
+            "height": 38,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 562
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Entrer"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/auth/login",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Connexion",
+        "Inscription",
+        "Email",
+        "Mot de passe",
+        "Entrer"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/10-auth-inscription.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 256,
+            "height": 38,
+            "right": 191,
+            "width": 144,
+            "x": 47,
+            "y": 218
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Connexion"
+        },
+        {
+          "aria": "",
+          "className": "is-active",
+          "rect": {
+            "bottom": 256,
+            "height": 38,
+            "right": 344,
+            "width": 144,
+            "x": 199,
+            "y": 218
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Inscription"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 345,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 297
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 428,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 380
+          },
+          "role": "",
+          "tag": "input",
+          "text": "Aegis Command"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 510,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 462
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 593,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 545
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Afficher le mot de passe",
+          "className": "password-input-toggle",
+          "rect": {
+            "bottom": 586,
+            "height": 34,
+            "right": 336,
+            "width": 34,
+            "x": 302,
+            "y": 552
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Afficher le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 637,
+            "height": 18,
+            "right": 78,
+            "width": 18,
+            "x": 60,
+            "y": 619
+          },
+          "role": "",
+          "tag": "input",
+          "text": "on"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 722,
+            "height": 38,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 684
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Creer le compte"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/auth/register",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Connexion",
+        "Inscription",
+        "Nom affiche",
+        "Organisation",
+        "Email",
+        "Mot de passe",
+        "Activer les notifications",
+        "Disponible après validation du compte.",
+        "Creer le compte"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/11-app-entree.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "is-active",
+          "rect": {
+            "bottom": 378,
+            "height": 38,
+            "right": 191,
+            "width": 144,
+            "x": 47,
+            "y": 340
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Connexion"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 378,
+            "height": 38,
+            "right": 344,
+            "width": 144,
+            "x": 199,
+            "y": 340
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Inscription"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 467,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 419
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 550,
+            "height": 48,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 502
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Afficher le mot de passe",
+          "className": "password-input-toggle",
+          "rect": {
+            "bottom": 543,
+            "height": 34,
+            "right": 336,
+            "width": 34,
+            "x": 302,
+            "y": 509
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Afficher le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 600,
+            "height": 38,
+            "right": 344,
+            "width": 297,
+            "x": 47,
+            "y": 562
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Entrer"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Connexion",
+        "Inscription",
+        "Email",
+        "Mot de passe",
+        "Entrer"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/12-adhesion-devenir-membre.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 229,
+            "height": 29,
+            "right": 337,
+            "width": 283,
+            "x": 54,
+            "y": 200
+          },
+          "text": "Demande d'accès"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [],
+      "tappables": [],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/join/aegis-nord",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "DEMANDE À VALIDER",
+        "Demande d'accès",
+        "Chargement de la guilde...",
+        "Invitation introuvable",
+        "Guild site not found"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/13-site-public-equipe.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 253,
+            "height": 32,
+            "right": 357,
+            "width": 339,
+            "x": 18,
+            "y": 221
+          },
+          "text": "Aegis Nord"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 667,
+            "height": 33,
+            "right": 357,
+            "width": 339,
+            "x": 18,
+            "y": 634
+          },
+          "text": "Etat-major Aegis Nord"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 1518,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "public-site-gallery-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Galerie"
+        },
+        {
+          "aria": "",
+          "className": "public-site-invite-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 363,
+            "width": 173,
+            "x": 191,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 146,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": 110
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 551,
+            "height": 42,
+            "right": 357,
+            "width": 339,
+            "x": 18,
+            "y": 509
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Retour accueil"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/g/aegis-nord/equipe",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "A",
+        "Aegis Nord",
+        "Whiteout Survival · S1287",
+        "GALERIE",
+        "Devenir membre",
+        "Espace membre",
+        "EQUIPE",
+        "AEGIS NORD",
+        "Whiteout Survival · S1287",
+        "MEMBRES",
+        "Etat-major",
+        "ROLES",
+        "4",
+        "Retour accueil",
+        "ORGANISATION",
+        "Etat-major Aegis Nord",
+        "Aucun roster n'est encore publie. La page affiche les roles de commandement attendus.",
+        "O",
+        "Operations",
+        "Officier",
+        "Wars, events, presences et consignes de terrain.",
+        "Adhésions · Events · Forum",
+        "D",
+        "Diplomatie",
+        "Diplomate",
+        "Contacts royaume, alliances, NAP et coordination externe.",
+        "Diplomatie",
+        "B",
+        "Ressources",
+        "Banquier",
+        "Demandes, stocks et suivi des contributions.",
+        "Banque",
+        "A",
+        "Commandement",
+        "Admin",
+        "Priorites de guilde, mise en ligne du site et arbitrages sensibles."
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/14-site-public-forum.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 303,
+            "height": 64,
+            "right": 344,
+            "width": 314,
+            "x": 31,
+            "y": 239
+          },
+          "text": "Briefings et annonces"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 1241,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "public-site-gallery-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Galerie"
+        },
+        {
+          "aria": "",
+          "className": "public-site-invite-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 363,
+            "width": 173,
+            "x": 191,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 146,
+            "height": 36,
+            "right": 185,
+            "width": 173,
+            "x": 12,
+            "y": 110
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 487,
+            "height": 42,
+            "right": 344,
+            "width": 314,
+            "x": 31,
+            "y": 445
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Retour accueil"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 539,
+            "height": 42,
+            "right": 344,
+            "width": 314,
+            "x": 31,
+            "y": 497
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1057,
+            "height": 42,
+            "right": 338,
+            "width": 302,
+            "x": 37,
+            "y": 1015
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/g/aegis-nord/forum",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "A",
+        "Aegis Nord",
+        "Whiteout Survival · S1287",
+        "GALERIE",
+        "Devenir membre",
+        "Espace membre",
+        "FORUM",
+        "BRIEFINGS ET ANNONCES",
+        "Aegis Nord partage ici ses briefings et annonces. Les espaces membres, officiers et admins restent verrouillés.",
+        "Retour accueil",
+        "Espace membre",
+        "CATÉGORIES",
+        "0",
+        "SUJETS",
+        "0",
+        "ESPACES VERROUILLÉS",
+        "4",
+        "Aucune annonce",
+        "Aucun sujet n'est ouvert pour le moment.",
+        "Espace membre",
+        "Contenu privé verrouillé",
+        "4 espaces ou sujets restent réservés aux membres."
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/15-site-public-espace-membre.png",
+    "targetFound": true,
+    "metrics": {
+      "headings": [
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 214,
+            "height": 32,
+            "right": 360,
+            "width": 329,
+            "x": 31,
+            "y": 182
+          },
+          "text": "Espace membre"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "public-site-gallery-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 130,
+            "width": 118,
+            "x": 12,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Galerie"
+        },
+        {
+          "aria": "",
+          "className": "public-site-invite-action",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 254,
+            "width": 118,
+            "x": 136,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 104,
+            "height": 36,
+            "right": 378,
+            "width": 118,
+            "x": 260,
+            "y": 68
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 308,
+            "height": 42,
+            "right": 360,
+            "width": 329,
+            "x": 31,
+            "y": 266
+          },
+          "role": "",
+          "tag": "a",
+          "text": "Retour accueil"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 507,
+            "height": 44,
+            "right": 360,
+            "width": 329,
+            "x": 31,
+            "y": 463
+          },
+          "role": "",
+          "tag": "input",
+          "text": "Pseudo membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 563,
+            "height": 40,
+            "right": 359,
+            "width": 327,
+            "x": 32,
+            "y": 523
+          },
+          "role": "",
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "public-member-save-button",
+          "rect": {
+            "bottom": 621,
+            "height": 42,
+            "right": 360,
+            "width": 329,
+            "x": 31,
+            "y": 579
+          },
+          "role": "",
+          "tag": "button",
+          "text": "Enregistrer"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/g/aegis-nord/espace-membre",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "A",
+        "Aegis Nord",
+        "Whiteout Survival · S1287",
+        "GALERIE",
+        "Devenir membre",
+        "Espace membre",
+        "MEMBRE",
+        "ESPACE MEMBRE",
+        "Aegis Nord · Whiteout Survival · S1287",
+        "Retour accueil",
+        "M",
+        "Membre",
+        "Image de profil",
+        "PSEUDO",
+        "Image de profil",
+        "Enregistrer"
+      ]
+    }
+  },
+  {
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-complet-2026-07-11/16-landing-menu-mobile.png",
+    "targetFound": true,
+    "metrics": {
+      "overflowX": false,
+      "scroll": {
+        "height": 4821,
+        "width": 375
+      },
+      "smallTargets": [
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "",
+          "className": "landing-brand",
+          "rect": {
+            "bottom": 52,
+            "height": 44,
+            "right": 307,
+            "width": 293,
+            "x": 14,
+            "y": 8
+          },
+          "text": "GuildOps"
+        },
+        {
+          "aria": "Fermer le menu",
+          "className": "landing-mobile-menu-toggle",
+          "rect": {
+            "bottom": 52,
+            "height": 44,
+            "right": 361,
+            "width": 44,
+            "x": 317,
+            "y": 8
+          },
+          "text": "Fermer le menu"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 117,
+            "height": 46,
+            "right": 184,
+            "width": 170,
+            "x": 14,
+            "y": 71
+          },
+          "text": "Produit"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 117,
+            "height": 46,
+            "right": 361,
+            "width": 170,
+            "x": 192,
+            "y": 71
+          },
+          "text": "Modules"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 171,
+            "height": 46,
+            "right": 184,
+            "width": 170,
+            "x": 14,
+            "y": 125
+          },
+          "text": "Aperçu"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 171,
+            "height": 46,
+            "right": 361,
+            "width": 170,
+            "x": 192,
+            "y": 125
+          },
+          "text": "Galerie"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 225,
+            "height": 46,
+            "right": 184,
+            "width": 170,
+            "x": 14,
+            "y": 179
+          },
+          "text": "Aperçu builder"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 225,
+            "height": 46,
+            "right": 361,
+            "width": 170,
+            "x": 192,
+            "y": 179
+          },
+          "text": "Connexion"
+        },
+        {
+          "aria": "",
+          "className": "is-primary",
+          "rect": {
+            "bottom": 279,
+            "height": 46,
+            "right": 361,
+            "width": 347,
+            "x": 14,
+            "y": 233
+          },
+          "text": "Inscription"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": 611,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 559
+          },
+          "text": "Créer mon QG"
+        },
+        {
+          "aria": "",
+          "className": "landing-button builder-test",
+          "rect": {
+            "bottom": 677,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 625
+          },
+          "text": "Aperçu builder"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": 743,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 691
+          },
+          "text": "Voir l’aperçu"
+        },
+        {
+          "aria": "",
+          "className": "landing-button",
+          "rect": {
+            "bottom": 809,
+            "height": 52,
+            "right": 359,
+            "width": 343,
+            "x": 16,
+            "y": 757
+          },
+          "text": "Explorer les guildes"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2882,
+            "height": 38,
+            "right": 342,
+            "width": 310,
+            "x": 33,
+            "y": 2844
+          },
+          "text": "Voir les consignes"
+        },
+        {
+          "aria": "",
+          "className": "landing-button primary",
+          "rect": {
+            "bottom": 4764,
+            "height": 52,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 4712
+          },
+          "text": "Créer mon QG"
+        }
+      ],
+      "url": "http://127.0.0.1:5173/",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Produit",
+        "Modules",
+        "Aperçu",
+        "Galerie",
+        "Aperçu builder",
+        "Connexion",
+        "Inscription",
+        "Le QG de guilde qui remplace les messages épinglés",
+        "Publiez un site de guilde, suivez les membres, les wars, les SOS, la banque et la diplomatie depuis un seul cockpit.",
+        "Créer mon QG",
+        "Aperçu builder",
+        "Voir l’aperçu",
+        "Explorer les guildes",
+        "Aetherium",
+        "Carte de commandement",
+        "Allies",
+        "Neutres",
+        "Ennemis",
+        "Tout ce que l’état-major doit voir",
+        "Guerres & Events",
+        "Planifiez, suivez et rappelez chaque war et event.",
+        "Membres",
+        "Suivez les rôles, présences et priorités de progression.",
+        "Banque",
+        "Suivez les stocks, les depots et les retraits en temps reel.",
+        "SOS",
+        "Alertez, coordonnez et suivez les demandes d'aide.",
+        "Diplomatie",
+        "Contacts, traites et communications inter-alliances.",
+        "Du site de guilde aux opérations privées",
+        "Site de guilde",
+        "Aetherium",
+        "Unis pour dominer.",
+        "Niveau",
+        "24",
+        "Membres",
+        "48/50",
+        "Trophees",
+        "51234"
+      ]
+    }
+  }
+]

@@ -77,6 +77,16 @@ export function AbsencesView({
     onSubmitAbsence?.(absenceDraft);
   }
 
+  function focusAbsenceForm() {
+    window.requestAnimationFrame(() => {
+      const form = document.querySelector(".absence-form");
+      const firstField = form?.querySelector("input, textarea");
+
+      form?.scrollIntoView({ behavior: "smooth", block: "start" });
+      firstField?.focus();
+    });
+  }
+
   return (
     <div className="page-grid absences-page">
       <section className="absence-summary-grid" aria-label="Résumé des absences">
@@ -193,9 +203,12 @@ export function AbsencesView({
         ) : (
           <div className="absence-empty">
             <EmptyState
+              actionIcon={CalendarX2}
+              actionLabel="Déclarer une absence"
               icon={CalendarX2}
-              title="Aucune absence déclarée"
-              text="Les absences enregistrées apparaîtront ici avec leurs dates et leur motif."
+              title="Planning encore vide"
+              text="C'est normal pour une nouvelle guilde: personne n'a encore signalé d'indisponibilité. La première déclaration apparaîtra ici avec ses dates et son motif."
+              onAction={focusAbsenceForm}
             />
           </div>
         )}

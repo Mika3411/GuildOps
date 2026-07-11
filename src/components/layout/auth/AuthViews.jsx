@@ -5,10 +5,13 @@ import React, {
 } from "react";
 import {
   AlertTriangle,
+  Bell,
   Command,
+  Home,
   MailCheck,
   RefreshCw,
   Rocket,
+  Search,
   Shield,
   Zap
 } from "lucide-react";
@@ -19,12 +22,18 @@ import {
   normalizeRealmCodeForGame
 } from "../../../config/guildOpsConfig.js";
 import {
+  clearPendingPushOptIn,
+  hasPendingPushOptIn,
+  rememberPendingPushOptIn
+} from "../../../lib/pushOptInPreference.js";
+import {
   formatAuthError,
   getAuthErrorDetails
 } from "../../../lib/authErrors.js";
 import { PasswordInput } from "../../shared/PasswordInput.jsx";
 
 const emailVerificationRequests = new Map();
+const REGISTER_PASSWORD_MIN_LENGTH = 10;
 
 export function AuthLoading() {
   return (
@@ -42,7 +51,7 @@ export function AuthLoading() {
   );
 }
 
-export function AuthGate({ authSession, initialMode = "login" }) {
+export function AuthGate({ authSession, initialMode = "login", notificationProps, onNavigatePublicPath }) {
   const initialEmail = getAuthEmailFromLocation();
   const [mode, setMode] = useState(initialMode === "register" ? "register" : "login");
   const [form, setForm] = useState({
@@ -54,6 +63,7 @@ export function AuthGate({ authSession, initialMode = "login" }) {
   const [error, setError] = useState(() => (authSession.status === "error" ? "" : formatAuthError(authSession.error || "")));
   const [notice, setNotice] = useState("");
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
+  const [pushOptIn, setPushOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [verificationUrl, setVerificationUrl] = useState("");
   const isRegister = mode === "register";
@@ -72,8 +82,59 @@ export function AuthGate({ authSession, initialMode = "login" }) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function switchMode(nextMode) {
+    setMode(nextMode);
+    setError("");
+    setNotice("");
+    setVerificationUrl("");
+  }
+
+  function openPublicPath(path) {
+    if (typeof onNavigatePublicPath === "function") {
+      onNavigatePublicPath(path);
+      return;
+    }
+
+    window.history.pushState({}, "", path);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+
+  function validateForm() {
+    const email = form.email.trim();
+    const password = form.password.trim();
+
+    if (!email || !password) {
+      return "Indiquez votre email et votre mot de passe.";
+    }
+
+    if (!isValidEmail(email)) {
+      return "Utilisez une adresse email valide.";
+    }
+
+    if (isRegister) {
+      if (form.displayName.trim().length < 2) {
+        return "Indiquez un nom affiche de 2 caracteres minimum.";
+      }
+
+      if (password.length < REGISTER_PASSWORD_MIN_LENGTH) {
+        return `Le mot de passe doit contenir au moins ${REGISTER_PASSWORD_MIN_LENGTH} caracteres.`;
+      }
+    }
+
+    return "";
+  }
+
   async function submitAuth(event) {
     event.preventDefault();
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      setNotice("");
+      setVerificationUrl("");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     setNotice("");
@@ -83,23 +144,34 @@ export function AuthGate({ authSession, initialMode = "login" }) {
       if (isRegister) {
         const payload = await authSession.register({
           displayName: form.displayName,
-          email: form.email,
+          email: form.email.trim(),
           organizationName: form.organizationName || undefined,
           password: form.password,
           preferredLanguage: "fr",
         });
 
         if (payload?.status === "verification_required") {
+          if (pushOptIn) {
+            rememberPendingPushOptIn(payload.email || form.email);
+          }
           setPendingVerificationEmail(payload.email || form.email);
           setNotice(payload.message || "Compte cree. Consultez votre email pour valider la connexion.");
           setVerificationUrl(payload.verificationUrl || "");
           setMode("login");
+        } else if (payload?.user && pushOptIn) {
+          await notificationProps?.onEnablePush?.();
         }
       } else {
         await authSession.login({
-          email: form.email,
+          email: form.email.trim(),
           password: form.password,
         });
+        if (hasPendingPushOptIn(form.email.trim())) {
+          const enabled = await notificationProps?.onEnablePush?.();
+          if (enabled) {
+            clearPendingPushOptIn(form.email.trim());
+          }
+        }
       }
     } catch (submitError) {
       const details = submitError?.payload?.error?.details || {};
@@ -154,15 +226,25 @@ export function AuthGate({ authSession, initialMode = "login" }) {
           </div>
           <span>GuildOps</span>
         </div>
+        <div className="auth-public-actions" aria-label="Navigation publique">
+          <button type="button" onClick={() => openPublicPath("/")}>
+            <Home size={16} />
+            Accueil
+          </button>
+          <button type="button" onClick={() => openPublicPath("/guildes")}>
+            <Search size={16} />
+            Galerie
+          </button>
+        </div>
         <div className="auth-tabs" role="tablist" aria-label="Authentification">
-          <button className={!isRegister ? "is-active" : ""} type="button" onClick={() => setMode("login")}>
+          <button className={!isRegister ? "is-active" : ""} type="button" onClick={() => switchMode("login")}>
             Connexion
           </button>
-          <button className={isRegister ? "is-active" : ""} type="button" onClick={() => setMode("register")}>
+          <button className={isRegister ? "is-active" : ""} type="button" onClick={() => switchMode("register")}>
             Inscription
           </button>
         </div>
-        <form className="auth-form" onSubmit={submitAuth}>
+        <form className="auth-form" onSubmit={submitAuth} noValidate>
           {isRegister ? (
             <>
               <label className="form-row">
@@ -199,12 +281,27 @@ export function AuthGate({ authSession, initialMode = "login" }) {
             <span>Mot de passe</span>
             <PasswordInput
               autoComplete={isRegister ? "new-password" : "current-password"}
-              minLength={isRegister ? 10 : 1}
+              minLength={isRegister ? REGISTER_PASSWORD_MIN_LENGTH : 1}
               value={form.password}
               onChange={(event) => updateField("password", event.target.value)}
               required
             />
+            {isRegister ? <small className="auth-field-hint">{REGISTER_PASSWORD_MIN_LENGTH} caracteres minimum.</small> : null}
           </label>
+          {isRegister ? (
+            <label className="checkbox-row auth-notification-optin">
+              <input
+                type="checkbox"
+                checked={pushOptIn}
+                onChange={(event) => setPushOptIn(event.target.checked)}
+                disabled={notificationProps?.pushState?.supported === false}
+              />
+              <span>
+                Activer les notifications
+                <small>Disponible après validation du compte.</small>
+              </span>
+            </label>
+          ) : null}
           {notice ? (
             <div className="auth-notice">
               <MailCheck size={18} />
@@ -233,6 +330,10 @@ export function AuthGate({ authSession, initialMode = "login" }) {
   );
 }
 
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 function getAuthEmailFromLocation() {
   if (typeof window === "undefined") return "";
 
@@ -243,9 +344,10 @@ function getAuthEmailFromLocation() {
   }
 }
 
-export function VerifyEmailRoute({ authSession, onBackToLogin, onVerified }) {
+export function VerifyEmailRoute({ authSession, notificationProps, onBackToLogin, onVerified }) {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("verifying");
+  const [verifiedEmail, setVerifiedEmail] = useState("");
   const submittedRef = useRef(false);
 
   useEffect(() => {
@@ -261,7 +363,14 @@ export function VerifyEmailRoute({ authSession, onBackToLogin, onVerified }) {
     }
 
     verifyEmailOnce(authSession, token)
-      .then(() => {
+      .then((payload) => {
+        const email = payload?.user?.email || "";
+        if (email && hasPendingPushOptIn(email)) {
+          setVerifiedEmail(email);
+          setStatus("push-ready");
+          return;
+        }
+
         setStatus("success");
         window.setTimeout(() => onVerified?.(), 650);
       })
@@ -271,23 +380,57 @@ export function VerifyEmailRoute({ authSession, onBackToLogin, onVerified }) {
       });
   }, [authSession, onVerified]);
 
+  async function enablePushAndContinue() {
+    setStatus("push-enabling");
+    const enabled = await notificationProps?.onEnablePush?.();
+
+    if (enabled) {
+      clearPendingPushOptIn(verifiedEmail);
+      onVerified?.();
+      return;
+    }
+
+    setStatus("push-ready");
+  }
+
+  function continueWithoutPush() {
+    clearPendingPushOptIn(verifiedEmail);
+    onVerified?.();
+  }
+
+  const awaitingPush = status === "push-ready" || status === "push-enabling";
+
   return (
     <main className="auth-shell command-state-shell">
       <section className="auth-panel command-state-card">
         <div className="brand-lockup auth-brand">
           <div className={`brand-mark ${status === "error" ? "danger" : ""}`}>
-            {status === "error" ? <AlertTriangle size={28} /> : <MailCheck size={28} />}
+            {status === "error" ? <AlertTriangle size={28} /> : awaitingPush ? <Bell size={28} /> : <MailCheck size={28} />}
           </div>
           <span>GuildOps</span>
         </div>
-        <h1>{status === "success" ? "Email valide" : status === "error" ? "Validation impossible" : "Validation en cours"}</h1>
+        <h1>{awaitingPush ? "Notifications" : status === "success" ? "Email valide" : status === "error" ? "Validation impossible" : "Validation en cours"}</h1>
         <p>
-          {status === "success"
+          {awaitingPush
+            ? "Ton compte est active. Tu peux recevoir les alertes importantes sur cet appareil."
+            : status === "success"
             ? "Votre compte est active. Ouverture de l'espace GuildOps..."
             : status === "error"
               ? error
               : "Nous confirmons le lien recu par email."}
         </p>
+        {awaitingPush ? (
+          <div className="state-actions">
+            <button className="primary-action" type="button" onClick={enablePushAndContinue} disabled={status === "push-enabling"}>
+              <Bell size={17} />
+              {status === "push-enabling" ? "Activation..." : "Activer"}
+            </button>
+            <button className="ghost-action" type="button" onClick={continueWithoutPush} disabled={status === "push-enabling"}>
+              Continuer sans
+            </button>
+            {notificationProps?.pushState?.message ? <p className="auth-notice">{notificationProps.pushState.message}</p> : null}
+          </div>
+        ) : null}
         {status === "error" ? (
           <div className="state-actions">
             <button className="primary-action" type="button" onClick={onBackToLogin}>
@@ -452,8 +595,8 @@ export function GuildOnboarding({ creating, currentUser, error, onCreateGuild, o
               <small>Laisse décoché pour créer seulement la guilde privée.</small>
             </span>
           </label>
-          {error ? <p className="auth-error">{error}</p> : null}
-          <button className="primary-action" type="submit" disabled={creating}>
+          {error ? <p className="auth-error" aria-live="polite">{error}</p> : null}
+          <button className="primary-action" type="submit" disabled={creating} aria-busy={creating ? "true" : undefined}>
             <Rocket size={17} />
             {creating ? "Création..." : "Créer la guilde"}
           </button>

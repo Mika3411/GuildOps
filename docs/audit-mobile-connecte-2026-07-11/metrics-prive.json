@@ -1,0 +1,3490 @@
+[
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/05-modules-hub.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 496,
+            "height": 19,
+            "right": 192,
+            "width": 137,
+            "x": 55,
+            "y": 477
+          },
+          "text": "Modules GuildOps"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 929,
+            "height": 36,
+            "right": 338,
+            "width": 300,
+            "x": 38,
+            "y": 893
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1269,
+            "height": 36,
+            "right": 338,
+            "width": 300,
+            "x": 38,
+            "y": 1233
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2192,
+            "height": 36,
+            "right": 338,
+            "width": 300,
+            "x": 38,
+            "y": 2156
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2532,
+            "height": 36,
+            "right": 338,
+            "width": 300,
+            "x": 38,
+            "y": 2496
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2872,
+            "height": 36,
+            "right": 338,
+            "width": 300,
+            "x": 38,
+            "y": 2836
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 3504,
+            "height": 36,
+            "right": 338,
+            "width": 300,
+            "x": 38,
+            "y": 3468
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/modules",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "4",
+        "CENTRE MODULES",
+        "MODULES",
+        "4/10 activés",
+        "Modules GuildOps",
+        "4/10 activés",
+        "Ajoute les outils quand ta guilde grandit.",
+        "Le site de guilde reste le point de départ. Active ensuite les modules qui répondent à un vrai besoin d'organisation.",
+        "Wars & Events",
+        "Planning, check-in et objectifs d'events.",
+        "Désactivé",
+        "BÉNÉFICE",
+        "Préparer les wars, collecter les présences et donner un plan commun avant les gros rendez-vous.",
+        "Complexité",
+        "Avancé",
+        "Permissions nécessaires",
+        "Events",
+        "Pré-requis",
+        "Aucun prérequis",
+        "Activer",
+        "SOS attaque",
+        "Alerte attaque, suivi des réponses et temps réel.",
+        "Désactivé",
+        "BÉNÉFICE",
+        "Déclencher une alerte rapide, suivre les renforts et réduire les pertes pendant les attaques.",
+        "Complexité",
+        "Simple",
+        "Permissions nécessaires",
+        "SOS",
+        "Pré-requis",
+        "Aucun prérequis",
+        "Activer",
+        "Adhésions",
+        "Demandes d'accès arrivées hors lien d'invitation.",
+        "Activé",
+        "BÉNÉFICE",
+        "Valider les nouveaux joueurs avant de les activer comme membres de la guilde.",
+        "Complexité",
+        "Essentiel",
+        "Permissions nécessaires",
+        "Adhésions",
+        "Pré-requis",
+        "Site",
+        "Absences"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/06-compte-membre.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 515,
+            "height": 38,
+            "right": 149,
+            "width": 95,
+            "x": 55,
+            "y": 477
+          },
+          "text": "Espace membre"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1061,
+            "height": 19,
+            "right": 208,
+            "width": 153,
+            "x": 55,
+            "y": 1042
+          },
+          "text": "Suivi de commandes"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1536,
+            "height": 19,
+            "right": 186,
+            "width": 131,
+            "x": 55,
+            "y": 1517
+          },
+          "text": "Détail commande"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1883,
+            "height": 19,
+            "right": 252,
+            "width": 197,
+            "x": 55,
+            "y": 1864
+          },
+          "text": "Informations personnelles"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 2250,
+            "height": 19,
+            "right": 153,
+            "width": 98,
+            "x": 55,
+            "y": 2231
+          },
+          "text": "Notifications"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 2485,
+            "height": 19,
+            "right": 154,
+            "width": 99,
+            "x": 55,
+            "y": 2466
+          },
+          "text": "Mot de passe"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "member-order-row is-selected",
+          "rect": {
+            "bottom": 1215,
+            "height": 137,
+            "right": 362,
+            "width": 350,
+            "x": 13,
+            "y": 1078
+          },
+          "tag": "button",
+          "text": "Emojis OfficiersCMD-1042 · 29 juin 20269 €Livré"
+        },
+        {
+          "aria": "",
+          "className": "member-order-row ",
+          "rect": {
+            "bottom": 1352,
+            "height": 137,
+            "right": 362,
+            "width": 350,
+            "x": 13,
+            "y": 1215
+          },
+          "tag": "button",
+          "text": "Template War RoomCMD-1041 · 24 juin 202629 €Livré"
+        },
+        {
+          "aria": "",
+          "className": "member-order-row ",
+          "rect": {
+            "bottom": 1488,
+            "height": 136,
+            "right": 362,
+            "width": 350,
+            "x": 13,
+            "y": 1352
+          },
+          "tag": "button",
+          "text": "Pack images Camp NordCMD-1040 · 21 juin 202619 €En cours"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1981,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 1937
+          },
+          "tag": "input",
+          "text": "Audit Mobile Codex"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2058,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 2014
+          },
+          "tag": "input",
+          "text": "codex.audit.1783789519178@example.com"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2134,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 2090
+          },
+          "tag": "select",
+          "text": "FR - FrancaisEN - AnglaisES - Espagnol"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 2188,
+            "height": 44,
+            "right": 165,
+            "width": 138,
+            "x": 27,
+            "y": 2144
+          },
+          "tag": "button",
+          "text": "Enregistrer"
+        },
+        {
+          "aria": "",
+          "className": "notification-preference-action",
+          "rect": {
+            "bottom": 2410,
+            "height": 44,
+            "right": 108,
+            "width": 68,
+            "x": 40,
+            "y": 2366
+          },
+          "tag": "button",
+          "text": "Activer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2582,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 2538
+          },
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Afficher le mot de passe",
+          "className": "password-input-toggle",
+          "rect": {
+            "bottom": 2582,
+            "height": 44,
+            "right": 342,
+            "width": 44,
+            "x": 298,
+            "y": 2538
+          },
+          "tag": "button",
+          "text": "Afficher le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2659,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 2615
+          },
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Afficher le mot de passe",
+          "className": "password-input-toggle",
+          "rect": {
+            "bottom": 2659,
+            "height": 44,
+            "right": 342,
+            "width": 44,
+            "x": 298,
+            "y": 2615
+          },
+          "tag": "button",
+          "text": "Afficher le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2736,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 2692
+          },
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Afficher le mot de passe",
+          "className": "password-input-toggle",
+          "rect": {
+            "bottom": 2736,
+            "height": 44,
+            "right": 342,
+            "width": 44,
+            "x": 298,
+            "y": 2692
+          },
+          "tag": "button",
+          "text": "Afficher le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 2790,
+            "height": 44,
+            "right": 262,
+            "width": 236,
+            "x": 27,
+            "y": 2746
+          },
+          "tag": "button",
+          "text": "Modifier le mot de passe"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/member",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "ESPACE ESPACE MEMBRE",
+        "ESPACE MEMBRE",
+        "Session active",
+        "Espace membre",
+        "Audit Mobile 05774 · Audit Codex",
+        "AM",
+        "Audit Mobile Codex",
+        "codex.audit.1783789519178@example.com",
+        "Email valide",
+        "Commandes",
+        "3",
+        "Livrees",
+        "2",
+        "En cours",
+        "1",
+        "Suivi de commandes",
+        "3 commandes",
+        "Emojis Officiers",
+        "CMD-1042 · 29 juin 2026",
+        "9 €",
+        "Livré",
+        "Template War Room",
+        "CMD-1041 · 24 juin 2026",
+        "29 €",
+        "Livré",
+        "Pack images Camp Nord",
+        "CMD-1040 · 21 juin 2026",
+        "19 €",
+        "En cours",
+        "Détail commande",
+        "CMD-1042",
+        "Emojis Officiers",
+        "Pack PNG + Discord ready",
+        "Disponible dans les fichiers du compte",
+        "Paiement confirme",
+        "Preparation",
+        "Livraison",
+        "Disponible",
+        "Informations personnelles",
+        "Profil",
+        "Nom affiche",
+        "Email",
+        "Langue",
+        "FR - Francais"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/07-messages.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1525,
+            "height": 19,
+            "right": 136,
+            "width": 81,
+            "x": 55,
+            "y": 1506
+          },
+          "text": "Chat invite"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1748,
+            "height": 19,
+            "right": 175,
+            "width": 120,
+            "x": 55,
+            "y": 1729
+          },
+          "text": "Traduction auto"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 492,
+            "height": 38,
+            "right": 283,
+            "width": 83,
+            "x": 200,
+            "y": 454
+          },
+          "tag": "button",
+          "text": "Groupe"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 586,
+            "height": 42,
+            "right": 347,
+            "width": 319,
+            "x": 28,
+            "y": 544
+          },
+          "tag": "input",
+          "text": "Nom, pseudo ou email"
+        },
+        {
+          "aria": "",
+          "className": "message-row-main",
+          "rect": {
+            "bottom": 700,
+            "height": 82,
+            "right": 293,
+            "width": 266,
+            "x": 28,
+            "y": 618
+          },
+          "tag": "button",
+          "text": "GuildeGuildOps: Aucun message pour le moment"
+        },
+        {
+          "aria": "Supprimer Guilde",
+          "className": "message-row-action",
+          "rect": {
+            "bottom": 676,
+            "height": 34,
+            "right": 341,
+            "width": 34,
+            "x": 307,
+            "y": 642
+          },
+          "tag": "button",
+          "text": "Supprimer Guilde"
+        },
+        {
+          "aria": "",
+          "className": "is-danger",
+          "rect": {
+            "bottom": 841,
+            "height": 48,
+            "right": 84,
+            "width": 50,
+            "x": 34,
+            "y": 793
+          },
+          "tag": "button",
+          "text": "Supprimer"
+        },
+        {
+          "aria": "Ajouter une image",
+          "className": "thread-attach-button",
+          "rect": {
+            "bottom": 1317,
+            "height": 34,
+            "right": 75,
+            "width": 34,
+            "x": 41,
+            "y": 1283
+          },
+          "tag": "button",
+          "text": "Ajouter une image"
+        },
+        {
+          "aria": "",
+          "className": "thread-file-input",
+          "rect": {
+            "bottom": 1300,
+            "height": 2,
+            "right": 26,
+            "width": 2,
+            "x": 25,
+            "y": 1299
+          },
+          "tag": "input",
+          "text": ""
+        },
+        {
+          "aria": "Message",
+          "className": "",
+          "rect": {
+            "bottom": 1344,
+            "height": 89,
+            "right": 288,
+            "width": 202,
+            "x": 87,
+            "y": 1255
+          },
+          "tag": "textarea",
+          "text": "Message"
+        },
+        {
+          "aria": "Ajouter un emoji",
+          "className": "thread-emoji-toggle ",
+          "rect": {
+            "bottom": 1317,
+            "height": 34,
+            "right": 334,
+            "width": 34,
+            "x": 300,
+            "y": 1283
+          },
+          "tag": "button",
+          "text": "Ajouter un emoji"
+        },
+        {
+          "aria": "Envoyer le message",
+          "className": "",
+          "rect": {
+            "bottom": 1418,
+            "height": 64,
+            "right": 351,
+            "width": 327,
+            "x": 24,
+            "y": 1354
+          },
+          "tag": "button",
+          "text": "Envoyer"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1690,
+            "height": 38,
+            "right": 304,
+            "width": 280,
+            "x": 25,
+            "y": 1652
+          },
+          "tag": "input",
+          "text": "Chat invités désactivé"
+        },
+        {
+          "aria": "Envoyer le message",
+          "className": "",
+          "rect": {
+            "bottom": 1690,
+            "height": 38,
+            "right": 350,
+            "width": 38,
+            "x": 312,
+            "y": 1652
+          },
+          "tag": "button",
+          "text": "Envoyer le message"
+        },
+        {
+          "aria": "",
+          "className": "toggle ",
+          "rect": {
+            "bottom": 1754,
+            "height": 25,
+            "right": 347,
+            "width": 46,
+            "x": 301,
+            "y": 1729
+          },
+          "tag": "button",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1816,
+            "height": 36,
+            "right": 172,
+            "width": 147,
+            "x": 25,
+            "y": 1780
+          },
+          "tag": "select",
+          "text": "EN - AnglaisES - EspagnolDE - Allemand"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1816,
+            "height": 36,
+            "right": 350,
+            "width": 147,
+            "x": 203,
+            "y": 1780
+          },
+          "tag": "select",
+          "text": "FR - FrancaisEN - AnglaisES - Espagnol"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/messages",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "ESPACE MESSAGERIE",
+        "MESSAGERIE",
+        "0 non lus",
+        "Conversations",
+        "Groupe",
+        "0 non lus",
+        "CHERCHER UN MEMBRE",
+        "Guilde",
+        "GuildOps: Aucun message pour le moment",
+        "CANAL GENERAL",
+        "Guilde",
+        "Supprimer",
+        "Aucun message dans cette conversation.",
+        "MESSAGE",
+        "ENVOYER",
+        "Internal server error",
+        "Chat invite",
+        "Désactivé",
+        "Le chat invités est desactive dans les sections du site.",
+        "Limite 3 msg / 30 s. Certains messages passent en moderation.",
+        "Traduction auto",
+        "EN - Anglais",
+        "ES - Espagnol",
+        "DE - Allemand",
+        "FR - Francais",
+        "EN - Anglais",
+        "ES - Espagnol",
+        "Statut: Pause sur Chat invités et Messages",
+        "Site",
+        "Boutique",
+        "Compte",
+        "Abs.",
+        "Messages",
+        "Admin",
+        "Modules"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/08-absences.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 814,
+            "height": 19,
+            "right": 213,
+            "width": 158,
+            "x": 55,
+            "y": 795
+          },
+          "text": "Déclarer une absence"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1385,
+            "height": 19,
+            "right": 222,
+            "width": 167,
+            "x": 55,
+            "y": 1366
+          },
+          "text": "Planning des absences"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 919,
+            "height": 41,
+            "right": 336,
+            "width": 298,
+            "x": 39,
+            "y": 878
+          },
+          "tag": "input",
+          "text": "Pseudo du membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1007,
+            "height": 43,
+            "right": 336,
+            "width": 298,
+            "x": 39,
+            "y": 964
+          },
+          "tag": "input",
+          "text": "2026-07-11"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1095,
+            "height": 43,
+            "right": 336,
+            "width": 298,
+            "x": 39,
+            "y": 1052
+          },
+          "tag": "input",
+          "text": "2026-07-11"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1268,
+            "height": 128,
+            "right": 336,
+            "width": 298,
+            "x": 39,
+            "y": 1140
+          },
+          "tag": "textarea",
+          "text": "Vacances, déplacement, examens..."
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 1324,
+            "height": 44,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 1280
+          },
+          "tag": "button",
+          "text": "Enregistrer l'absence"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/absences",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "ESPACE ABSENCES",
+        "ABSENCES",
+        "0 absence",
+        "En cours",
+        "0",
+        "À venir",
+        "0",
+        "Jours couverts",
+        "0",
+        "Déclarer une absence",
+        "Dates + motif",
+        "Membre",
+        "Début",
+        "Fin",
+        "Motif",
+        "Enregistrer l'absence",
+        "Planning des absences",
+        "0 déclaration",
+        "Aucune absence déclarée",
+        "Les absences enregistrées apparaîtront ici avec leurs dates et leur motif.",
+        "Site",
+        "Boutique",
+        "Compte",
+        "Abs.",
+        "Messages",
+        "Admin",
+        "Modules"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/09-boutique.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 496,
+            "height": 19,
+            "right": 123,
+            "width": 68,
+            "x": 55,
+            "y": 477
+          },
+          "text": "Boutique"
+        },
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 655,
+            "height": 101,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 554
+          },
+          "text": "Donne à ta guilde un look qui donne envie de la rejoindre."
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1027,
+            "height": 19,
+            "right": 130,
+            "width": 75,
+            "x": 55,
+            "y": 1008
+          },
+          "text": "Catalogue"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 2423,
+            "height": 19,
+            "right": 174,
+            "width": 119,
+            "x": 55,
+            "y": 2404
+          },
+          "text": "Détail de l'offre"
+        },
+        {
+          "level": "H1",
+          "rect": {
+            "bottom": 2655,
+            "height": 23,
+            "right": 361,
+            "width": 312,
+            "x": 48,
+            "y": 2632
+          },
+          "text": "Aegis Nord"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 2667,
+            "height": 7,
+            "right": 361,
+            "width": 312,
+            "x": 48,
+            "y": 2660
+          },
+          "text": "Rallyes, timers et consignes au même endroit."
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 3379,
+            "height": 19,
+            "right": 145,
+            "width": 90,
+            "x": 55,
+            "y": 3360
+          },
+          "text": "Déjà adopté"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 784,
+            "height": 40,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 744
+          },
+          "tag": "button",
+          "text": "Voir les templates"
+        },
+        {
+          "aria": "",
+          "className": "ghost-action",
+          "rect": {
+            "bottom": 833,
+            "height": 40,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 793
+          },
+          "tag": "button",
+          "text": "Demander un pack"
+        },
+        {
+          "aria": "",
+          "className": "is-active",
+          "rect": {
+            "bottom": 1346,
+            "height": 34,
+            "right": 88,
+            "width": 64,
+            "x": 25,
+            "y": 1312
+          },
+          "tag": "button",
+          "text": "Tous"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1346,
+            "height": 34,
+            "right": 204,
+            "width": 107,
+            "x": 96,
+            "y": 1312
+          },
+          "tag": "button",
+          "text": "Templates"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1346,
+            "height": 34,
+            "right": 294,
+            "width": 82,
+            "x": 212,
+            "y": 1312
+          },
+          "tag": "button",
+          "text": "Images"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1346,
+            "height": 34,
+            "right": 380,
+            "width": 77,
+            "x": 302,
+            "y": 1312
+          },
+          "tag": "button",
+          "text": "Emojis"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 1346,
+            "height": 34,
+            "right": 476,
+            "width": 89,
+            "x": 388,
+            "y": 1312
+          },
+          "tag": "button",
+          "text": "Bundles"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-red tone-raid-board is-selected ",
+          "rect": {
+            "bottom": 1494,
+            "height": 121,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1373
+          },
+          "tag": "button",
+          "text": "Template Raid BoardTemplate builder · 12 fichiers39 €Utilisé par 27 guildesActif"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-blue tone-atlas  ",
+          "rect": {
+            "bottom": 1646,
+            "height": 142,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1504
+          },
+          "tag": "button",
+          "text": "Template Alliance AtlasTemplate builder · 14 fichiers45 €Utilisé par 19 guildesActif"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-amber tone-forge-terminal  ",
+          "rect": {
+            "bottom": 1798,
+            "height": 142,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1656
+          },
+          "tag": "button",
+          "text": "Template Forge TerminalTemplate builder · 10 fichiers35 €Utilisé par 34 guildesActif"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-violet tone-citadel  ",
+          "rect": {
+            "bottom": 1929,
+            "height": 121,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1808
+          },
+          "tag": "button",
+          "text": "Template Citadel LuxeTemplate builder · 16 fichiers49 €Utilisé par 16 guildesActif"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-blue tone-asset  ",
+          "rect": {
+            "bottom": 2081,
+            "height": 142,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1939
+          },
+          "tag": "button",
+          "text": "Pack images Camp NordPack images · 24 fichiers19 €Utilisé par 18 guildesActif"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-amber tone-asset  ",
+          "rect": {
+            "bottom": 2212,
+            "height": 121,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 2091
+          },
+          "tag": "button",
+          "text": "Emojis OfficiersPack emojis · 36 fichiers9 €Utilisé par 64 guildesActif"
+        },
+        {
+          "aria": "",
+          "className": "shop-product-card accent-violet tone-asset  ",
+          "rect": {
+            "bottom": 2364,
+            "height": 142,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 2222
+          },
+          "tag": "button",
+          "text": "Bundle lancement guildeBundle · 68 fichiers49 €Utilisé par 0 guildesBientôt"
+        },
+        {
+          "aria": "",
+          "className": "preview-message-action",
+          "rect": {
+            "bottom": 2608,
+            "height": 12,
+            "right": 272,
+            "width": 55,
+            "x": 217,
+            "y": 2596
+          },
+          "tag": "button",
+          "text": "Messagerie0"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2608,
+            "height": 12,
+            "right": 363,
+            "width": 51,
+            "x": 313,
+            "y": 2596
+          },
+          "tag": "button",
+          "text": "Espace membre"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 2720,
+            "height": 15,
+            "right": 361,
+            "width": 312,
+            "x": 48,
+            "y": 2705
+          },
+          "tag": "a",
+          "text": "Devenir membre"
+        },
+        {
+          "aria": "Agrandir l'aperçu de Template Raid Board",
+          "className": "shop-preview-open-button",
+          "rect": {
+            "bottom": 2837,
+            "height": 244,
+            "right": 333,
+            "width": 290,
+            "x": 42,
+            "y": 2592
+          },
+          "tag": "button",
+          "text": "Agrandir l'aperçu de Template Raid Board"
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 3269,
+            "height": 40,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 3229
+          },
+          "tag": "button",
+          "text": "Déverrouiller ce template"
+        },
+        {
+          "aria": "",
+          "className": "ghost-action",
+          "rect": {
+            "bottom": 3318,
+            "height": 40,
+            "right": 348,
+            "width": 322,
+            "x": 27,
+            "y": 3278
+          },
+          "tag": "button",
+          "text": "Télécharger un aperçu"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/shop",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "ESPACE BOUTIQUE",
+        "BOUTIQUE",
+        "0 acquis",
+        "Boutique",
+        "6/7 offres disponibles",
+        "TEMPLATES PREMIUM, IMAGES, EMOJIS",
+        "Donne à ta guilde un look qui donne envie de la rejoindre.",
+        "Tes templates, images et emojis se déverrouillent dans le builder et restent disponibles dans tes propositions de design.",
+        "Voir les templates",
+        "Demander un pack",
+        "DÉVERROUILLAGE BUILDER",
+        "0 template disponible",
+        "Choisis un template premium, déverrouille-le, puis applique-le directement dans ton builder.",
+        "Catalogue",
+        "7 offres",
+        "Offres prêtes",
+        "6",
+        "Prix dès",
+        "9 €",
+        "Fichiers inclus",
+        "180",
+        "Tous",
+        "Templates",
+        "Images",
+        "Emojis",
+        "Bundles",
+        "Template Raid Board",
+        "Template builder · 12 fichiers",
+        "39 €",
+        "Utilisé par 27 guildes",
+        "Actif",
+        "Template Alliance Atlas",
+        "Template builder · 14 fichiers",
+        "45 €",
+        "Utilisé par 19 guildes",
+        "Actif",
+        "Template Forge Terminal",
+        "Template builder · 10 fichiers",
+        "35 €",
+        "Utilisé par 34 guildes",
+        "Actif",
+        "Template Citadel Luxe",
+        "Template builder · 16 fichiers",
+        "49 €"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/10-admin.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 496,
+            "height": 19,
+            "right": 168,
+            "width": 114,
+            "x": 55,
+            "y": 477
+          },
+          "text": "Administration"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "admin-access-toggle is-on",
+          "rect": {
+            "bottom": 906,
+            "height": 34,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 872
+          },
+          "tag": "button",
+          "text": "Accès admin"
+        },
+        {
+          "aria": "",
+          "className": "admin-all-toggle",
+          "rect": {
+            "bottom": 950,
+            "height": 34,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 916
+          },
+          "tag": "button",
+          "text": "Retirer tout"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted ",
+          "rect": {
+            "bottom": 1009,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 960
+          },
+          "tag": "button",
+          "text": "SiteSite"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted ",
+          "rect": {
+            "bottom": 1066,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1017
+          },
+          "tag": "button",
+          "text": "AdhésionsAdhésions"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted ",
+          "rect": {
+            "bottom": 1123,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1074
+          },
+          "tag": "button",
+          "text": "AbsencesAccès privé"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted is-inactive",
+          "rect": {
+            "bottom": 1180,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1131
+          },
+          "tag": "button",
+          "text": "Wars & EventsInactif"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted is-inactive",
+          "rect": {
+            "bottom": 1236,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1188
+          },
+          "tag": "button",
+          "text": "SOSInactif"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted is-inactive",
+          "rect": {
+            "bottom": 1293,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1244
+          },
+          "tag": "button",
+          "text": "BanqueInactif"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted is-inactive",
+          "rect": {
+            "bottom": 1350,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1301
+          },
+          "tag": "button",
+          "text": "DiplomatieInactif"
+        },
+        {
+          "aria": "",
+          "className": "admin-module-chip is-granted is-inactive",
+          "rect": {
+            "bottom": 1407,
+            "height": 49,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 1358
+          },
+          "tag": "button",
+          "text": "ForumInactif"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": "is-active ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/admin",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "1",
+        "ESPACE ADMINISTRATION",
+        "ADMINISTRATION",
+        "1/1 accès",
+        "Administration",
+        "1/1 membres",
+        "Membres avec accès",
+        "1",
+        "Modules administrables",
+        "3/8",
+        "Restrictions actives",
+        "8",
+        "AM",
+        "Audit Mobile Codex",
+        "active",
+        "Membre",
+        "Accès admin",
+        "Retirer tout",
+        "Site",
+        "Site",
+        "Adhésions",
+        "Adhésions",
+        "Absences",
+        "Accès privé",
+        "Wars & Events",
+        "Inactif",
+        "SOS",
+        "Inactif",
+        "Banque",
+        "Inactif",
+        "Diplomatie",
+        "Inactif",
+        "Forum",
+        "Inactif",
+        "Site",
+        "Boutique",
+        "Compte",
+        "Abs.",
+        "Messages",
+        "Admin",
+        "Modules"
+      ]
+    }
+  },
+  {
+    "ok": true,
+    "file": "C:/Users/admin/OneDrive/Documents/GuildSpace/docs/audit-mobile-connecte-2026-07-11/11-parametres.png",
+    "metrics": {
+      "headings": [
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 515,
+            "height": 38,
+            "right": 309,
+            "width": 254,
+            "x": 55,
+            "y": 477
+          },
+          "text": "Gestion multi-guildes / multi-mondes"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 688,
+            "height": 19,
+            "right": 215,
+            "width": 161,
+            "x": 55,
+            "y": 669
+          },
+          "text": "Fusion avec doublons"
+        },
+        {
+          "level": "H2",
+          "rect": {
+            "bottom": 1011,
+            "height": 19,
+            "right": 217,
+            "width": 162,
+            "x": 55,
+            "y": 992
+          },
+          "text": "Permissions avancees"
+        }
+      ],
+      "overflowX": false,
+      "scroll": {
+        "height": 844,
+        "width": 390
+      },
+      "smallTargets": [
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]",
+        "[Circular]"
+      ],
+      "tappables": [
+        {
+          "aria": "Menu",
+          "className": "icon-button",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 56,
+            "width": 44,
+            "x": 12,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Menu"
+        },
+        {
+          "aria": "Notifications, 0 non lue",
+          "className": "mobile-icon-action notification-bell",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 303,
+            "width": 44,
+            "x": 259,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Notifications, 0 non lue"
+        },
+        {
+          "aria": "Messagerie, 0 message non lu",
+          "className": "mobile-icon-action",
+          "rect": {
+            "bottom": 60,
+            "height": 44,
+            "right": 363,
+            "width": 44,
+            "x": 319,
+            "y": 16
+          },
+          "tag": "button",
+          "text": "Messagerie, 0 message non lu"
+        },
+        {
+          "aria": "",
+          "className": "mobile-guild-card",
+          "rect": {
+            "bottom": 160,
+            "height": 84,
+            "right": 363,
+            "width": 351,
+            "x": 12,
+            "y": 76
+          },
+          "tag": "button",
+          "text": "Audit Mobile 05774Whiteout Survival · S999 · fr"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 129,
+            "width": 117,
+            "x": 13,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 246,
+            "width": 117,
+            "x": 129,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 226,
+            "height": 54,
+            "right": 362,
+            "width": 117,
+            "x": 246,
+            "y": 172
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 631,
+            "height": 44,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 587
+          },
+          "tag": "button",
+          "text": "Active"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 771,
+            "height": 43,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 728
+          },
+          "tag": "select",
+          "text": "Audit Mobile 05774 · Whiteout Survival · S999"
+        },
+        {
+          "aria": "",
+          "className": "",
+          "rect": {
+            "bottom": 847,
+            "height": 43,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 804
+          },
+          "tag": "select",
+          "text": ""
+        },
+        {
+          "aria": "",
+          "className": "primary-action",
+          "rect": {
+            "bottom": 901,
+            "height": 44,
+            "right": 350,
+            "width": 326,
+            "x": 25,
+            "y": 857
+          },
+          "tag": "button",
+          "text": "Lancer l'analyse"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1192,
+            "height": 44,
+            "right": 95,
+            "width": 70,
+            "x": 25,
+            "y": 1148
+          },
+          "tag": "button",
+          "text": "Adhésions"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1192,
+            "height": 44,
+            "right": 150,
+            "width": 50,
+            "x": 100,
+            "y": 1148
+          },
+          "tag": "button",
+          "text": "Events"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1192,
+            "height": 44,
+            "right": 194,
+            "width": 39,
+            "x": 155,
+            "y": 1148
+          },
+          "tag": "button",
+          "text": "SOS"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1192,
+            "height": 44,
+            "right": 249,
+            "width": 50,
+            "x": 199,
+            "y": 1148
+          },
+          "tag": "button",
+          "text": "Forum"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1192,
+            "height": 44,
+            "right": 320,
+            "width": 66,
+            "x": 254,
+            "y": 1148
+          },
+          "tag": "button",
+          "text": "Membres"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1289,
+            "height": 44,
+            "right": 63,
+            "width": 39,
+            "x": 25,
+            "y": 1245
+          },
+          "tag": "button",
+          "text": "SOS"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1289,
+            "height": 44,
+            "right": 142,
+            "width": 73,
+            "x": 68,
+            "y": 1245
+          },
+          "tag": "button",
+          "text": "Diplomatie"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1385,
+            "height": 44,
+            "right": 63,
+            "width": 39,
+            "x": 25,
+            "y": 1341
+          },
+          "tag": "button",
+          "text": "SOS"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1385,
+            "height": 44,
+            "right": 124,
+            "width": 56,
+            "x": 68,
+            "y": 1341
+          },
+          "tag": "button",
+          "text": "Banque"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1482,
+            "height": 44,
+            "right": 61,
+            "width": 36,
+            "x": 25,
+            "y": 1438
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1482,
+            "height": 44,
+            "right": 136,
+            "width": 70,
+            "x": 66,
+            "y": 1438
+          },
+          "tag": "button",
+          "text": "Adhésions"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1482,
+            "height": 44,
+            "right": 192,
+            "width": 50,
+            "x": 141,
+            "y": 1438
+          },
+          "tag": "button",
+          "text": "Events"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1482,
+            "height": 44,
+            "right": 235,
+            "width": 39,
+            "x": 197,
+            "y": 1438
+          },
+          "tag": "button",
+          "text": "SOS"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1482,
+            "height": 44,
+            "right": 314,
+            "width": 73,
+            "x": 240,
+            "y": 1438
+          },
+          "tag": "button",
+          "text": "Diplomatie"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1531,
+            "height": 44,
+            "right": 81,
+            "width": 56,
+            "x": 25,
+            "y": 1487
+          },
+          "tag": "button",
+          "text": "Banque"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1531,
+            "height": 44,
+            "right": 136,
+            "width": 50,
+            "x": 86,
+            "y": 1487
+          },
+          "tag": "button",
+          "text": "Forum"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1531,
+            "height": 44,
+            "right": 207,
+            "width": 66,
+            "x": 141,
+            "y": 1487
+          },
+          "tag": "button",
+          "text": "Membres"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1531,
+            "height": 44,
+            "right": 256,
+            "width": 45,
+            "x": 212,
+            "y": 1487
+          },
+          "tag": "button",
+          "text": "Roles"
+        },
+        {
+          "aria": "",
+          "className": "is-enabled",
+          "rect": {
+            "bottom": 1531,
+            "height": 44,
+            "right": 347,
+            "width": 86,
+            "x": 261,
+            "y": 1487
+          },
+          "tag": "button",
+          "text": "Admin global"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 65,
+            "width": 52,
+            "x": 13,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Site"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 117,
+            "width": 52,
+            "x": 65,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Boutique"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 169,
+            "width": 52,
+            "x": 117,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Compte"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 221,
+            "width": 52,
+            "x": 169,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Abs."
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 273,
+            "width": 52,
+            "x": 221,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Messages"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 325,
+            "width": 52,
+            "x": 273,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Admin"
+        },
+        {
+          "aria": "",
+          "className": " ",
+          "rect": {
+            "bottom": 833,
+            "height": 58,
+            "right": 378,
+            "width": 52,
+            "x": 325,
+            "y": 775
+          },
+          "tag": "button",
+          "text": "Modules"
+        }
+      ],
+      "title": "GuildOps - Commandement de guilde",
+      "url": "http://127.0.0.1:5173/app/settings",
+      "viewport": {
+        "height": 844,
+        "width": 390
+      },
+      "visibleText": [
+        "GuildOps",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Site",
+        "Boutique",
+        "Compte",
+        "ESPACE MULTI-GUILDES",
+        "PARAMÈTRES",
+        "1 guilde",
+        "Gestion multi-guildes / multi-mondes",
+        "S999",
+        "Audit Mobile 05774",
+        "Whiteout Survival · S999 · fr",
+        "Active",
+        "Fusion avec doublons",
+        "0 doublon a traiter",
+        "Guilde source",
+        "Audit Mobile 05774 · Whiteout Survival · S999",
+        "Guilde cible",
+        "Lancer l'analyse",
+        "Lancez l'analyse pour ouvrir la resolution manuelle.",
+        "Permissions avancees",
+        "Roles modulaires",
+        "Membre",
+        "Accès membre",
+        "Officier",
+        "Adhésions",
+        "Events",
+        "SOS",
+        "Forum",
+        "Membres",
+        "Diplomate",
+        "SOS",
+        "Diplomatie",
+        "Banquier",
+        "SOS",
+        "Banque",
+        "Admin",
+        "Site",
+        "Adhésions",
+        "Events",
+        "SOS",
+        "Diplomatie",
+        "Banque",
+        "Forum",
+        "Membres",
+        "Roles",
+        "Admin global",
+        "Site",
+        "Boutique"
+      ]
+    }
+  }
+]

@@ -322,6 +322,8 @@ export function useMessagesController({
   onBankCommand,
   moduleEnabled = true,
   translationEnabled = true,
+  onNotificationsChanged,
+  messagesVisible = true,
 }) {
   const [translateOn, setTranslateOn] = useState(() => Boolean(translationEnabled));
   const [targetLanguage, setTargetLanguage] = useState(() => normalizeLanguageChoice(currentUser.preferredLanguage || "FR"));
@@ -698,11 +700,17 @@ export function useMessagesController({
         const visibleConversations = filterVisibleConversations(normalizeApiConversations(conversationPayload?.conversations));
         const nextActiveConversation =
           visibleConversations.find((conversation) => conversation.id === activeConversation?.id) || visibleConversations[0] || null;
-        const readState = markConversationReadInList(visibleConversations, nextActiveConversation?.id);
+        const readState = messagesVisible
+          ? markConversationReadInList(visibleConversations, nextActiveConversation?.id)
+          : { conversations: visibleConversations, clearedUnread: 0 };
         conversationUnreadCountsRef.current = getConversationUnreadCounts(readState.conversations);
 
         setConversations(readState.conversations);
-        setActiveConversation(nextActiveConversation ? { ...nextActiveConversation, unreadCount: 0 } : null);
+        setActiveConversation(
+          nextActiveConversation
+            ? { ...nextActiveConversation, unreadCount: messagesVisible ? 0 : nextActiveConversation.unreadCount }
+            : null,
+        );
         setMessageRecipients((recipientsPayload?.recipients || []).map(normalizeApiRecipient));
         setUnreadMessageCount(Math.max(0, Number(unreadPayload?.unreadCount || 0) - readState.clearedUnread));
       })
@@ -712,7 +720,7 @@ export function useMessagesController({
       });
 
     return () => controller.abort();
-  }, [apiEnabled, hiddenConversationIds, moduleEnabled, selectedGuild]);
+  }, [apiEnabled, hiddenConversationIds, messagesVisible, moduleEnabled, selectedGuild]);
 
   useEffect(() => {
     const guildId = getApiGuildId(selectedGuild);
@@ -739,6 +747,10 @@ export function useMessagesController({
     if (!moduleEnabled || !apiEnabled || !guildId) {
       setThreadMessages([]);
       setMessageNextCursor(null);
+      return undefined;
+    }
+
+    if (!messagesVisible) {
       return undefined;
     }
 
@@ -782,7 +794,7 @@ export function useMessagesController({
       });
 
     return () => controller.abort();
-  }, [activeConversation?.id, apiEnabled, groupThreadMessages, moduleEnabled, selectedGuild, targetLanguage]);
+  }, [activeConversation?.id, apiEnabled, groupThreadMessages, messagesVisible, moduleEnabled, selectedGuild, targetLanguage]);
 
   useEffect(() => {
     const guildId = getApiGuildId(selectedGuild);
@@ -808,9 +820,11 @@ export function useMessagesController({
         const message = payload?.message ? normalizeApiPrivateMessage(payload.message) : null;
         if (!message) return;
 
-        setConversations((current) => filterVisibleConversations(upsertConversationKeepingLabels(current, message, activeConversation)));
+        setConversations((current) =>
+          filterVisibleConversations(upsertConversationKeepingLabels(current, message, messagesVisible ? activeConversation : null)),
+        );
 
-        if (messageMatchesConversation(message, activeConversation)) {
+        if (messagesVisible && messageMatchesConversation(message, activeConversation)) {
           setThreadMessages((current) => appendUniqueById(current, prepareThreadMessages([{ ...message, read: true }])));
 
           if (!message.isOwn) {
@@ -819,8 +833,13 @@ export function useMessagesController({
               .then((readPayload) => {
                 if (readPayload?.unreadCount !== undefined) setUnreadMessageCount(Number(readPayload.unreadCount || 0));
               })
+              .finally(() => {
+                onNotificationsChanged?.();
+              })
               .catch(() => {});
           }
+        } else if (!message.isOwn) {
+          onNotificationsChanged?.();
         }
       });
       stream.addEventListener("unread_count", (event) => {
@@ -834,7 +853,7 @@ export function useMessagesController({
     }
 
     return () => stream?.close();
-  }, [activeConversation, apiEnabled, hiddenConversationIds, moduleEnabled, selectedGuild]);
+  }, [activeConversation, apiEnabled, hiddenConversationIds, messagesVisible, moduleEnabled, onNotificationsChanged, selectedGuild]);
 
   function selectConversation(conversation) {
     if (!moduleEnabled) return;

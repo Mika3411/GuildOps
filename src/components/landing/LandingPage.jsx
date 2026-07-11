@@ -1,73 +1,80 @@
-import React from "react";
+import React, { useState } from "react";
 import {
-  ArrowRight,
+  Banknote,
   BellRing,
-  CalendarDays,
-  Check,
-  ChevronRight,
-  Crown,
-  Gem,
-  Handshake,
-  LockKeyhole,
+  GalleryHorizontalEnd,
+  Globe2,
+  Layers3,
   LogIn,
-  Map,
-  MessageSquare,
-  Play,
-  Search,
-  Settings,
+  Menu,
   Shield,
   ShieldAlert,
+  Sparkles,
   Swords,
   UserPlus,
-  Users,
-  Vault,
+  X,
 } from "lucide-react";
 
-const moduleRows = [
+const promiseCards = [
   {
-    icon: Swords,
-    label: "Guerres & Events",
-    text: "Planifiez, suivez et rappelez chaque war et event.",
-    tone: "blue",
+    icon: Globe2,
+    label: "Présenter ta guilde",
+    text: "Explique le jeu, le serveur, la langue, les règles et le type de joueurs recherchés.",
+    detail: "Une page claire à partager",
   },
   {
-    icon: Users,
-    label: "Membres",
-    text: "Suivez les rôles, présences et priorités de progression.",
-    tone: "teal",
+    icon: UserPlus,
+    label: "Accueillir les joueurs",
+    text: "Les nouveaux comprennent où ils arrivent avant de demander à rejoindre.",
+    detail: "Moins de questions répétées",
   },
   {
-    icon: Vault,
-    label: "Banque",
-    text: "Suivez les stocks, les depots et les retraits en temps reel.",
-    tone: "green",
-  },
-  {
-    icon: ShieldAlert,
-    label: "SOS",
-    text: "Alertez, coordonnez et suivez les demandes d'aide.",
-    tone: "red",
-  },
-  {
-    icon: Handshake,
-    label: "Diplomatie",
-    text: "Contacts, traites et communications inter-alliances.",
-    tone: "violet",
+    icon: Layers3,
+    label: "Piloter les moments importants",
+    text: "Alertes, SOS, événements, rappels, banque et absences restent visibles au bon endroit.",
+    detail: "La partie utile pendant le jeu",
   },
 ];
 
-const privateRows = [
-  ["Commandement", "Vue d'ensemble et decisions cles.", Users],
-  ["Calendrier", "Tous les events et rappels.", CalendarDays],
-  ["Membres", "Roles, activites et performance.", Crown],
-  ["Rapports", "Historique des wars et metriques.", MessageSquare],
-  ["Parametres", "Roles, permissions et integrations.", Settings],
+const journeySteps = [
+  ["1", "Tu crées la page", "Nom, jeu, serveur, langue, description et règles de base."],
+  ["2", "Un joueur découvre", "Il comprend vite si la guilde correspond à son style de jeu."],
+  ["3", "Il rejoint", "Il crée son compte et accède aux espaces privés de la guilde."],
+  ["4", "Le staff gère", "Les admins suivent les membres, les absences, les messages et les modules."],
 ];
 
-const eventRows = [
-  ["Guerre d'alliance", "Aujourd'hui 20:00", Swords, "red"],
-  ["Siege", "Demain 19:00", Shield, "blue"],
-  ["Recolte de ressources", "Samedi 18:00", Gem, "green"],
+const moduleBadges = ["Alertes", "SOS", "Événements", "Banque", "Absences", "Messages"];
+
+const demoGuild = {
+  initials: "AN",
+  name: "Aegis Nord",
+  game: "Whiteout Survival",
+  realm: "Royaume 847",
+  modules: "6/10 modules activés",
+};
+
+const sosResponses = [
+  ["Nora", "défense prête"],
+  ["Kaito", "renfort en route"],
+  ["Mila", "bouclier posé"],
+];
+
+const eventReminders = [
+  ["20:00", "Forteresse niveau 4"],
+  ["19:30", "Rappel préparation"],
+  ["19:50", "Check-in final"],
+];
+
+const bankResources = [
+  ["Acier", "1,2 M", "+240 K"],
+  ["Charbon", "860 K", "-80 K"],
+  ["Viande", "3,4 M", "+510 K"],
+];
+
+const alertFeed = [
+  ["SOS", "Rallye entrant sur Bastion Nord"],
+  ["Rappel", "Event dans 30 minutes"],
+  ["Banque", "3 demandes de ressources à valider"],
 ];
 
 function scrollToSection(id) {
@@ -91,142 +98,27 @@ function BrandMark() {
   );
 }
 
-function CommandMap() {
+function PromiseSection() {
   return (
-    <div className="landing-command-map" aria-label="Carte de commandement">
-      <div className="map-node primary">
-        <Shield size={25} />
+    <section className="landing-section landing-promises" id="product">
+      <div className="section-heading">
+        <span>GuildOps, en clair</span>
+        <h2>Crée une page pour ta guilde, puis active les outils utiles pendant le jeu.</h2>
+        <p>
+          Si tu découvres GuildOps : c'est un outil pour les guildes de jeu. Les nouveaux joueurs voient qui vous êtes,
+          et les membres connectés retrouvent les alertes, SOS, événements, rappels, absences et ressources au même
+          endroit.
+        </p>
       </div>
-      <div className="map-node north">
-        <Vault size={18} />
-      </div>
-      <div className="map-node east">
-        <Swords size={18} />
-      </div>
-      <div className="map-node south">
-        <ShieldAlert size={18} />
-      </div>
-      <div className="map-legend">
-        <span>
-          <i className="ally" />
-          Allies
-        </span>
-        <span>
-          <i className="neutral" />
-          Neutres
-        </span>
-        <span>
-          <i className="enemy" />
-          Ennemis
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function DashboardPreview() {
-  return (
-    <section className="landing-dashboard" aria-label="Apercu du cockpit GuildOps">
-      <header className="dashboard-topbar">
-        <div className="dashboard-guild">
-          <span>
-            <Crown size={17} />
-          </span>
-          <strong>Aetherium</strong>
-          <ChevronRight size={14} />
-        </div>
-        <label className="dashboard-search">
-          <Search size={15} />
-          <input aria-label="Rechercher dans le cockpit" placeholder="Rechercher..." />
-        </label>
-        <BellRing size={18} />
-        <Settings size={18} />
-        <span className="dashboard-avatar">NL</span>
-      </header>
-
-      <div className="dashboard-body">
-        <nav className="dashboard-sidebar" aria-label="Modules GuildOps">
-          {["Commandement", "Calendrier", "Membres", "Banque", "SOS", "Diplomatie"].map((item, index) => (
-            <span className={index === 0 ? "is-active" : ""} key={item}>
-              {item}
-            </span>
-          ))}
-        </nav>
-
-        <div className="dashboard-main">
-          <div className="dashboard-panel command">
-            <h3>Carte de commandement</h3>
-            <CommandMap />
-          </div>
-          <div className="dashboard-panel events">
-            <h3>Prochains events</h3>
-            {eventRows.map(([label, time, Icon, tone]) => (
-              <p className={`event-row tone-${tone}`} key={label}>
-                <span>
-                  <Icon size={18} />
-                </span>
-                <strong>{label}</strong>
-                <small>{time}</small>
-              </p>
-            ))}
-            <button type="button">
-              Voir le calendrier
-              <ArrowRight size={14} />
-            </button>
-          </div>
-          <div className="dashboard-panel members">
-            <h3>Suivi membres</h3>
-            {["ShieldMaiden", "FrostWarden", "NightLead"].map((name, index) => (
-              <p key={name}>
-                <span className="member-avatar">{name.slice(0, 1)}</span>
-                <strong>{name}</strong>
-                <small>{index === 0 ? "War confirmee" : index === 1 ? "Objectif banque" : "Brief à lire"}</small>
-              </p>
-            ))}
-          </div>
-          <div className="dashboard-panel bank">
-            <h3>Banque</h3>
-            {[
-              ["Or", "12,4 M"],
-              ["Elixir", "9,8 M"],
-              ["Gemmes", "5 120"],
-            ].map(([name, amount]) => (
-              <p key={name}>
-                <span />
-                <strong>{name}</strong>
-                <small>{amount}</small>
-              </p>
-            ))}
-          </div>
-          <div className="dashboard-panel sos">
-            <h3>SOS actifs</h3>
-            <strong>Aide requise !</strong>
-            <p>T1H2 en difficulte</p>
-            <small>Coordonnees X: 1256 Y: 878</small>
-            <button type="button">
-              Voir tous les SOS (3)
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ModuleRows() {
-  return (
-    <section className="landing-section landing-modules" id="modules">
-      <h2>Tout ce que l’état-major doit voir</h2>
-      <div className="module-row-list">
-        {moduleRows.map(({ icon: Icon, label, text, tone }) => (
-          <article className="module-row" key={label}>
-            <span className={`module-icon tone-${tone}`}>
-              <Icon size={23} />
+      <div className="promise-grid">
+        {promiseCards.map(({ icon: Icon, label, text, detail }) => (
+          <article className="promise-card" key={label}>
+            <span>
+              <Icon size={22} />
             </span>
             <strong>{label}</strong>
             <p>{text}</p>
-            <ArrowRight size={18} />
+            <small>{detail}</small>
           </article>
         ))}
       </div>
@@ -234,132 +126,201 @@ function ModuleRows() {
   );
 }
 
-function FlowSection() {
+function OperationsSection() {
   return (
-    <section className="landing-section landing-flow" id="product">
-      <h2>Du site de guilde aux opérations privées</h2>
-      <div className="flow-grid">
-        <article className="public-site-card">
-          <h3>Site de guilde</h3>
-          <div className="public-site-panel">
-            <div className="site-banner">
-              <span className="site-crest">
-                <Crown size={24} />
-              </span>
-              <div>
-                <strong>Aetherium</strong>
-                <small>Unis pour dominer.</small>
-              </div>
+    <section className="landing-section landing-operations" id="modules">
+      <div className="section-heading">
+        <span>Ce qui compte en jeu</span>
+        <h2>Alertes, SOS, rappels, événements, banque : les modules prioritaires.</h2>
+      </div>
+      <div className="operations-layout">
+        <div className="ops-phone" aria-label="Apercu mobile espace membre">
+          <header>
+            <Shield size={18} />
+            <strong>GuildOps</strong>
+            <BellRing size={18} />
+          </header>
+          <div className="ops-guild-card">
+            <span>{demoGuild.initials}</span>
+            <div>
+              <strong>{demoGuild.name}</strong>
+              <small>
+                {demoGuild.game} · {demoGuild.realm}
+              </small>
             </div>
-            <dl>
-              <div>
-                <dt>Niveau</dt>
-                <dd>24</dd>
-              </div>
-              <div>
-                <dt>Membres</dt>
-                <dd>48/50</dd>
-              </div>
-              <div>
-                <dt>Trophees</dt>
-                <dd>51234</dd>
-              </div>
-              <div>
-                <dt>Langue</dt>
-                <dd>FR</dd>
-              </div>
-            </dl>
-            <div className="site-public-copy">
-              <p>
-                <strong>A propos de nous</strong>
-                Guilde competitive et organisee. Wars constantes, entraide active et progression collective.
-              </p>
-              <p>
-                <strong>Exigences</strong>
-                <span>
-                  <Check size={14} />
-                  HDV 14+
-                </span>
-                <span>
-                  <Check size={14} />
-                  Heros optimises
-                </span>
-                <span>
-                  <Check size={14} />
-                  Actif & loyal
-                </span>
-              </p>
-            </div>
-            <button type="button">Voir les consignes</button>
           </div>
-        </article>
-
-        <div className="flow-bridge" aria-hidden="true">
-          <span />
-          <LockKeyhole size={27} />
-          <ArrowRight size={24} />
-        </div>
-
-        <article className="private-ops-card">
-          <h3>Opérations privées</h3>
-          <div className="private-ops-panel">
-            {privateRows.map(([label, text, Icon]) => (
-              <p key={label}>
-                <span>
-                  <Icon size={18} />
-                </span>
-                <strong>{label}</strong>
-                <small>{text}</small>
-                <ArrowRight size={16} />
-              </p>
+          <div className="ops-tabs">
+            {["Alertes", "Events", "Banque"].map((item) => (
+              <span className={item === "Alertes" ? "is-active" : ""} key={item}>
+                {item}
+              </span>
             ))}
           </div>
-        </article>
+          <div className="ops-member-panel">
+            <small>SOS attaque</small>
+            <strong>Rallye entrant</strong>
+            <p>Bastion Nord · X:417 Y:388 · impact dans 03:42.</p>
+            <div className="ops-alert-stats" aria-label="Etat de l'alerte SOS">
+              <span>12 réponses</span>
+              <span>4 renforts</span>
+              <span>2 boucliers</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="real-preview-grid">
+          <article className="real-preview-card is-wide">
+            <header>
+              <span>
+                <ShieldAlert size={20} />
+              </span>
+              <div>
+                <small>SOS attaque</small>
+                <strong>Réponses des membres</strong>
+              </div>
+              <em>03:42</em>
+            </header>
+            <div className="sos-response-list">
+              {sosResponses.map(([name, status]) => (
+                <p key={name}>
+                  <strong>{name}</strong>
+                  <span>{status}</span>
+                </p>
+              ))}
+            </div>
+          </article>
+
+          <article className="real-preview-card">
+            <header>
+              <span>
+                <Swords size={20} />
+              </span>
+              <div>
+                <small>Événement</small>
+                <strong>Rappels & check-in</strong>
+              </div>
+            </header>
+            <div className="event-preview-list">
+              {eventReminders.map(([time, label]) => (
+                <p key={`${time}-${label}`}>
+                  <span>{time}</span>
+                  <strong>{label}</strong>
+                </p>
+              ))}
+            </div>
+          </article>
+
+          <article className="real-preview-card">
+            <header>
+              <span>
+                <Banknote size={20} />
+              </span>
+              <div>
+                <small>Banque</small>
+                <strong>Stocks & demandes</strong>
+              </div>
+            </header>
+            <div className="bank-resource-list">
+              {bankResources.map(([name, amount, delta]) => (
+                <p key={name}>
+                  <strong>{name}</strong>
+                  <span>{amount}</span>
+                  <em>{delta}</em>
+                </p>
+              ))}
+            </div>
+          </article>
+
+          <article className="real-preview-card is-wide">
+            <header>
+              <span>
+                <BellRing size={20} />
+              </span>
+              <div>
+                <small>Alertes récentes</small>
+                <strong>Ce que le staff doit voir</strong>
+              </div>
+            </header>
+            <div className="alert-feed">
+              {alertFeed.map(([type, label]) => (
+                <p key={`${type}-${label}`}>
+                  <span>{type}</span>
+                  <strong>{label}</strong>
+                </p>
+              ))}
+            </div>
+          </article>
+        </div>
       </div>
     </section>
   );
 }
 
-function CockpitPreview() {
+function JourneySection() {
   return (
-    <section className="landing-section cockpit-preview" id="preview">
-      <h2>Aperçu du cockpit</h2>
-      <div className="cockpit-shell">
-        <div className="cockpit-map-pane">
-          <Map size={24} />
-          <strong>Ruche Aegis</strong>
-          <span>X:417 Y:388</span>
-          <i className="route route-one" />
-          <i className="route route-two" />
+    <section className="landing-section landing-journey" id="workflow">
+      <div className="section-heading">
+        <span>Parcours représentatif</span>
+        <h2>De la découverte à la coordination quotidienne</h2>
+      </div>
+      <div className="journey-grid">
+        {journeySteps.map(([number, label, text]) => (
+          <article className="journey-step" key={label}>
+            <span>{number}</span>
+            <strong>{label}</strong>
+            <p>{text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function RepresentativePreview() {
+  return (
+    <section className="landing-section landing-preview" id="preview">
+      <div className="section-heading">
+        <span>Aperçu produit</span>
+        <h2>Une interface pensée pour réagir vite pendant les moments critiques</h2>
+      </div>
+      <div className="preview-workspace">
+        <div className="preview-sidebar">
+          <strong>{demoGuild.name}</strong>
+          <small>{demoGuild.modules}</small>
+          <div>
+            {moduleBadges.map((module) => (
+              <span className={module === "SOS" ? "is-active" : ""} key={module}>
+                {module}
+              </span>
+            ))}
+          </div>
         </div>
-        <div className="cockpit-activity">
-          {[
-            ["SOS", "Rallye detecte sur Forteresse Est", "Maintenant"],
-            ["War", "Guerre d'alliance confirmee", "20:00"],
-            ["Banque", "Livraison FrostWarden", "12:31"],
-          ].map(([type, title, time]) => (
-            <p key={title}>
-              <span>{type}</span>
-              <strong>{title}</strong>
-              <small>{time}</small>
+        <div className="preview-main">
+          <header>
+            <div>
+              <span>Module SOS</span>
+              <strong>Alerte attaque</strong>
+            </div>
+            <button type="button">Envoyer l'alerte</button>
+          </header>
+          <div className="preview-thread">
+            <p>
+              <strong>Rallye entrant</strong>
+              Coordonnées, cible, délai et besoin de renforts visibles pour tous les membres autorisés.
             </p>
-          ))}
+            <p>
+              <strong>Prochaine action</strong>
+              Les membres confirment leur réponse, le staff suit qui peut aider et qui a déjà réagi.
+            </p>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-export function LandingPage({ onOpenApp, onOpenGallery, onOpenLogin, onOpenRegister }) {
-  const openApp = () => {
-    if (typeof onOpenApp === "function") {
-      onOpenApp();
-      return;
-    }
-
-    window.history.pushState({}, "", "/app");
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
+export function LandingPage({ onOpenGallery, onOpenLogin, onOpenRegister }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const openLogin = () => {
     if (typeof onOpenLogin === "function") {
       onOpenLogin();
@@ -387,9 +348,13 @@ export function LandingPage({ onOpenApp, onOpenGallery, onOpenLogin, onOpenRegis
     window.history.pushState({}, "", "/guildes");
     window.dispatchEvent(new PopStateEvent("popstate"));
   };
+  const useMobileNav = (callback) => {
+    setMobileMenuOpen(false);
+    callback();
+  };
 
   return (
-    <main className="landing-page">
+    <main className="landing-page landing-home">
       <header className="landing-nav">
         <button className="landing-brand" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
           <BrandMark />
@@ -402,63 +367,93 @@ export function LandingPage({ onOpenApp, onOpenGallery, onOpenLogin, onOpenRegis
           <button type="button" onClick={() => scrollToSection("modules")}>
             Modules
           </button>
-          <button type="button" onClick={() => scrollToSection("preview")}>
-            Aperçu
+          <button type="button" onClick={() => scrollToSection("workflow")}>
+            Parcours
           </button>
           <button type="button" onClick={openGallery}>
             Galerie
           </button>
         </nav>
         <div className="landing-auth-actions" aria-label="Acces au compte">
-          <LandingButton className="nav-auth nav-builder" icon={Settings} onClick={openApp}>
-            Builder
-          </LandingButton>
           <LandingButton className="nav-auth" icon={LogIn} onClick={openLogin}>
             Connexion
           </LandingButton>
           <LandingButton className="primary nav-cta" icon={UserPlus} onClick={openRegister}>
-            Inscription
+            Créer ma page
           </LandingButton>
         </div>
+        <button
+          className="landing-mobile-menu-toggle"
+          type="button"
+          aria-controls="landing-mobile-menu"
+          aria-expanded={mobileMenuOpen}
+          aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          title={mobileMenuOpen ? "Fermer le menu" : "Menu"}
+          onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
+        >
+          {mobileMenuOpen ? <X size={21} /> : <Menu size={21} />}
+        </button>
+        {mobileMenuOpen ? (
+          <div className="landing-mobile-menu" id="landing-mobile-menu">
+            <button type="button" onClick={() => useMobileNav(() => scrollToSection("product"))}>
+              Produit
+            </button>
+            <button type="button" onClick={() => useMobileNav(() => scrollToSection("modules"))}>
+              Modules
+            </button>
+            <button type="button" onClick={() => useMobileNav(() => scrollToSection("workflow"))}>
+              Parcours
+            </button>
+            <button type="button" onClick={() => useMobileNav(openGallery)}>
+              Galerie
+            </button>
+            <button type="button" onClick={() => useMobileNav(openLogin)}>
+              Connexion
+            </button>
+            <button className="is-primary" type="button" onClick={() => useMobileNav(openRegister)}>
+              Créer ma page
+            </button>
+          </div>
+        ) : null}
       </header>
 
-      <section className="landing-hero">
-        <div className="hero-copy-block">
-          <h1>Le QG de guilde qui remplace les messages épinglés</h1>
+      <section className="landing-hero-v2">
+        <div className="hero-v2-content">
+          <span className="hero-eyebrow">
+            <Sparkles size={17} />
+            Pour les guildes de jeu
+          </span>
+          <h1>GuildOps</h1>
           <p>
-            Publiez un site de guilde, suivez les membres, les wars, les SOS, la banque et la diplomatie depuis un seul
-            cockpit.
+            Crée une page publique pour présenter ta guilde, puis ouvre une zone réservée aux membres pour organiser
+            alertes, SOS, événements, banque, messages et absences.
           </p>
           <div className="hero-actions">
             <LandingButton className="primary" icon={UserPlus} onClick={openRegister}>
-              Créer mon QG
+              Créer ma page
             </LandingButton>
-            <LandingButton className="builder-test" icon={Settings} onClick={openApp}>
-              Tester le builder
+            <LandingButton icon={GalleryHorizontalEnd} onClick={openGallery}>
+              Voir des exemples
             </LandingButton>
-            <LandingButton icon={Play} onClick={() => scrollToSection("preview")}>
-              Voir l’aperçu
-            </LandingButton>
-            <LandingButton icon={Search} onClick={openGallery}>
-              Explorer les guildes
+            <LandingButton className="ghost" icon={LogIn} onClick={openLogin}>
+              Se connecter
             </LandingButton>
           </div>
         </div>
-        <DashboardPreview />
       </section>
 
-      <ModuleRows />
-      <FlowSection />
+      <PromiseSection />
+      <OperationsSection />
+      <JourneySection />
+      <RepresentativePreview />
 
       <section className="landing-final-cta">
-        <h2>Prêt avant le prochain event</h2>
-        <p>Gagnez du temps, restez alignés, remportez plus de victoires.</p>
+        <h2>Présente ta guilde clairement, puis organise-la sans perdre les infos.</h2>
+        <p>Commence par une page simple. Ajoute ensuite les modules utiles à tes membres.</p>
         <LandingButton className="primary" icon={UserPlus} onClick={openRegister}>
-          Créer mon QG
+          Créer ma page
         </LandingButton>
       </section>
-
-      <CockpitPreview />
     </main>
   );
 }

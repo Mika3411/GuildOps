@@ -30,7 +30,7 @@
   flex: 0 0 auto;
 }
 
-.panel-header h2 {
+.panel-header :is(h2, h3, h4, h5, h6) {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
@@ -470,7 +470,8 @@
   text-transform: uppercase;
 }
 
-.message-space-hero strong {
+.message-space-hero .module-hero-title {
+  margin: 0;
   color: var(--text);
   font-size: clamp(2rem, 4vw, 3.4rem);
   line-height: 0.98;
@@ -1707,13 +1708,7 @@
 }
 
 .thread-file-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
+  display: none;
 }
 
 .thread-input button:disabled {
@@ -1751,6 +1746,32 @@
   text-align: left;
 }
 
+.empty-card.is-actionable {
+  place-items: stretch;
+  text-align: left;
+}
+
+.empty-card:not(.compact).is-actionable {
+  justify-items: start;
+}
+
+.empty-card.compact.is-actionable {
+  align-items: start;
+  grid-template-areas:
+    "icon copy"
+    "action action";
+  grid-template-rows: auto auto;
+  min-height: 142px;
+}
+
+.empty-card.compact.is-actionable .empty-card-icon {
+  grid-area: icon;
+}
+
+.empty-card.compact.is-actionable > span:not(.empty-card-icon) {
+  grid-area: copy;
+}
+
 .empty-card-icon {
   width: 34px;
   height: 34px;
@@ -1780,4 +1801,19 @@
   margin-top: 3px;
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+.empty-card-action {
+  width: fit-content;
+  min-height: 40px;
+  margin-top: 4px;
+  padding-inline: 14px;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.empty-card.compact .empty-card-action {
+  grid-area: action;
+  grid-column: 1 / -1;
+  margin-top: 2px;
 }

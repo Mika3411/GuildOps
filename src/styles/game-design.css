@@ -568,7 +568,7 @@
   border-bottom-color: rgba(238, 176, 67, 0.18);
 }
 
-.panel-header h2,
+.panel-header :is(h2, h3, h4, h5, h6),
 .message-inbox-header strong,
 .message-thread-title strong {
   font-weight: 950;
@@ -901,13 +901,15 @@
   text-shadow: 0 0 14px rgba(66, 243, 255, 0.28);
 }
 
-.message-space-hero strong {
+.message-space-hero .module-hero-title {
+  margin: 0;
   max-width: 760px;
-  color: transparent;
+  color: var(--text);
   background:
     linear-gradient(180deg, #fff8df 0%, #f1f4ed 32%, #b8c3c5 48%, #ffffff 56%, #7f8d90 100%);
   background-clip: text;
   -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   -webkit-text-stroke: 1px rgba(0, 0, 0, 0.18);
   font-family: "Arial Narrow", "Roboto Condensed", Impact, Inter, sans-serif;
   font-size: clamp(2.85rem, 4.1vw, 4.05rem);
@@ -918,7 +920,7 @@
     0 0 18px rgba(255, 255, 255, 0.06);
 }
 
-.module-space-hero strong {
+.module-space-hero .module-hero-title {
   font-size: 3.65rem;
   letter-spacing: 0;
   text-shadow:
@@ -1648,7 +1650,7 @@
   text-shadow: 0 0 14px rgba(66, 243, 255, 0.28);
 }
 
-.messages-page .message-space-hero strong {
+.messages-page .message-space-hero .module-hero-title {
   font-size: 3.65rem;
   letter-spacing: 0;
   text-shadow:
@@ -2273,7 +2275,7 @@
     height: auto;
   }
 
-  .messages-page .message-space-hero strong {
+  .messages-page .message-space-hero .module-hero-title {
     font-size: 3rem;
   }
 
@@ -2306,7 +2308,7 @@
     height: 74px;
   }
 
-  .messages-page .message-space-hero strong {
+  .messages-page .message-space-hero .module-hero-title {
     font-size: 2.3rem;
   }
 

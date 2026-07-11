@@ -427,6 +427,76 @@
   font-weight: 900;
 }
 
+.notification-preference-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 14px;
+  padding: 12px;
+  border: 1px solid rgba(154, 180, 192, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.notification-preference-card.is-enabled {
+  border-color: rgba(84, 223, 204, 0.32);
+  background: rgba(84, 223, 204, 0.07);
+}
+
+.notification-preference-icon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(84, 223, 204, 0.28);
+  border-radius: 8px;
+  color: var(--teal);
+  background: rgba(84, 223, 204, 0.08);
+}
+
+.notification-preference-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.notification-preference-main strong,
+.notification-preference-main small,
+.notification-preference-main em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-preference-main small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.notification-preference-main em {
+  color: var(--amber);
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.notification-preference-action {
+  min-height: 44px;
+  padding: 0 12px;
+  border-color: rgba(84, 223, 204, 0.32);
+  border-radius: 7px;
+  background: rgba(84, 223, 204, 0.08);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.notification-preference-action:disabled {
+  opacity: 0.48;
+}
+
 .user-chip {
   min-width: 0;
   display: flex;
@@ -483,7 +553,9 @@
 }
 
 .mobile-header,
-.mobile-bottom-nav {
+.mobile-bottom-nav,
+.mobile-more-scrim,
+.mobile-more-drawer {
   display: none;
 }
 

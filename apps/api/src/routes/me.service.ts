@@ -36,6 +36,7 @@ type GuildRow = {
   organization_role: string;
   member_id: string | null;
   role_codes: string[] | null;
+  permission_keys: string[] | null;
   is_active: boolean;
 };
 
@@ -99,6 +100,7 @@ export async function buildMePayload(db: Queryable, userId: string, sessionId?: 
           om.organization_role,
           gm.id::text AS member_id,
           COALESCE(array_remove(array_agg(DISTINCT roles.code::text), NULL), ARRAY[]::text[]) AS role_codes,
+          COALESCE(array_remove(array_agg(DISTINCT permissions.key::text), NULL), ARRAY[]::text[]) AS permission_keys,
           false AS is_active
         FROM organization_members om
         JOIN guilds g ON g.organization_id = om.organization_id
@@ -107,9 +109,11 @@ export async function buildMePayload(db: Queryable, userId: string, sessionId?: 
         LEFT JOIN guild_members gm
           ON gm.guild_id = g.id
          AND gm.user_id = om.user_id
-         AND gm.status <> 'banned'
+         AND gm.status NOT IN ('banned', 'left')
         LEFT JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
         LEFT JOIN roles ON roles.id = gmr.role_id
+        LEFT JOIN role_permissions rp ON rp.role_id = roles.id
+        LEFT JOIN permissions ON permissions.id = rp.permission_id
         WHERE om.user_id = $1
           AND g.deleted_at IS NULL
           AND (
@@ -173,6 +177,7 @@ export async function buildMePayload(db: Queryable, userId: string, sessionId?: 
     organizationRole: guild.organization_role,
     memberId: guild.member_id,
     roleCodes: guild.role_codes ?? [],
+    permissionKeys: resolveSubjectPermissionKeys(user.global_role, guild.organization_role, guild.permission_keys ?? []),
     roles: resolveSubjectRoles(user.global_role, guild.organization_role, guild.role_codes ?? []),
     isActive: guild.id === activeGuildId
   }));
@@ -190,7 +195,8 @@ export async function buildMePayload(db: Queryable, userId: string, sessionId?: 
       preferredLanguage: user.preferred_language,
       globalRole: user.global_role,
       role: roles[0] ?? "membre",
-      roles
+      roles,
+      permissionKeys: activeGuild?.permissionKeys ?? []
     },
     context: {
       activeOrganization,
@@ -222,7 +228,7 @@ export async function setActiveContext(
         LEFT JOIN guild_members gm
           ON gm.guild_id = g.id
          AND gm.user_id = om.user_id
-         AND gm.status <> 'banned'
+         AND gm.status NOT IN ('banned', 'left')
         WHERE g.id = $1
           AND om.user_id = $2
           AND g.deleted_at IS NULL
@@ -292,7 +298,7 @@ export async function getDefaultSessionContext(
           LEFT JOIN guild_members gm
             ON gm.guild_id = g.id
            AND gm.user_id = om.user_id
-           AND gm.status <> 'banned'
+           AND gm.status NOT IN ('banned', 'left')
           WHERE g.organization_id = om.organization_id
             AND g.deleted_at IS NULL
             AND (
@@ -331,6 +337,14 @@ function resolveSubjectRoles(globalRole: string, organizationRole?: string | nul
   }
 
   return ["membre"];
+}
+
+function resolveSubjectPermissionKeys(globalRole: string, organizationRole?: string | null, permissionKeys: string[] = []): string[] {
+  if (globalRole === "admin" || organizationRole === "owner" || organizationRole === "admin") {
+    return ["admin_all"];
+  }
+
+  return permissionKeys;
 }
 
 function getInitials(displayName: string): string {

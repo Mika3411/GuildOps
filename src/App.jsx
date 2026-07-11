@@ -21,6 +21,7 @@ import {
 function App() {
   const controller = useGuildOpsController();
   const { activeGuilds, activeView, authSession, guildOpsState, inviteRouteSlug, publicRouteSlug, routePath } = controller;
+  const notificationProps = controller.viewRouterProps?.notificationProps || controller.topBarProps?.notificationProps;
   const workspaceRef = useRef(null);
 
   useEffect(() => {
@@ -48,6 +49,7 @@ function App() {
     return (
       <VerifyEmailRoute
         authSession={authSession}
+        notificationProps={notificationProps}
         onBackToLogin={() => controller.onNavigatePath("/app")}
         onVerified={() => controller.onNavigatePath("/app")}
       />
@@ -59,7 +61,14 @@ function App() {
       return <AuthLoading />;
     }
 
-    return <AuthGate authSession={authSession} initialMode={routePath === "/auth/register" ? "register" : "login"} />;
+    return (
+      <AuthGate
+        authSession={authSession}
+        initialMode={routePath === "/auth/register" ? "register" : "login"}
+        notificationProps={notificationProps}
+        onNavigatePublicPath={controller.onNavigatePath}
+      />
+    );
   }
 
   if (authSession.isLoading) {
@@ -67,7 +76,7 @@ function App() {
   }
 
   if (authSession.requiresAuth || authSession.status === "error") {
-    return <AuthGate authSession={authSession} />;
+    return <AuthGate authSession={authSession} notificationProps={notificationProps} onNavigatePublicPath={controller.onNavigatePath} />;
   }
 
   if (authSession.isApiEnabled && authSession.isAuthenticated && guildOpsState.isLoading) {
@@ -86,7 +95,7 @@ function App() {
     <div className="app-shell">
       <Sidebar {...controller.sidebarProps} />
       <main className="workspace" ref={workspaceRef}>
-        <MobileHeader {...controller.mobileHeaderProps} />
+        <MobileHeader {...controller.mobileHeaderProps} workspaceRef={workspaceRef} />
         <TopBar {...controller.topBarProps} />
         <ViewRouter {...controller.viewRouterProps} />
       </main>

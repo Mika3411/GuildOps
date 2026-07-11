@@ -8,6 +8,7 @@ process.env.NODE_ENV = "test";
 process.env.SESSION_SECRET ??= "guildops-api-contracts-test-secret";
 
 const { normalizeIncomingBankStatus, normalizeStoredBankStatus } = await import("./bank.routes.js");
+const { canSendSos } = await import("./alerts.routes.js");
 const { canApproveMembershipRequests } = await import("./guilds.routes.js");
 const { canManageEvents } = await import("./events.routes.js");
 const {
@@ -20,6 +21,7 @@ const {
   withDefaultGuildModuleKeys
 } = await import("./guild-modules.service.js");
 const { buildRegistrationInvitationUrl } = await import("../notifications/email.js");
+const { createGuildNotificationsForPermission, createGuildNotificationsForUsers } = await import("../notifications/notifications.js");
 const { findPublicChatGuildBySlug, toMessageRecipientResource } = await import("./messages.routes.js");
 const { toPublicBankSnapshotResource, toPublicGuildSiteResource } = await import("./public.routes.js");
 const { assertRequestCsrf, needsCsrfCheck } = await import("../security/csrf.js");
@@ -153,6 +155,75 @@ test("public bank snapshot masks requester details and omits internal history by
   assert.equal(Object.hasOwn(bank as Record<string, unknown>, "commandAlias"), false);
 });
 
+test("permission notifications target bank managers and keep actor excluded", async () => {
+  const queries: Array<{ text: string; params?: unknown[] }> = [];
+  const db = fakeDb([
+    {
+      id: "notification-1",
+      guild_id: "guild-1",
+      user_id: "user-bank",
+      actor_user_id: "user-requester",
+      type: "bank.request.created",
+      title: "Nouvelle demande de ressources",
+      body: "Bear: 25 Bois",
+      data: { url: "/app/bank" },
+      read_at: null,
+      created_at: "2026-07-11T08:00:00.000Z"
+    }
+  ], queries);
+
+  const notifications = await createGuildNotificationsForPermission(db, {
+    guildId: "guild-1",
+    actorUserId: "user-requester",
+    permissionKeys: ["manage_bank", "admin_all"],
+    type: "bank.request.created",
+    title: "Nouvelle demande de ressources",
+    body: "Bear: 25 Bois",
+    data: { url: "/app/bank" }
+  });
+
+  assert.equal(notifications[0]?.userId, "user-bank");
+  assert.match(queries[0]?.text ?? "", /p\.key::text = ANY/);
+  assert.match(queries[0]?.text ?? "", /user_id <> \$2::uuid/);
+  assert.deepEqual(queries[0]?.params?.slice(0, 2), ["guild-1", "user-requester"]);
+  assert.deepEqual(queries[0]?.params?.[6], ["manage_bank", "admin_all"]);
+});
+
+test("user notifications target explicit guild members and keep actor excluded", async () => {
+  const queries: Array<{ text: string; params?: unknown[] }> = [];
+  const db = fakeDb([
+    {
+      id: "notification-1",
+      guild_id: "guild-1",
+      user_id: "user-recipient",
+      actor_user_id: "user-sender",
+      type: "message.private.created",
+      title: "Nouveau message de FrostWarden",
+      body: "FrostWarden: Salut",
+      data: { url: "/app/messages", messageId: "message-1" },
+      read_at: null,
+      created_at: "2026-07-11T08:05:00.000Z"
+    }
+  ], queries);
+
+  const notifications = await createGuildNotificationsForUsers(db, {
+    guildId: "guild-1",
+    actorUserId: "user-sender",
+    userIds: ["user-recipient", "user-recipient", "user-sender"],
+    type: "message.private.created",
+    title: "Nouveau message de FrostWarden",
+    body: "FrostWarden: Salut",
+    data: { url: "/app/messages", messageId: "message-1" }
+  });
+
+  assert.equal(notifications[0]?.userId, "user-recipient");
+  assert.match(queries[0]?.text ?? "", /gm\.status = 'active'/);
+  assert.match(queries[0]?.text ?? "", /gm\.user_id = ANY\(\$7::uuid\[\]\)/);
+  assert.match(queries[0]?.text ?? "", /gm\.user_id <> \$2::uuid/);
+  assert.deepEqual(queries[0]?.params?.slice(0, 2), ["guild-1", "user-sender"]);
+  assert.deepEqual(queries[0]?.params?.[6], ["user-recipient", "user-sender"]);
+});
+
 test("manage_events RBAC allows officers through role permissions", async () => {
   const queries: Array<{ text: string; params?: unknown[] }> = [];
   const db = fakeDb([{ allowed: true }], queries);
@@ -177,6 +248,32 @@ test("manage_events RBAC denies ordinary members without permission", async () =
   const db = fakeDb([]);
 
   assert.equal(await canManageEvents(db, "guild-1", "user-1", "member", "user"), false);
+});
+
+test("send_sos RBAC allows authorized members through role permissions", async () => {
+  const queries: Array<{ text: string; params?: unknown[] }> = [];
+  const db = fakeDb([{ allowed: true }], queries);
+
+  const allowed = await canSendSos(db, "guild-1", "user-1", "member", "user");
+
+  assert.equal(allowed, true);
+  assert.match(queries[0]?.text ?? "", /send_sos/);
+  assert.deepEqual(queries[0]?.params, ["guild-1", "user-1"]);
+});
+
+test("send_sos RBAC allows admins without querying role permissions", async () => {
+  const queries: Array<{ text: string; params?: unknown[] }> = [];
+  const db = fakeDb([], queries);
+
+  assert.equal(await canSendSos(db, "guild-1", "user-1", "member", "admin"), true);
+  assert.equal(await canSendSos(db, "guild-1", "user-1", "owner", "user"), true);
+  assert.equal(queries.length, 0);
+});
+
+test("send_sos RBAC denies ordinary members without permission", async () => {
+  const db = fakeDb([]);
+
+  assert.equal(await canSendSos(db, "guild-1", "user-1", "member", "user"), false);
 });
 
 test("guild module helpers normalize rows and read active module keys", async () => {

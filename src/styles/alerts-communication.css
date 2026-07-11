@@ -199,49 +199,11 @@
   gap: 0;
 }
 
-.sos-fast-card {
-  display: grid;
-  gap: 4px;
-  margin: 12px 12px 10px;
-  padding: 13px;
-  border: 1px solid rgba(255, 93, 82, 0.34);
-  border-radius: 8px;
-  background: rgba(8, 16, 21, 0.66);
-}
-
-.alert-panel.sos-call-attack .sos-fast-card {
-  border-color: rgba(82, 158, 255, 0.36);
-}
-
-.sos-fast-card span,
-.sos-fast-card small {
-  color: var(--muted);
-  font-size: 0.74rem;
-}
-
-.sos-fast-card strong {
-  color: #ffffff;
-  font-size: 1rem;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
-
-.sos-fast-card p {
-  margin: 5px 0 0;
-  color: #ffd8d5;
-  font-size: 0.8rem;
-  line-height: 1.4;
-}
-
-.alert-panel.sos-call-attack .sos-fast-card p {
-  color: #d9ecff;
-}
-
 .sos-fast-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  padding: 0 12px 12px;
+  padding: 12px;
 }
 
 .sos-fast-actions .danger-action {

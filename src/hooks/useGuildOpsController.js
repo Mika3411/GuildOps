@@ -167,6 +167,7 @@ export function useGuildOpsController() {
     }),
     [effectiveEnabledModuleKey],
   );
+  const sosAuthorized = can(currentUser, "send_sos");
   const [roleEdits, setRoleEdits] = useState(() =>
     Object.fromEntries(guildOpsData.members.map((member) => [member.id, getRoleLabel(member.role)])),
   );
@@ -311,6 +312,11 @@ export function useGuildOpsController() {
     authSession,
     moduleEnabled: moduleAvailability.bank,
   });
+  const notificationsController = useNotificationsController({
+    apiEnabled,
+    authSession,
+    selectedGuild,
+  });
   const messagesController = useMessagesController({
     apiEnabled,
     currentUser,
@@ -324,11 +330,8 @@ export function useGuildOpsController() {
     onBankCommand: bankController.recordBankCommand,
     moduleEnabled: moduleAvailability.messages,
     translationEnabled: moduleAvailability.translation,
-  });
-  const notificationsController = useNotificationsController({
-    apiEnabled,
-    authSession,
-    selectedGuild,
+    onNotificationsChanged: notificationsController.refreshNotifications,
+    messagesVisible: activeView === "messages",
   });
   const forumController = useForumController({
     apiEnabled,
@@ -357,6 +360,7 @@ export function useGuildOpsController() {
     authSession,
     currentMemberId: eventsController.currentMemberId,
     moduleEnabled: moduleAvailability.sos,
+    moduleAuthorized: sosAuthorized,
   });
 
   async function approveMembershipRequest(requestId) {
@@ -677,6 +681,16 @@ export function useGuildOpsController() {
     return apiRequest;
   }
 
+  async function leavePublicGuild(slug) {
+    if (!apiEnabled || !authSession.isAuthenticated || !authSession.leavePublicGuild) {
+      throw new Error("Connexion requise pour quitter cette guilde.");
+    }
+
+    const payload = await authSession.leavePublicGuild(slug);
+    await guildOpsState.reload?.();
+    return payload;
+  }
+
   function toggleAdministrationMember(memberId) {
     setAdministrationAccess((current) => {
       const currentModuleIds = current[memberId] || [];
@@ -883,6 +897,7 @@ export function useGuildOpsController() {
     guildOpsState,
     inviteRouteSlug,
     lastPublishedSite,
+    leavePublicGuild,
     memberBlocks,
     memberModerationError,
     membershipRequests,
@@ -917,6 +932,7 @@ export function useGuildOpsController() {
     siteDraft,
     sitePublishError,
     sitePublished,
+    sosAuthorized,
     sosController,
     toggleAdministrationMember,
     toggleAdministrationModule,

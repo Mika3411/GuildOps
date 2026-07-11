@@ -218,12 +218,41 @@
     grid-template-columns: 1fr;
   }
 
+  .absence-list-panel {
+    order: 2;
+  }
+
+  .absence-form-panel {
+    order: 3;
+  }
+
   .absence-form .primary-action {
     width: 100%;
   }
 }
 
 @media (max-width: 560px) {
+  .absence-summary-grid {
+    gap: 10px;
+  }
+
+  .absence-summary-card {
+    min-height: 74px;
+    padding: 14px;
+  }
+
+  .absence-summary-card strong {
+    font-size: 1.6rem;
+  }
+
+  .absence-empty {
+    padding: 10px 12px 12px;
+  }
+
+  .absence-empty .empty-card {
+    margin: 0;
+  }
+
   .absence-card header,
   .absence-card footer,
   .absence-card-dates {

@@ -3,11 +3,17 @@ import type { Request, Response } from "express";
 import { Router } from "express";
 import { z } from "zod";
 import { env } from "../config/env.js";
-import { database, query, type Queryable } from "../db/pool.js";
+import { database, query, withClient, type Queryable } from "../db/pool.js";
 import { asyncHandler } from "../http/async-handler.js";
 import { BadRequestError, ForbiddenError, NotFoundError, TooManyRequestsError } from "../http/errors.js";
 import { validate } from "../http/validate.js";
 import { sendRegistrationInvitationEmail } from "../notifications/email.js";
+import {
+  createGuildNotificationsForMembers,
+  createGuildNotificationsForUsers,
+  deliverPushNotifications,
+  type GuildNotificationInput
+} from "../notifications/notifications.js";
 import { getAuth, requireAuth } from "../security/auth.js";
 import { formatMessageForLanguage, normalizeLanguage, type MessageRow } from "../translation/messages.js";
 import { assertGuildAccess } from "./access.js";
@@ -155,6 +161,18 @@ type MessageRecipientRow = {
 
 type MessageInvitationLookupRow = MessageRecipientRow & {
   isGuildMember: boolean;
+};
+
+type MessageNotificationBuildInput = {
+  author: string;
+  channel: string;
+  conversationType: "internal" | "private";
+  guildId: string;
+  hasImageAttachment: boolean;
+  messageBody: string;
+  messageId: string;
+  recipientUserId: string | null;
+  senderUserId: string;
 };
 
 type SseClient = {
@@ -336,7 +354,7 @@ messagesRouter.get(
         LEFT JOIN roles ON roles.id = gmr.role_id
         WHERE gm.guild_id = $1
           AND gm.user_id <> $2
-          AND gm.status <> 'banned'
+          AND gm.status NOT IN ('banned', 'left')
         GROUP BY u.id, u.email, u.display_name, gm.nickname, u.preferred_language, gm.status
         ORDER BY gm.nickname ASC, u.display_name ASC
       `,
@@ -446,58 +464,89 @@ messagesRouter.post(
       await assertMessageRecipientExists(body.recipientUserId);
     }
 
-    const result = await query<PrivateMessageRow>(
-      `
-        INSERT INTO private_messages (
-          organization_id,
-          guild_id,
-          sender_user_id,
-          recipient_user_id,
-          body,
-          source_language,
-          metadata
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING
-          id::text,
-          body,
-          source_language,
-          created_at::text,
-          $8::text AS author,
-          sender_user_id::text,
-          recipient_user_id::text,
-          true AS is_read,
-          jsonb_build_array(
-            jsonb_build_object(
-              'id', $3::text,
-              'displayName', $8::text,
-              'readAt', now()::text
+    const { row, notifications } = await withClient(async (client) => {
+      await client.query("BEGIN");
+
+      try {
+        const result = await client.query<PrivateMessageRow>(
+          `
+            INSERT INTO private_messages (
+              organization_id,
+              guild_id,
+              sender_user_id,
+              recipient_user_id,
+              body,
+              source_language,
+              metadata
             )
-          ) AS read_by,
-          metadata
-      `,
-      [
-        access.organization_id,
-        guildId,
-        auth.user.id,
-        conversationType === "private" ? body.recipientUserId : null,
-        messageBody,
-        normalizeLanguage(body.sourceLanguage, "auto"),
-        { kind: conversationType, channel, attachments },
-        auth.user.displayName
-      ]
-    );
-    const row = result.rows[0];
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING
+              id::text,
+              body,
+              source_language,
+              created_at::text,
+              $8::text AS author,
+              sender_user_id::text,
+              recipient_user_id::text,
+              true AS is_read,
+              jsonb_build_array(
+                jsonb_build_object(
+                  'id', $3::text,
+                  'displayName', $8::text,
+                  'readAt', now()::text
+                )
+              ) AS read_by,
+              metadata
+          `,
+          [
+            access.organization_id,
+            guildId,
+            auth.user.id,
+            conversationType === "private" ? body.recipientUserId : null,
+            messageBody,
+            normalizeLanguage(body.sourceLanguage, "auto"),
+            { kind: conversationType, channel, attachments },
+            auth.user.displayName
+          ]
+        );
+        const savedRow = result.rows[0];
 
-    if (!row) {
-      throw new NotFoundError("Message could not be created");
-    }
+        if (!savedRow) {
+          throw new NotFoundError("Message could not be created");
+        }
 
-    await markSingleMessageRead(row.id, auth.user.id);
+        await markSingleMessageRead(client, savedRow.id, auth.user.id);
+        const notificationInput = buildMessageNotificationInput({
+          author: auth.user.displayName,
+          channel,
+          conversationType,
+          guildId,
+          hasImageAttachment: attachments.length > 0,
+          messageBody,
+          messageId: savedRow.id,
+          recipientUserId: body.recipientUserId ?? null,
+          senderUserId: auth.user.id
+        });
+        const createdNotifications =
+          conversationType === "private"
+            ? await createGuildNotificationsForUsers(client, {
+                ...notificationInput,
+                userIds: [body.recipientUserId as string]
+              })
+            : await createGuildNotificationsForMembers(client, notificationInput);
+
+        await client.query("COMMIT");
+        return { row: savedRow, notifications: createdNotifications };
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      }
+    });
     const message = await formatPrivateMessage(row, body.targetLanguage ?? auth.user.preferredLanguage, auth.user.id);
 
     broadcastGuild(guildId, "private_message", { message }, (client) => canClientReceiveMessage(client, message));
     void broadcastUnreadCounts(guildId, conversationType === "private" ? [auth.user.id, body.recipientUserId as string] : undefined);
+    void deliverPushNotifications(notifications);
 
     res.status(201).json({ message });
   })
@@ -518,6 +567,7 @@ messagesRouter.patch(
       throw new NotFoundError("Message not found");
     }
 
+    await markMessageNotificationsRead(guildId, auth.user.id, [readMessageId]);
     const unreadCount = await countUnreadMessages(guildId, auth.user.id);
     broadcastGuild(guildId, "unread_count", { unreadCount }, (client) => client.userId === auth.user.id);
     res.json({ messageId: readMessageId, unreadCount });
@@ -538,14 +588,15 @@ messagesRouter.post(
       throw new BadRequestError("participantId is required for private messages");
     }
 
-    const readCount = await markConversationRead(guildId, auth.user.id, {
+    const readMessageIds = await markConversationRead(guildId, auth.user.id, {
       channel: normalizeChannel(body.channel),
       conversationType: body.conversationType,
       participantId: body.participantId
     });
+    await markMessageNotificationsRead(guildId, auth.user.id, readMessageIds);
     const unreadCount = await countUnreadMessages(guildId, auth.user.id);
     broadcastGuild(guildId, "unread_count", { unreadCount }, (client) => client.userId === auth.user.id);
-    res.json({ readCount, unreadCount });
+    res.json({ readCount: readMessageIds.length, unreadCount });
   })
 );
 
@@ -956,8 +1007,8 @@ async function markReadableMessageRead(guildId: string, userId: string, messageI
   return result.rows[0]?.message_id ?? null;
 }
 
-async function markSingleMessageRead(messageId: string, userId: string): Promise<void> {
-  await query(
+async function markSingleMessageRead(db: Queryable, messageId: string, userId: string): Promise<void> {
+  await db.query(
     `
       INSERT INTO message_read_receipts (message_id, user_id, read_at)
       VALUES ($1, $2, now())
@@ -972,7 +1023,7 @@ async function markConversationRead(
   guildId: string,
   userId: string,
   input: { channel: string; conversationType: "internal" | "private"; participantId?: string }
-): Promise<number> {
+): Promise<string[]> {
   const result =
     input.conversationType === "private"
       ? await query<{ message_id: string }>(
@@ -1008,7 +1059,24 @@ async function markConversationRead(
           [guildId, userId, input.channel]
         );
 
-  return result.rowCount ?? 0;
+  return result.rows.map((row) => row.message_id).filter(Boolean);
+}
+
+async function markMessageNotificationsRead(guildId: string, userId: string, messageIds: string[]): Promise<void> {
+  const uniqueMessageIds = [...new Set(messageIds.filter(Boolean))];
+  if (!uniqueMessageIds.length) return;
+
+  await query(
+    `
+      UPDATE notifications
+      SET read_at = COALESCE(read_at, now())
+      WHERE guild_id = $1
+        AND user_id = $2
+        AND type IN ('message.private.created', 'message.internal.created')
+        AND data->>'messageId' = ANY($3::text[])
+    `,
+    [guildId, userId, uniqueMessageIds]
+  );
 }
 
 async function countUnreadMessages(guildId: string, userId: string): Promise<number> {
@@ -1066,6 +1134,38 @@ async function formatPrivateMessage(message: PrivateMessageRow, targetLanguage: 
     recipientUserId: message.recipient_user_id,
     senderUserId: message.sender_user_id
   };
+}
+
+function buildMessageNotificationInput(input: MessageNotificationBuildInput): GuildNotificationInput {
+  const channelLabel = input.channel === "general" ? "Guilde" : input.channel;
+  const preview = getMessageNotificationPreview(input.messageBody, input.hasImageAttachment);
+
+  return {
+    guildId: input.guildId,
+    actorUserId: input.senderUserId,
+    type: input.conversationType === "private" ? "message.private.created" : "message.internal.created",
+    title:
+      input.conversationType === "private"
+        ? `Nouveau message de ${input.author}`
+        : `Nouveau message · ${channelLabel}`,
+    body: `${input.author}: ${preview}`,
+    data: {
+      url: "/app/messages",
+      messageId: input.messageId,
+      conversationType: input.conversationType,
+      channel: input.channel,
+      recipientUserId: input.recipientUserId,
+      senderUserId: input.senderUserId,
+      hasImageAttachment: input.hasImageAttachment
+    }
+  };
+}
+
+function getMessageNotificationPreview(messageBody: string, hasImageAttachment: boolean): string {
+  const body = messageBody.trim();
+  const preview = body && (body !== "Image" || !hasImageAttachment) ? body : "Image envoyée";
+
+  return preview.length > 120 ? `${preview.slice(0, 117)}...` : preview;
 }
 
 function normalizePrivateMessageAttachments(attachments: unknown) {
@@ -1154,7 +1254,7 @@ async function findUserByEmail(guildId: string, email: string): Promise<MessageI
         COALESCE(gm.nickname, u.display_name) AS nickname,
         u.preferred_language,
         gm.status,
-        (gm.id IS NOT NULL AND gm.status <> 'banned') AS "isGuildMember",
+        (gm.id IS NOT NULL AND gm.status NOT IN ('banned', 'left')) AS "isGuildMember",
         COALESCE(
           string_agg(DISTINCT roles.name, ', ' ORDER BY roles.name) FILTER (WHERE roles.name IS NOT NULL),
           ''

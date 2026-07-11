@@ -60,6 +60,7 @@ export const guildOpsEndpoints = {
     directory: "/directory/guilds",
     show: (slug) => `/public/guilds/${encodeURIComponent(slug)}`,
     join: (slug) => `/public/guilds/${encodeURIComponent(slug)}/join`,
+    leaveMembership: (slug) => `/public/guilds/${encodeURIComponent(slug)}/membership`,
     membershipRequests: (slug) => `/public/guilds/${encodeURIComponent(slug)}/membership-requests`,
     bank: (slug) => `/public/guilds/${encodeURIComponent(slug)}/bank`,
     publish: (guildId) => `/guilds/${encodeURIComponent(guildId)}/site/publish`,
@@ -297,6 +298,9 @@ export const guildOpsApi = {
   },
   joinPublicGuild(slug, body) {
     return apiRequest(guildOpsEndpoints.publicSite.join(slug), { body, method: "POST" });
+  },
+  leavePublicGuild(slug) {
+    return apiRequest(guildOpsEndpoints.publicSite.leaveMembership(slug), { method: "DELETE" });
   },
   createMembershipRequest(slug, body) {
     return apiRequest(guildOpsEndpoints.publicSite.membershipRequests(slug), { body, method: "POST" });

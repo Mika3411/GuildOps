@@ -6,6 +6,8 @@
   "scripts": {
     "test": "npm run test:guildops-transforms && npm run api:test && npm run worker:test",
     "test:guildops-transforms": "node scripts/check-guildops-transforms.mjs",
+    "test:onboarding-mobile": "node scripts/check-onboarding-mobile-layout.mjs",
+    "test:private-mobile": "node scripts/check-private-mobile-layout.mjs",
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1",

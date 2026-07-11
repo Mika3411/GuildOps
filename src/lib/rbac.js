@@ -2,6 +2,7 @@ export const RBAC_PERMISSIONS = Object.freeze([
   "manage_site",
   "approve_members",
   "manage_events",
+  "send_sos",
   "manage_diplomacy",
   "manage_bank",
   "moderate_forum",
@@ -21,19 +22,19 @@ export const RBAC_ROLE_DEFINITIONS = Object.freeze({
     code: "officier",
     label: "Officier",
     color: "blue",
-    permissions: ["approve_members", "manage_events", "moderate_forum", "manage_members"],
+    permissions: ["approve_members", "manage_events", "send_sos", "moderate_forum", "manage_members"],
   },
   diplomate: {
     code: "diplomate",
     label: "Diplomate",
     color: "violet",
-    permissions: ["manage_diplomacy"],
+    permissions: ["send_sos", "manage_diplomacy"],
   },
   banquier: {
     code: "banquier",
     label: "Banquier",
     color: "amber",
-    permissions: ["manage_bank"],
+    permissions: ["send_sos", "manage_bank"],
   },
   admin: {
     code: "admin",
@@ -57,6 +58,7 @@ const PERMISSION_LABELS = Object.freeze({
   manage_site: "Site",
   approve_members: "Adhésions",
   manage_events: "Events",
+  send_sos: "SOS",
   manage_diplomacy: "Diplomatie",
   manage_bank: "Banque",
   moderate_forum: "Forum",
@@ -115,6 +117,10 @@ export function getPermissionsForRoles(roles) {
 
 export function can(subject, permission) {
   if (!RBAC_PERMISSIONS.includes(permission)) return false;
+  const directPermissions = new Set([...(subject?.permissions || []), ...(subject?.permissionKeys || [])]);
+  const hasDirectPermissionList = Array.isArray(subject?.permissions) || Array.isArray(subject?.permissionKeys);
+  if (hasDirectPermissionList) return directPermissions.has("admin_all") || directPermissions.has(permission);
+
   const permissions = getPermissionsForRoles(getSubjectRoles(subject));
   return permissions.has("admin_all") || permissions.has(permission);
 }

@@ -32,6 +32,14 @@ export type GuildNotificationInput = {
   data?: Record<string, unknown>;
 };
 
+export type GuildNotificationPermissionInput = GuildNotificationInput & {
+  permissionKeys: string[];
+};
+
+export type GuildNotificationUsersInput = GuildNotificationInput & {
+  userIds: string[];
+};
+
 export type GuildNotification = {
   id: string;
   guildId: string;
@@ -103,6 +111,123 @@ export async function createGuildNotificationsForMembers(
       input.title,
       input.body,
       JSON.stringify(input.data || {})
+    ]
+  );
+
+  return result.rows.map(formatNotificationRow);
+}
+
+export async function createGuildNotificationsForPermission(
+  db: Queryable,
+  input: GuildNotificationPermissionInput
+): Promise<GuildNotification[]> {
+  if (!input.permissionKeys.length) return [];
+
+  const result = await db.query<NotificationRow>(
+    `
+      WITH guild_context AS (
+        SELECT organization_id
+        FROM guilds
+        WHERE id = $1
+          AND deleted_at IS NULL
+        LIMIT 1
+      ),
+      permission_recipients AS (
+        SELECT DISTINCT gm.user_id
+        FROM guild_members gm
+        JOIN guild_member_roles gmr ON gmr.guild_member_id = gm.id
+        JOIN role_permissions rp ON rp.role_id = gmr.role_id
+        JOIN permissions p ON p.id = rp.permission_id
+        WHERE gm.guild_id = $1
+          AND gm.status = 'active'
+          AND gm.user_id IS NOT NULL
+          AND p.key::text = ANY($7::text[])
+      ),
+      organization_recipients AS (
+        SELECT om.user_id
+        FROM guild_context gc
+        JOIN organization_members om ON om.organization_id = gc.organization_id
+        WHERE om.organization_role IN ('owner', 'admin')
+      ),
+      recipients AS (
+        SELECT DISTINCT user_id
+        FROM (
+          SELECT user_id FROM permission_recipients
+          UNION ALL
+          SELECT user_id FROM organization_recipients
+        ) all_recipients
+        WHERE user_id IS NOT NULL
+          AND ($2::uuid IS NULL OR user_id <> $2::uuid)
+      )
+      INSERT INTO notifications (guild_id, user_id, actor_user_id, type, title, body, data)
+      SELECT $1, recipients.user_id, $2, $3, $4, $5, $6::jsonb
+      FROM recipients
+      RETURNING
+        id::text,
+        guild_id::text,
+        user_id::text,
+        actor_user_id::text,
+        type,
+        title,
+        body,
+        data,
+        read_at::text,
+        created_at::text
+    `,
+    [
+      input.guildId,
+      input.actorUserId ?? null,
+      input.type,
+      input.title,
+      input.body,
+      JSON.stringify(input.data || {}),
+      input.permissionKeys
+    ]
+  );
+
+  return result.rows.map(formatNotificationRow);
+}
+
+export async function createGuildNotificationsForUsers(
+  db: Queryable,
+  input: GuildNotificationUsersInput
+): Promise<GuildNotification[]> {
+  const userIds = [...new Set(input.userIds.filter(Boolean))];
+  if (!userIds.length) return [];
+
+  const result = await db.query<NotificationRow>(
+    `
+      WITH recipients AS (
+        SELECT DISTINCT gm.user_id
+        FROM guild_members gm
+        WHERE gm.guild_id = $1
+          AND gm.status = 'active'
+          AND gm.user_id = ANY($7::uuid[])
+          AND ($2::uuid IS NULL OR gm.user_id <> $2::uuid)
+      )
+      INSERT INTO notifications (guild_id, user_id, actor_user_id, type, title, body, data)
+      SELECT $1, recipients.user_id, $2, $3, $4, $5, $6::jsonb
+      FROM recipients
+      RETURNING
+        id::text,
+        guild_id::text,
+        user_id::text,
+        actor_user_id::text,
+        type,
+        title,
+        body,
+        data,
+        read_at::text,
+        created_at::text
+    `,
+    [
+      input.guildId,
+      input.actorUserId ?? null,
+      input.type,
+      input.title,
+      input.body,
+      JSON.stringify(input.data || {}),
+      userIds
     ]
   );
 

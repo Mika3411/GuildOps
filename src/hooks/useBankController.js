@@ -17,6 +17,45 @@ import {
   getBankResourceName
 } from "../lib/guildOpsTransforms.js";
 
+function formatBankUpdatedAt() {
+  return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function normalizeNewBankResourceCode(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function normalizeBankResourceDraft(resource = {}) {
+  const resourceName = String(resource.resourceName || resource.name || "").trim();
+  const resourceCode = String(resource.resourceCode || resource.code || "").trim() || normalizeNewBankResourceCode(resourceName);
+  const amount = Number(resource.amount);
+  const unit = String(resource.unit || "").trim();
+
+  return {
+    resourceCode,
+    resourceName: resourceName || resourceCode,
+    amount: Number.isFinite(amount) ? amount : 0,
+    unit,
+  };
+}
+
+function mergeBankResource(stock, resource) {
+  const resourceCode = getBankResourceCode(resource);
+  const exists = stock.some((item) => getBankResourceCode(item) === resourceCode);
+  const nextStock = exists
+    ? stock.map((item) => (getBankResourceCode(item) === resourceCode ? { ...item, ...resource } : item))
+    : [...stock, resource];
+
+  return nextStock.sort((left, right) => getBankResourceName(left).localeCompare(getBankResourceName(right), "fr"));
+}
+
 export function useBankController({ apiEnabled, currentUser, selectedGuild, guildOpsData, moduleEnabled = true }) {
   const [bankRequests, setBankRequests] = useState(() => (moduleEnabled ? guildOpsData.bankRequests : []));
   const [bankStock, setBankStock] = useState(() => (moduleEnabled ? guildOpsData.bankResources : []));
@@ -68,7 +107,15 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
         reason: normalizedRequest.reason,
       })
       .then((payload) => {
-        const savedRequest = payload?.request || normalizedRequest;
+        const savedRequest = payload?.request || (
+          payload?.id
+            ? {
+                ...normalizedRequest,
+                id: payload.id,
+                status: payload.status || normalizedRequest.status,
+              }
+            : normalizedRequest
+        );
         setBankRequests((current) => [
           {
             ...normalizedRequest,
@@ -228,6 +275,46 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
       });
   }
 
+  function saveBankResource(resourceDraft) {
+    if (!moduleEnabled) return;
+    if (!can(currentUser, "manage_bank")) {
+      setBankError("Permission banque requise pour modifier les ressources.");
+      return;
+    }
+
+    const guildId = getApiGuildId(selectedGuild);
+    if (!apiEnabled || !guildId) {
+      setBankError("API requise pour modifier une ressource banque.");
+      return;
+    }
+
+    const resource = normalizeBankResourceDraft(resourceDraft);
+    if (!resource.resourceCode || !resource.resourceName || resource.amount < 0) {
+      setBankError("Renseigne une ressource valide avec un montant positif ou nul.");
+      return;
+    }
+
+    const previousStock = bankStock;
+    const optimisticResource = {
+      ...resource,
+      updatedAt: formatBankUpdatedAt(),
+    };
+
+    setBankError("");
+    setBankStock((current) => mergeBankResource(current, optimisticResource));
+
+    void guildOpsApi
+      .saveBankResource(guildId, resource)
+      .then((payload) => {
+        const savedResource = payload?.resource || optimisticResource;
+        setBankStock((current) => mergeBankResource(current, savedResource));
+      })
+      .catch((error) => {
+        setBankStock(previousStock);
+        setBankError(error?.message || "Modification de la ressource banque impossible.");
+      });
+  }
+
   function recordBankCommand(createdAt) {
     if (!moduleEnabled) return;
     const guildId = getApiGuildId(selectedGuild);
@@ -265,6 +352,7 @@ export function useBankController({ apiEnabled, currentUser, selectedGuild, guil
     bankStock,
     createBankRequest,
     recordBankCommand,
+    saveBankResource,
     setBankCommand,
     updateBankRequestStatus,
   };

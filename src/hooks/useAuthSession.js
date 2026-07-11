@@ -149,6 +149,15 @@ export function useAuthSession() {
 
   const changePassword = useCallback(async (body) => guildOpsApi.changePassword(body), []);
 
+  const leavePublicGuild = useCallback(
+    async (slug) => {
+      const payload = await guildOpsApi.leavePublicGuild(slug);
+      applyPayload(payload);
+      return payload;
+    },
+    [applyPayload],
+  );
+
   return useMemo(
     () => ({
       ...state,
@@ -157,6 +166,7 @@ export function useAuthSession() {
       isLoading: apiEnabled && state.status === "loading",
       requiresAuth: apiEnabled && state.status === "unauthenticated",
       changePassword,
+      leavePublicGuild,
       login,
       logout,
       register,
@@ -166,7 +176,20 @@ export function useAuthSession() {
       updateMe,
       verifyEmail,
     }),
-    [apiEnabled, changePassword, loadMe, login, logout, register, resendVerification, state, updateContext, updateMe, verifyEmail],
+    [
+      apiEnabled,
+      changePassword,
+      leavePublicGuild,
+      loadMe,
+      login,
+      logout,
+      register,
+      resendVerification,
+      state,
+      updateContext,
+      updateMe,
+      verifyEmail,
+    ],
   );
 }
 
