@@ -112,6 +112,26 @@
   line-height: 1.35;
 }
 
+.auth-register-guidance {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid rgba(84, 223, 204, 0.28);
+  border-radius: 6px;
+  background: rgba(84, 223, 204, 0.08);
+  color: #dffdf7;
+  font-size: 0.9rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.auth-register-guidance svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--teal);
+}
+
 .auth-form .form-row input,
 .auth-form .form-row select,
 .auth-form .form-row textarea {

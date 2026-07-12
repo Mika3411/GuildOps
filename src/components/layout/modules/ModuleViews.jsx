@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import {
   AlertTriangle,
   Lock,
@@ -15,42 +15,9 @@ import {
   getPermissionLabel
 } from "../../../lib/rbac.js";
 import {
-  BankView
-} from "../../bank/BankViews.jsx";
-import {
-  AbsencesView
-} from "../../absence/AbsenceViews.jsx";
-import {
-  CommandCenter
-} from "../../command/CommandViews.jsx";
-import {
-  DiplomacyView
-} from "../../diplomacy/DiplomacyViews.jsx";
-import {
-  ForumView
-} from "../../forum/ForumViews.jsx";
-import {
-  MessagesView
-} from "../../messages/MessagesViews.jsx";
-import {
-  MemberSpaceView
-} from "../../member/MemberSpaceView.jsx";
-import {
-  ShopView
-} from "../../shop/ShopViews.jsx";
-import {
   ModuleHero,
   PanelHeader
 } from "../../shared/Shared.jsx";
-import {
-  WarsView
-} from "../../wars/WarsViews.jsx";
-import {
-  AdministrationView,
-  MembershipRequestsView,
-  MembersView,
-  SettingsView
-} from "../admin/AdminViews.jsx";
 
 const MODULE_CATALOG_IDS = Object.freeze([
   "wars_events",
@@ -65,6 +32,24 @@ const MODULE_CATALOG_IDS = Object.freeze([
   "multi_guilds",
 ]);
 const UTILITY_COMPACT_HERO_VIEWS = new Set(["administration", "absences", "settings"]);
+
+function lazyNamed(importer, exportName) {
+  return lazy(() => importer().then((module) => ({ default: module[exportName] })));
+}
+
+const AbsencesView = lazyNamed(() => import("../../absence/AbsenceViews.jsx"), "AbsencesView");
+const AdministrationView = lazyNamed(() => import("../admin/AdminViews.jsx"), "AdministrationView");
+const BankView = lazyNamed(() => import("../../bank/BankViews.jsx"), "BankView");
+const CommandCenter = lazyNamed(() => import("../../command/CommandViews.jsx"), "CommandCenter");
+const DiplomacyView = lazyNamed(() => import("../../diplomacy/DiplomacyViews.jsx"), "DiplomacyView");
+const ForumView = lazyNamed(() => import("../../forum/ForumViews.jsx"), "ForumView");
+const MembershipRequestsView = lazyNamed(() => import("../admin/AdminViews.jsx"), "MembershipRequestsView");
+const MembersView = lazyNamed(() => import("../admin/AdminViews.jsx"), "MembersView");
+const MemberSpaceView = lazyNamed(() => import("../../member/MemberSpaceView.jsx"), "MemberSpaceView");
+const MessagesView = lazyNamed(() => import("../../messages/MessagesViews.jsx"), "MessagesView");
+const SettingsView = lazyNamed(() => import("../admin/AdminViews.jsx"), "SettingsView");
+const ShopView = lazyNamed(() => import("../../shop/ShopViews.jsx"), "ShopView");
+const WarsView = lazyNamed(() => import("../../wars/WarsViews.jsx"), "WarsView");
 
 function getRouteModeValue(props) {
   if (props.authSession?.isApiEnabled) return "Synchronisé";
@@ -124,8 +109,8 @@ function getViewHeroConfig(props, moduleOverride) {
     },
     command: {
       metric: props.sitePublished ? "Site publié" : "Brouillon",
-      modeDetail: props.publicSiteUrl || "Builder privé",
-      modeValue: props.publishingSite ? "Publication" : props.sitePublished ? "En ligne" : "Builder",
+      modeDetail: props.publicSiteUrl || "Préparation privée",
+      modeValue: props.publishingSite ? "Publication" : props.sitePublished ? "En ligne" : "Préparer",
     },
     diplomacy: {
       metric: `${props.diplomacyRelations?.length || 0} relation${props.diplomacyRelations?.length > 1 ? "s" : ""}`,
@@ -205,6 +190,20 @@ function ViewRouteFrame({ children, module, props }) {
   );
 }
 
+function ModuleViewFallback() {
+  return (
+    <div className="page-grid">
+      <section className="panel">
+        <p className="empty-state">Chargement du module...</p>
+      </section>
+    </div>
+  );
+}
+
+function DeferredModuleView({ children }) {
+  return <Suspense fallback={<ModuleViewFallback />}>{children}</Suspense>;
+}
+
 export function ViewRouter(props) {
   const activeModule = getGuildOpsModuleByView(props.activeView);
   const enabledModuleIds = props.enabledModuleIds;
@@ -248,7 +247,11 @@ export function ViewRouter(props) {
       view = <DiplomacyView {...props} />;
       break;
     case "messages":
-      return <MessagesView {...props} />;
+      return (
+        <DeferredModuleView>
+          <MessagesView {...props} />
+        </DeferredModuleView>
+      );
     case "forum":
       view = <ForumView {...props} />;
       break;
@@ -264,7 +267,11 @@ export function ViewRouter(props) {
       break;
   }
 
-  return <ViewRouteFrame props={props}>{view}</ViewRouteFrame>;
+  return (
+    <ViewRouteFrame props={props}>
+      <DeferredModuleView>{view}</DeferredModuleView>
+    </ViewRouteFrame>
+  );
 }
 
 function getModulePermissionSummary(module) {
@@ -288,8 +295,8 @@ export function ModulesView({ enabledModuleIds = [], moduleUpdateError = "", onE
       <section className="panel wide-panel">
         <PanelHeader icon={Settings} title="Catalogue d'outils" meta={`${enabledCount}/${catalogModules.length} activés`} />
         <div className="module-registry-intro">
-          <strong>Ajoute les outils quand ta guilde grandit.</strong>
-          <p>Le site de guilde reste le point de départ. Active ensuite les modules qui répondent à un vrai besoin d'organisation.</p>
+          <strong>Active seulement ce qui sert maintenant.</strong>
+          <p>Le site suffit pour démarrer. Ajoute les autres outils quand l'équipe en a vraiment besoin.</p>
         </div>
         {moduleUpdateError ? (
           <p className="membership-moderation-error">
@@ -328,26 +335,29 @@ export function ModuleRegistryCard({ enabled = false, module, onEnable }) {
           <strong>{title}</strong>
           <small>{module.description}</small>
         </span>
-        <em>{enabled ? "Activé" : "Désactivé"}</em>
+        <em>{enabled ? "Activé" : "À activer"}</em>
       </header>
       <p className="module-registry-benefit">
-        <span>Bénéfice</span>
+        <span>Pourquoi</span>
         {module.benefit}
       </p>
-      <dl className="module-registry-meta">
-        <div>
-          <dt>Complexité</dt>
-          <dd>{getComplexityLabel(module.complexity)}</dd>
-        </div>
-        <div>
-          <dt>Permissions nécessaires</dt>
-          <dd>{permissionLabel}</dd>
-        </div>
-        <div>
-          <dt>Pré-requis</dt>
-          <dd>{dependencyLabel}</dd>
-        </div>
-      </dl>
+      <details className="module-registry-details">
+        <summary>Détails</summary>
+        <dl className="module-registry-meta">
+          <div>
+            <dt>Niveau</dt>
+            <dd>{getComplexityLabel(module.complexity)}</dd>
+          </div>
+          <div>
+            <dt>Accès</dt>
+            <dd>{permissionLabel}</dd>
+          </div>
+          <div>
+            <dt>Besoin de</dt>
+            <dd>{dependencyLabel}</dd>
+          </div>
+        </dl>
+      </details>
       {!enabled ? (
         <div className="module-registry-actions">
           <button type="button" onClick={onEnable}>

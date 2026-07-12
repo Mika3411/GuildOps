@@ -404,7 +404,7 @@ export function MobileHeader({
         </span>
         <ChevronDown aria-hidden="true" focusable="false" size={22} />
       </div>
-      <nav className="mobile-tab-rail" aria-label="Modules rapides">
+      <nav className="mobile-tab-rail" aria-hidden="true">
         {navItems.slice(0, 3).map((item) => {
           const badge = item.id === "messages" ? unreadMessages : item.badge;
           const isActive = isNavItemActive(item, activeView);
@@ -418,6 +418,7 @@ export function MobileHeader({
               aria-current={isActive ? "page" : undefined}
               aria-label={getNavButtonLabel(item, { badge, label })}
               disabled={item.disabled}
+              tabIndex={-1}
               onClick={() => onNavigate(item.id)}
             >
               <item.icon aria-hidden="true" focusable="false" size={18} />

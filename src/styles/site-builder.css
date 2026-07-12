@@ -193,6 +193,10 @@
 .builder-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "config launch"
+    "config quickops"
+    "style style";
   gap: 14px;
   align-items: start;
 }
@@ -215,11 +219,12 @@
 }
 
 .style-panel {
-  grid-column: 1 / -1;
+  grid-area: style;
   align-content: start;
 }
 
 .config-panel {
+  grid-area: config;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: 14px;
   row-gap: 12px;
@@ -551,6 +556,65 @@
   min-width: 0;
 }
 
+.advanced-builder-field {
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid rgba(154, 180, 192, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.advanced-builder-field summary {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  color: var(--text);
+  cursor: pointer;
+  list-style: none;
+}
+
+.advanced-builder-field summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-builder-field summary strong,
+.advanced-builder-field summary small {
+  min-width: 0;
+  display: block;
+}
+
+.advanced-builder-field summary strong {
+  font-size: 0.9rem;
+}
+
+.advanced-builder-field summary small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.advanced-builder-field summary em {
+  padding: 4px 8px;
+  border: 1px solid rgba(84, 223, 204, 0.28);
+  border-radius: 999px;
+  color: var(--teal);
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.advanced-builder-field[open] summary {
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(154, 180, 192, 0.13);
+}
+
+.advanced-builder-field:not([open]) > .generated-invite-row {
+  display: none;
+}
+
 .generated-invite-row {
   min-width: 0;
   display: grid;
@@ -583,6 +647,11 @@
   justify-self: end;
   color: #9cc7d5;
   font-size: 0.78rem;
+}
+
+.advanced-builder-field summary small {
+  justify-self: start;
+  color: var(--muted);
 }
 
 .tag-grid {
@@ -625,9 +694,14 @@
 }
 
 .preview-stage {
+  grid-area: launch;
   min-width: 0;
   display: grid;
   gap: 14px;
+}
+
+.quick-ops-dock {
+  grid-area: quickops;
 }
 
 .site-preview {

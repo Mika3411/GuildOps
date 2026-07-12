@@ -246,6 +246,12 @@ export function AuthGate({ authSession, initialMode = "login", notificationProps
         </div>
         <form className="auth-form" onSubmit={submitAuth} noValidate>
           {isRegister ? (
+            <div className="auth-register-guidance">
+              <Rocket size={18} />
+              <span>Crée ton compte, puis crée ta guilde en 2 minutes.</span>
+            </div>
+          ) : null}
+          {isRegister ? (
             <>
               <label className="form-row">
                 <span>Nom affiche</span>

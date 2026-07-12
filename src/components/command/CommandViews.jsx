@@ -125,17 +125,17 @@ import {
 } from "../wars/WarsViews.jsx";
 
 const SITE_BUILDER_HELP = Object.freeze({
-  config: "Parametres de base du site de guilde.",
+  config: "Les infos indispensables pour creer la page.",
   guildName: "Nom utilise dans l'en-tete, le titre et l'URL.",
   game: "Jeu de la guilde.",
-  realm: "Serveur, royaume ou monde de la guilde.",
-  tagline: "Phrase courte sous le nom de guilde, lisible des l'arrivee.",
-  objective: "Message principal de la page de guilde : coordination, évènements, consignes ou organisation.",
+  realm: "Serveur, royaume ou monde.",
+  tagline: "Phrase courte visible sous le nom.",
+  objective: "Message simple pour dire ce que la guilde propose.",
   memberInviteUrl: "Lien GuildOps genere automatiquement pour inviter un membre a s'inscrire.",
-  objectiveTags: "Badges rapides qui resument le style de guilde.",
-  style: "Regle l'apparence de la page de guilde.",
-  design: "Change la structure UI sans modifier les fonctions ni le contenu.",
-  heroImage: "Image principale affichee dans le hero du site.",
+  objectiveTags: "Choisis le ton principal de la page.",
+  style: "Regle l'apparence de la page.",
+  design: "Change la mise en page sans modifier le contenu.",
+  heroImage: "Image principale du haut de page.",
 });
 
 const HERO_IMAGE_SOURCE_MAX_BYTES = 6 * 1024 * 1024;
@@ -1086,7 +1086,7 @@ export function PublicGuildSite({
   const galleryPath = "/guildes";
   const chatPath = getPublicSiteRoutePath(publicSlug, "publicChat");
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
-  const appMessagesPath = "/app/messages";
+  const publicMessagesPath = siteDraft.sections.publicChat ? chatPath : memberSpacePath;
   const memberRequestUrl = getMemberRequestHref(publicSlug);
   const rawPublicMembers = Array.isArray(site?.members) && site.members.length ? site.members : fallbackMembers;
   const publicMembers = useMemo(() => normalizePublicTeamMembers(rawPublicMembers), [rawPublicMembers]);
@@ -1181,8 +1181,8 @@ export function PublicGuildSite({
             <a
               aria-label={`Messagerie membre, ${unreadMessageCount} message${unreadMessageCount > 1 ? "s" : ""} non lu${unreadMessageCount > 1 ? "s" : ""}`}
               className="public-site-message-action"
-              href={appMessagesPath}
-              onClick={(event) => navigatePublicSite(event, appMessagesPath, onNavigatePublicRoute)}
+              href={publicMessagesPath}
+              onClick={(event) => navigatePublicSite(event, publicMessagesPath, onNavigatePublicRoute)}
             >
               <Mail size={16} aria-hidden="true" />
               <span className="public-site-message-label">Messagerie</span>
@@ -1216,13 +1216,13 @@ export function PublicGuildSite({
       {!routeSegment ? (
         <PublicSiteHome
           acknowledgeSos={acknowledgeSos}
-          appMessagesPath={appMessagesPath}
           currentUser={currentUser}
           isCurrentMember={isCurrentMember}
           members={publicMembers}
           moduleManagementProps={moduleManagementProps}
           onNavigatePublicRoute={onNavigatePublicRoute}
           publicSlug={publicSlug}
+          publicMessagesPath={publicMessagesPath}
           sendSos={sendSos}
           setSosForm={setSosForm}
           showPublicSosPanel={canUsePublicSos}
@@ -1314,12 +1314,12 @@ export function PublicGuildSite({
 
 function PublicSiteHome({
   acknowledgeSos,
-  appMessagesPath = "/app/messages",
   currentUser,
   isCurrentMember = false,
   members = [],
   onNavigatePublicRoute,
   publicSlug,
+  publicMessagesPath = "",
   sendSos,
   setSosForm,
   showPublicSosPanel = false,
@@ -1353,8 +1353,8 @@ function PublicSiteHome({
             {isCurrentMember ? (
               <a
                 className="public-site-message-action public-site-hero-message-action"
-                href={appMessagesPath}
-                onClick={(event) => navigatePublicSite(event, appMessagesPath, onNavigatePublicRoute)}
+                href={publicMessagesPath}
+                onClick={(event) => navigatePublicSite(event, publicMessagesPath, onNavigatePublicRoute)}
               >
                 Messagerie
                 <Mail size={17} />
@@ -2833,13 +2833,6 @@ export function CommandCenter(props) {
 
   return (
     <div className="builder-layout">
-      <BuilderConfigPanel
-        currentUser={props.currentUser}
-        onDraftChange={updateSiteDraft}
-        onRotateInviteLink={props.onRotateInviteLink}
-        rotatingInviteLink={props.rotatingInviteLink}
-        siteDraft={siteDraft}
-      />
       <section className="preview-stage">
         <SiteLaunchChecklist
           linkCopied={linkCopied}
@@ -2852,22 +2845,29 @@ export function CommandCenter(props) {
           siteDraft={siteDraft}
           sitePublished={props.sitePublished}
         />
-        {showOperationsDock ? (
-          <QuickOpsDock
-            onCheckIn={props.checkIn}
-            onNavigate={props.onNavigate}
-            currentUser={props.currentUser}
-            enabledModuleIds={enabledModuleIds}
-            warSummary={props.warSummary}
-          />
-        ) : null}
       </section>
+      <BuilderConfigPanel
+        currentUser={props.currentUser}
+        onDraftChange={updateSiteDraft}
+        onRotateInviteLink={props.onRotateInviteLink}
+        rotatingInviteLink={props.rotatingInviteLink}
+        siteDraft={siteDraft}
+      />
       <StyleSectionsPanel
         currentUser={props.currentUser}
         onDraftChange={updateSiteDraft}
         purchasedDesignIds={props.purchasedDesignIds}
         siteDraft={siteDraft}
       />
+      {showOperationsDock ? (
+        <QuickOpsDock
+          onCheckIn={props.checkIn}
+          onNavigate={props.onNavigate}
+          currentUser={props.currentUser}
+          enabledModuleIds={enabledModuleIds}
+          warSummary={props.warSummary}
+        />
+      ) : null}
       {previewOpen ? (
         <PreviewPopup
           members={props.members}
@@ -2895,44 +2895,37 @@ export function SiteLaunchChecklist({
 }) {
   const profileComplete = Boolean(siteDraft.guildName?.trim() && siteDraft.game?.trim() && siteDraft.realm?.trim());
   const pagePersonalized = Boolean(siteDraft.tagline?.trim() && siteDraft.objective?.trim());
-  const inviteUrl = getAbsoluteMemberInviteUrl(siteDraft.memberInviteUrl || siteDraft.slug || siteDraft.guildName);
   const steps = [
     {
       id: "profile",
-      label: "Compléter le profil",
-      text: "Nom, jeu, royaume et promesse de guilde.",
+      label: "Profil",
+      text: "Nom, jeu et serveur.",
       done: profileComplete,
     },
     {
       id: "page",
-      label: "Personnaliser la page",
-      text: "Texte, thème et sections.",
+      label: "Message",
+      text: "Une phrase courte pour accueillir.",
       done: pagePersonalized,
     },
     {
-      id: "invite",
-      label: "Lien membre prêt",
-      text: inviteUrl,
-      done: Boolean(inviteUrl),
-    },
-    {
       id: "publish",
-      label: "Publier le site",
-      text: "Rendre la page accessible avec une URL partageable.",
+      label: "Publier",
+      text: "Mettre la page en ligne.",
       done: sitePublished,
       action: onPublishSite,
-      actionLabel: publishingSite ? "Mise en ligne..." : sitePublished ? "Mettre à jour" : "Publier",
+      actionLabel: publishingSite ? "Publication..." : sitePublished ? "Actualiser" : "Publier",
       disabled: publishingSite,
     },
     {
       id: "share",
-      label: "Copier ou ouvrir le lien",
-      text: publicSiteUrl,
+      label: "Partager",
+      text: publicSiteUrl || "Le lien apparaitra ici.",
       done: Boolean(sitePublished && linkCopied),
       action: onCopyLink,
       actionLabel: linkCopied ? "Lien copié" : "Copier",
       secondaryAction: onOpenPublicSite,
-      secondaryLabel: "Ouvrir",
+      secondaryLabel: "Voir",
       disabled: !publicSiteUrl,
       secondaryDisabled: !sitePublished,
     },
@@ -2942,8 +2935,8 @@ export function SiteLaunchChecklist({
     <section className="site-launch-checklist">
       <header>
         <span>
-          <strong>Publier le site de guilde</strong>
-          <small>Le premier objectif est un lien propre à partager.</small>
+          <strong>Démarrer le site</strong>
+          <small>Remplis l'essentiel, vérifie l'aperçu, puis publie.</small>
         </span>
         <div className="site-launch-header-actions">
           <button className="site-preview-button" type="button" onClick={onOpenPreview}>
@@ -2983,7 +2976,7 @@ export function SiteLaunchChecklist({
 }
 
 export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteLink, rotatingInviteLink = false, siteDraft }) {
-  const tags = ["Operations", "Communauté", "Compétitif", "Casual"];
+  const tags = ["Organisation", "Communauté", "Compétitif", "Détente"];
   const siteGuard = getGuardProps(currentUser, "manage_site");
   const canRotateInvite = can(currentUser, "approve_members") || can(currentUser, "manage_site");
   const realmPrefix = normalizeRealmCodeForGame("", siteDraft.game);
@@ -3003,10 +2996,10 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
 
   return (
     <aside className="builder-panel config-panel">
-      <PanelEyebrow icon={LayoutDashboard} label="Configuration du site" help={SITE_BUILDER_HELP.config} />
+      <PanelEyebrow icon={LayoutDashboard} label="Infos de départ" help={SITE_BUILDER_HELP.config} />
       <label className="builder-field">
         <span className="builder-field-head">
-          <HelpLabel label="Nom de guilde" help={SITE_BUILDER_HELP.guildName} />
+          <HelpLabel label="Nom" help={SITE_BUILDER_HELP.guildName} />
           <small>{siteDraft.guildName.length}/32</small>
         </span>
         <input
@@ -3026,7 +3019,7 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
       </label>
       <label className="builder-field">
         <span className="builder-field-head">
-          <HelpLabel label="Royaume" help={SITE_BUILDER_HELP.realm} />
+          <HelpLabel label="Serveur" help={SITE_BUILDER_HELP.realm} />
           <small>{siteDraft.realm.length}/{REALM_CODE_MAX_LENGTH}</small>
         </span>
         <input
@@ -3040,7 +3033,7 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
       </label>
       <label className="builder-field">
         <span className="builder-field-head">
-          <HelpLabel label="Tagline" help={SITE_BUILDER_HELP.tagline} />
+          <HelpLabel label="Phrase courte" help={SITE_BUILDER_HELP.tagline} />
           <small>{siteDraft.tagline.length}/60</small>
         </span>
         <input
@@ -3052,7 +3045,7 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
       </label>
       <label className="builder-field builder-field-wide">
         <span className="builder-field-head">
-          <HelpLabel label="Objectif" help={SITE_BUILDER_HELP.objective} />
+          <HelpLabel label="Message d'accueil" help={SITE_BUILDER_HELP.objective} />
           <small>{siteDraft.objective.length}/140</small>
         </span>
         <textarea
@@ -3062,11 +3055,14 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
           {...siteGuard}
         />
       </label>
-      <div className="builder-field builder-field-wide invite-link-field">
-        <span className="builder-field-head">
-          <HelpLabel label="Lien d'invitation" help={SITE_BUILDER_HELP.memberInviteUrl} />
-          <small>Généré</small>
-        </span>
+      <details className="builder-field builder-field-wide invite-link-field advanced-builder-field">
+        <summary>
+          <span>
+            <strong>Invitation membres</strong>
+            <small>Copier ou renouveler le lien d'inscription.</small>
+          </span>
+          <em>Optionnel</em>
+        </summary>
         <div className="generated-invite-row">
           <input
             aria-label="Lien GuildOps pour devenir membre"
@@ -3093,9 +3089,9 @@ export function BuilderConfigPanel({ currentUser, onDraftChange, onRotateInviteL
             {rotatingInviteLink ? "Renouvellement..." : "Renouveler"}
           </button>
         </div>
-      </div>
-      <HelpLabel className="builder-help-heading" label="Objectifs rapides" help={SITE_BUILDER_HELP.objectiveTags} />
-      <div className="tag-grid" aria-label="Objectifs rapides">
+      </details>
+      <HelpLabel className="builder-help-heading" label="Style de guilde" help={SITE_BUILDER_HELP.objectiveTags} />
+      <div className="tag-grid" aria-label="Style de guilde">
         {tags.map((tag) => (
           <button
             key={tag}
@@ -3465,9 +3461,9 @@ export function StyleSectionsPanel({ currentUser, onDraftChange, purchasedDesign
 
   return (
     <aside className="builder-panel style-panel">
-      <PanelEyebrow icon={Palette} label="Style" help={SITE_BUILDER_HELP.style} />
-      <HelpLabel className="builder-help-heading" label="Design UI" help={SITE_BUILDER_HELP.design} />
-      <div className="design-card-grid" aria-label="Designs UI">
+      <PanelEyebrow icon={Palette} label="Apparence" help={SITE_BUILDER_HELP.style} />
+      <HelpLabel className="builder-help-heading" label="Mise en page" help={SITE_BUILDER_HELP.design} />
+      <div className="design-card-grid" aria-label="Mises en page">
         {designOptions.map((design) => (
           <button
             key={design.id}
@@ -3491,7 +3487,7 @@ export function StyleSectionsPanel({ currentUser, onDraftChange, purchasedDesign
           </button>
         ))}
       </div>
-      <HelpLabel className="builder-help-heading" label="Image hero" help={SITE_BUILDER_HELP.heroImage} />
+      <HelpLabel className="builder-help-heading" label="Image principale" help={SITE_BUILDER_HELP.heroImage} />
       <div className={`hero-image-import ${heroImage ? "has-image" : ""}`}>
         <span className="hero-image-thumb" style={heroImagePreviewStyle}>
           {heroImage ? null : <ImagePlus size={24} />}
@@ -3537,7 +3533,7 @@ export function HelpLabel({ className = "", help, label }) {
   return (
     <span className={`help-label ${className}`.trim()}>
       <span className="help-label-text">{label}</span>
-      <span className="help-tooltip-anchor" tabIndex={0} aria-label={`${label} : ${help}`}>
+      <span className="help-tooltip-anchor" aria-hidden="true">
         <Info size={14} aria-hidden="true" />
         <span className="help-tooltip" role="tooltip">{help}</span>
       </span>

@@ -437,6 +437,37 @@
   background: rgba(84, 223, 204, 0.1);
 }
 
+.module-registry-details {
+  display: grid;
+  gap: 8px;
+}
+
+.module-registry-details summary {
+  width: max-content;
+  max-width: 100%;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(154, 180, 192, 0.18);
+  border-radius: 999px;
+  color: #cfe6ef;
+  font-size: 0.78rem;
+  font-weight: 850;
+  cursor: pointer;
+  list-style: none;
+}
+
+.module-registry-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.module-registry-details[open] summary {
+  border-color: rgba(84, 223, 204, 0.34);
+  color: var(--teal);
+  background: rgba(84, 223, 204, 0.08);
+}
+
 .module-registry-meta {
   display: grid;
   gap: 8px;
