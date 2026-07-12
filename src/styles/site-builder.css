@@ -1950,6 +1950,7 @@
 .public-site-actions .public-site-gallery-action:focus-visible,
 .public-site-actions .public-site-message-action:hover,
 .public-site-actions .public-site-message-action:focus-visible,
+.public-site-actions .public-site-message-action.is-active,
 .public-site-actions .public-site-sos-action:hover,
 .public-site-actions .public-site-sos-action:focus-visible {
   border-color: var(--site-accent, #45d8f0);
@@ -3291,12 +3292,49 @@
 }
 
 .public-chat-page,
+.public-messages-page,
 .public-member-space-page {
   width: min(1180px, calc(100% - 32px));
   display: grid;
   gap: 16px;
   margin: 24px auto;
   scroll-margin-top: 88px;
+}
+
+.public-messages-toolbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.public-messages-toolbar a {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid rgba(132, 157, 168, 0.28);
+  border-radius: 8px;
+  background: rgba(5, 12, 16, 0.72);
+  color: var(--text);
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.public-messages-toolbar a:hover,
+.public-messages-toolbar a:focus-visible {
+  border-color: var(--site-accent, #45d8f0);
+  color: var(--site-highlight, #c8ff08);
+  outline: none;
+}
+
+.public-messages-page .messages-page {
+  width: 100%;
+  margin: 0;
+}
+
+.public-messages-page .panel,
+.public-messages-page .message-inbox-workspace {
+  background: rgba(5, 12, 16, 0.78);
 }
 
 .public-chat-hero,

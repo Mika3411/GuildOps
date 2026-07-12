@@ -115,6 +115,9 @@ import {
   MembershipRequestsView
 } from "../layout/admin/AdminViews.jsx";
 import {
+  MessagesView
+} from "../messages/MessagesViews.jsx";
+import {
   Avatar,
   PanelHeader,
   RolePill,
@@ -151,6 +154,7 @@ const HERO_IMAGE_COMPRESSION_STEPS = Object.freeze([
   { maxSize: 880, quality: 0.6 },
 ]);
 const PUBLIC_MEMBER_SPACE_ROUTE = "espace-membre";
+const PUBLIC_MESSAGES_ROUTE = "messagerie";
 const PUBLIC_MEMBER_PROFILE_STORAGE_PREFIX = "guildops:public-member-profile:v1:";
 const PUBLIC_MEMBER_AVATAR_SOURCE_MAX_BYTES = 4 * 1024 * 1024;
 const PUBLIC_MEMBER_AVATAR_DATA_URL_MAX_LENGTH = 320_000;
@@ -275,6 +279,10 @@ function getPublicSiteRoutePath(slug, sectionKey = "") {
 
 function getPublicMemberSpacePath(slug) {
   return `/g/${slugify(slug)}/${PUBLIC_MEMBER_SPACE_ROUTE}`;
+}
+
+function getPublicMessagesPath(slug) {
+  return `/g/${slugify(slug)}/${PUBLIC_MESSAGES_ROUTE}`;
 }
 
 function getPublicSiteSectionFromRoute(routeSegment, visibleSections) {
@@ -881,6 +889,7 @@ export function PublicGuildRoute({
   events = [],
   fallbackSite,
   memberGuilds = [],
+  messagesProps = {},
   members = [],
   moduleManagementProps = {},
   onBackToBuilder,
@@ -1021,6 +1030,7 @@ export function PublicGuildRoute({
       fallbackPublicDiplomacy={fallbackPublicDiplomacy}
       fallbackPublicForum={fallbackPublicForum}
       memberGuilds={memberGuilds}
+      messagesProps={messagesProps}
       moduleManagementProps={moduleManagementProps}
       onNavigatePublicRoute={onNavigatePublicRoute}
       onBackToBuilder={onBackToBuilder}
@@ -1053,6 +1063,7 @@ export function PublicGuildSite({
   fallbackPublicDiplomacy,
   fallbackPublicForum,
   memberGuilds = [],
+  messagesProps = {},
   moduleManagementProps = {},
   onBackToBuilder,
   onLeavePublicGuild,
@@ -1081,12 +1092,12 @@ export function PublicGuildSite({
   const showPublicSosPanel = isGuildOpsModuleEnabled("sos_attack", publicEnabledModuleIds);
   const sosPath = getPublicSiteRoutePath(publicSlug, "sos");
   const isSosRoute = routeSegment === "sos";
+  const isMessagesRoute = routeSegment === PUBLIC_MESSAGES_ROUTE;
   const isMemberSpaceRoute = routeSegment === PUBLIC_MEMBER_SPACE_ROUTE;
   const homePath = getPublicSiteRoutePath(publicSlug);
   const galleryPath = "/guildes";
-  const chatPath = getPublicSiteRoutePath(publicSlug, "publicChat");
   const memberSpacePath = getPublicMemberSpacePath(publicSlug);
-  const publicMessagesPath = siteDraft.sections.publicChat ? chatPath : memberSpacePath;
+  const publicMessagesPath = getPublicMessagesPath(publicSlug);
   const memberRequestUrl = getMemberRequestHref(publicSlug);
   const rawPublicMembers = Array.isArray(site?.members) && site.members.length ? site.members : fallbackMembers;
   const publicMembers = useMemo(() => normalizePublicTeamMembers(rawPublicMembers), [rawPublicMembers]);
@@ -1105,7 +1116,7 @@ export function PublicGuildSite({
   });
   const viewerVisibleSections = getViewerVisiblePublicSections(visibleSections, isCurrentMember);
   const visibleContentSections = viewerVisibleSections.filter((section) => section.key !== "publicChat");
-  const activeSection = isMemberSpaceRoute || isSosRoute ? null : getPublicSiteSectionFromRoute(routeSegment, visibleSections);
+  const activeSection = isMemberSpaceRoute || isSosRoute || isMessagesRoute ? null : getPublicSiteSectionFromRoute(routeSegment, visibleSections);
   const activeSectionRequiresMembership = Boolean(
     activeSection && !isCurrentMember && isMemberOnlyPublicSection(activeSection.key),
   );
@@ -1113,6 +1124,7 @@ export function PublicGuildSite({
     ? can(currentPublicGuild, "send_sos")
     : sosAuthorized || (!isApiConfigured() && can(currentUser, "send_sos"));
   const canUsePublicSos = showPublicSosPanel && isCurrentMember && canCurrentUserSendSos;
+  const canUsePublicMessages = isCurrentMember && isGuildOpsModuleEnabled("messages", publicEnabledModuleIds);
   const unreadMessageCount = Math.max(0, Number(unreadMessages) || 0);
   const publicDiplomacy = site?.publicDiplomacy || site?.public_diplomacy || fallbackPublicDiplomacy;
   const publicForum = site?.publicForum || site?.public_forum || siteDraft.publicForum || fallbackPublicForum;
@@ -1179,8 +1191,9 @@ export function PublicGuildSite({
           ) : null}
           {isCurrentMember ? (
             <a
+              aria-current={isMessagesRoute ? "page" : undefined}
               aria-label={`Messagerie membre, ${unreadMessageCount} message${unreadMessageCount > 1 ? "s" : ""} non lu${unreadMessageCount > 1 ? "s" : ""}`}
-              className="public-site-message-action"
+              className={`public-site-message-action ${isMessagesRoute ? "is-active" : ""}`.trim()}
               href={publicMessagesPath}
               onClick={(event) => navigatePublicSite(event, publicMessagesPath, onNavigatePublicRoute)}
             >
@@ -1250,6 +1263,27 @@ export function PublicGuildSite({
             memberRequestUrl={memberRequestUrl}
             onNavigatePublicRoute={onNavigatePublicRoute}
             siteDraft={siteDraft}
+          />
+        )
+      ) : isMessagesRoute ? (
+        canUsePublicMessages ? (
+          <PublicMessagesModule
+            homePath={homePath}
+            messagesProps={messagesProps}
+            onNavigatePublicRoute={onNavigatePublicRoute}
+            siteDraft={siteDraft}
+          />
+        ) : (
+          <PublicMemberAccessRequired
+            homePath={homePath}
+            memberRequestUrl={isCurrentMember ? "" : memberRequestUrl}
+            message={
+              isCurrentMember
+                ? `La messagerie de ${siteDraft.guildName} est indisponible pour cette guilde.`
+                : `La messagerie de ${siteDraft.guildName} est réservée aux membres actifs.`
+            }
+            onNavigatePublicRoute={onNavigatePublicRoute}
+            title={isCurrentMember ? "Messagerie indisponible" : "Messagerie réservée aux membres"}
           />
         )
       ) : isSosRoute && canUsePublicSos ? (
@@ -1979,6 +2013,19 @@ function PublicChatModule({ homePath, onNavigatePublicRoute, siteDraft }) {
         </div>
       </div>
       <PublicSiteGuestChat siteDraft={siteDraft} />
+    </section>
+  );
+}
+
+function PublicMessagesModule({ homePath, messagesProps = {}, onNavigatePublicRoute, siteDraft }) {
+  return (
+    <section className="public-messages-page" tabIndex={-1}>
+      <div className="public-messages-toolbar">
+        <a href={homePath} onClick={(event) => navigatePublicSite(event, homePath, onNavigatePublicRoute)}>
+          Retour accueil
+        </a>
+      </div>
+      <MessagesView {...messagesProps} siteDraft={siteDraft} />
     </section>
   );
 }

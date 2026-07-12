@@ -1675,6 +1675,7 @@
   }
 
   .public-chat-page,
+  .public-messages-page,
   .public-member-space-page {
     width: calc(100% - 24px);
     margin: 12px auto 32px;

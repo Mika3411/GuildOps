@@ -140,6 +140,7 @@ export function useGuildOpsController() {
   const enabledModuleKey = enabledModuleIds.join("|");
   const publicRouteSlug = getPublicRouteSlug(routePath);
   const publicRouteSegment = getPublicRouteSegment(routePath);
+  const publicMessagesVisible = Boolean(publicRouteSlug && publicRouteSegment === "messagerie");
   const inviteRouteSlug = getInviteRouteSlug(routePath);
   const siteDraftEnabledModuleKey = Array.isArray(siteDraft.enabledModules) ? siteDraft.enabledModules.join("|") : "";
   const publishedEnabledModuleKey = Array.isArray(lastPublishedSite?.enabledModules) ? lastPublishedSite.enabledModules.join("|") : "";
@@ -331,7 +332,7 @@ export function useGuildOpsController() {
     moduleEnabled: moduleAvailability.messages,
     translationEnabled: moduleAvailability.translation,
     onNotificationsChanged: notificationsController.refreshNotifications,
-    messagesVisible: activeView === "messages",
+    messagesVisible: activeView === "messages" || publicMessagesVisible,
   });
   const forumController = useForumController({
     apiEnabled,
